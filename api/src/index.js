@@ -7,6 +7,91 @@ import { Router } from 'itty-router';
 
 const router = Router();
 
+// ── DATABASE INITIALIZATION ──
+let dbInitialized = false;
+
+async function initializeDatabase(env) {
+  if (dbInitialized) return;
+  
+  try {
+    // Create tables with IF NOT EXISTS to prevent errors on subsequent calls
+    const createTableStatements = [
+      `CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        first_name TEXT,
+        last_name TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        is_active INTEGER DEFAULT 1
+      )`,
+      `CREATE TABLE IF NOT EXISTS user_data_snapshots (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+        user_id TEXT NOT NULL,
+        snapshot_data TEXT NOT NULL,
+        size_bytes INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS sync_logs (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+        user_id TEXT NOT NULL,
+        device_id TEXT,
+        action TEXT,
+        synced_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        status TEXT DEFAULT 'pending',
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS api_keys (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+        user_id TEXT NOT NULL,
+        key_hash TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at DATETIME,
+        is_active INTEGER DEFAULT 1,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS sessions (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+        user_id TEXT NOT NULL,
+        token TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at DATETIME,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS audit_logs (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+        user_id TEXT,
+        action TEXT NOT NULL,
+        details TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`,
+      `CREATE INDEX IF NOT EXISTS idx_snapshots_user ON user_data_snapshots(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_sync_logs_user ON sync_logs(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id)`
+    ];
+
+    for (const sql of createTableStatements) {
+      try {
+        await env.DB.prepare(sql).run();
+      } catch (e) {
+        // Log but don't fail - table might already exist
+        console.log('Init note:', e.message);
+      }
+    }
+    
+    dbInitialized = true;
+  } catch (e) {
+    console.error('Database initialization error:', e);
+    // Don't throw - let requests continue and handle DB errors individually
+  }
+}
+
 // ── CORS HEADERS ──
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -119,13 +204,13 @@ router.post('/auth/register', async (request, env) => {
     const token = generateToken(userId);
     
     await env.DB.prepare(
-      `INSERT INTO sessions (id, user_id, token, created_at, expires_at, is_active)
-       VALUES (?, ?, ?, datetime('now'), datetime('now', '+30 days'), 1)`
+      `INSERT INTO sessions (id, user_id, token, created_at, expires_at)
+       VALUES (?, ?, ?, datetime('now'), datetime('now', '+30 days'))`
     ).bind(sessionId, userId, token).run();
     
     // Log audit
     await env.DB.prepare(
-      `INSERT INTO audit_logs (user_id, action, status, created_at)
+      `INSERT INTO audit_logs (user_id, action, details, created_at)
        VALUES (?, 'register', 'success', datetime('now'))`
     ).bind(userId).run();
     
@@ -181,19 +266,18 @@ router.post('/auth/login', async (request, env) => {
     // Create session
     const sessionId = generateUUID();
     const token = generateToken(user.id);
-    const deviceId = generateUUID();
     
     await env.DB.prepare(
-      `INSERT INTO sessions (id, user_id, device_id, token, created_at, expires_at, is_active)
-       VALUES (?, ?, ?, ?, datetime('now'), datetime('now', '+30 days'), 1)`
-    ).bind(sessionId, user.id, deviceId, token).run();
+      `INSERT INTO sessions (id, user_id, token, created_at, expires_at)
+       VALUES (?, ?, ?, datetime('now'), datetime('now', '+30 days'))`
+    ).bind(sessionId, user.id, token).run();
     
     // Update last_login
-    await env.DB.prepare('UPDATE users SET last_login = datetime("now") WHERE id = ?').bind(user.id).run();
+    await env.DB.prepare('UPDATE users SET updated_at = datetime("now") WHERE id = ?').bind(user.id).run();
     
     // Log audit
     await env.DB.prepare(
-      `INSERT INTO audit_logs (user_id, action, status, created_at)
+      `INSERT INTO audit_logs (user_id, action, details, created_at)
        VALUES (?, 'login', 'success', datetime('now'))`
     ).bind(user.id).run();
     
@@ -388,4 +472,13 @@ router.all('*', () => new Response(JSON.stringify({ error: 'Not found' }), {
   headers: { ...corsHeaders, 'Content-Type': 'application/json' }
 }));
 
-export default router;
+// ── EXPORT WITH DATABASE INITIALIZATION ──
+export default {
+  async fetch(request, env, ctx) {
+    // Initialize database on first request
+    await initializeDatabase(env);
+    
+    // Handle the request with the router
+    return router.handle(request, env);
+  }
+};
