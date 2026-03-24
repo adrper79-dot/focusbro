@@ -5,6 +5,7 @@
 
 import { Router } from 'itty-router';
 import extendedRouter from './extended-routes.js';
+import htmlContent from './html.js';
 
 const router = Router();
 
@@ -495,6 +496,14 @@ router.get('/health', async (request, env) => {
   });
 });
 
+// ── ROOT PAGE (Serve HTML) ──
+router.get('/', async (request, env) => {
+  return new Response(htmlContent, {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
+  });
+});
+
 // ── 404 Fallback ──
 router.all('*', () => new Response(JSON.stringify({ error: 'Not found' }), {
   status: 404,
@@ -510,7 +519,7 @@ export default {
     // Try main router first
     const response = await router.handle(request, env);
     
-    // If main router returns 404 and the path might be for extended routes, try extended router
+    // If main router returns 404, try extended router
     if (response.status === 404) {
       const extendedResponse = await extendedRouter.handle(request, env);
       if (extendedResponse.status !== 404) {
@@ -518,7 +527,7 @@ export default {
       }
     }
     
-    // Return response from main router or extended router
+    // Return response from routers
     return response;
   }
 };
