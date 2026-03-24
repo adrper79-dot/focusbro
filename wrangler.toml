@@ -1,7 +1,6 @@
 name = "focusbro"
-type = "javascript"
 compatibility_date = "2024-03-24"
-main = "src/index.js"
+main = "api/src/index.js"
 
 # Cloudflare D1 Database (SQLite)
 [[d1_databases]]
@@ -17,9 +16,9 @@ preview_id = "placeholder-kv-preview-id"
 
 # Environment-specific config
 [env.production]
-d1_databases = [{ binding = "DB", database_id = "prod-db-id", database_name = "focusbro" }]
-kv_namespaces = [{ binding = "KV", id = "prod-kv-id", preview_id = "preview-kv-id" }]
-vars = { ENV = "production", API_ORIGIN = "https://api.focusbro.pages.dev" }
+d1_databases = [{ binding = "DB", database_id = "2ac20b08-66e3-4abd-92de-f0e6380bdad0", database_name = "focusbro" }]
+kv_namespaces = [{ binding = "KV", id = "60c1852cd70f4999a380b9ea290fccb3", preview_id = "60c1852cd70f4999a380b9ea290fccb3" }]
+vars = { ENV = "production", API_ORIGIN = "https://focusbro-api-production.adrper79.workeruction.adrper79.workers.dev" }
 
 [env.development]
 vars = { ENV = "development", API_ORIGIN = "http://localhost:8787" }
