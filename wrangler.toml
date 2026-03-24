@@ -1,3 +1,25 @@
 name = "focusbro"
 type = "javascript"
 compatibility_date = "2024-03-24"
+main = "src/index.js"
+
+# Cloudflare D1 Database (SQLite)
+[[d1_databases]]
+binding = "DB"
+database_name = "focusbro"
+database_id = "placeholder-db-id"
+
+# Cloudflare KV Store (for user data blobs)
+[[kv_namespaces]]
+binding = "KV"
+id = "placeholder-kv-id"
+preview_id = "placeholder-kv-preview-id"
+
+# Environment-specific config
+[env.production]
+d1_databases = [{ binding = "DB", database_id = "prod-db-id", database_name = "focusbro" }]
+kv_namespaces = [{ binding = "KV", id = "prod-kv-id", preview_id = "preview-kv-id" }]
+vars = { ENV = "production", API_ORIGIN = "https://api.focusbro.pages.dev" }
+
+[env.development]
+vars = { ENV = "development", API_ORIGIN = "http://localhost:8787" }

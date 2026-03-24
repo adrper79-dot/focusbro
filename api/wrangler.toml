@@ -1,0 +1,33 @@
+name = "focusbro-api"
+type = "javascript"
+main = "src/index.js"
+compatibility_date = "2024-03-24"
+account_id = "a1c8a33cbe8a3c9e260480433a0dbb06"
+
+# ── DATABASE ──
+[[d1_databases]]
+binding = "DB"
+database_name = "focusbro-db"
+database_id = "placeholder-will-update"
+
+# ── KEY-VALUE STORE ──
+[[kv_namespaces]]
+binding = "KV_CACHE"
+id = "placeholder-will-update"
+preview_id = "placeholder-will-update"
+
+# ── ENVIRONMENT ──
+[env.production]
+routes = [
+  { pattern = "api.focusbro.io/*", zone_name = "focusbro.io" }
+]
+
+# ── CORS & SECURITY ──
+[env.production.vars]
+FRONTEND_URL = "https://main.focusbro-7g0.pages.dev"
+JWT_SECRET = "your-secret-key-change-in-production"
+PASSWORD_SALT_ROUNDS = "10"
+
+[env.production.build]
+command = "npm install && npm run build"
+cwd = "./api"

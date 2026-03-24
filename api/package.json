@@ -1,0 +1,24 @@
+{
+  "name": "focusbro-api",
+  "version": "1.0.0",
+  "description": "FocusBro Cloudflare Workers API for authentication and data sync",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "tsc --noEmit",
+    "lint": "eslint src/**/*.js"
+  },
+  "dependencies": {
+    "itty-router": "^4.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.37.0",
+    "@cloudflare/workers-types": "^4.20240604.0",
+    "eslint": "^8.50.0"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
