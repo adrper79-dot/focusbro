@@ -352,15 +352,15 @@ router.post('/sync/data', async (request, env) => {
     
     // Store in D1 for archival
     await env.DB.prepare(
-      `INSERT INTO user_data_snapshots (user_id, snapshot_data, snapshot_size, created_at)
+      `INSERT INTO user_data_snapshots (user_id, snapshot_data, size_bytes, created_at)
        VALUES (?, ?, ?, datetime('now'))`
     ).bind(userId, dataString, dataSize).run();
     
     // Log sync
     await env.DB.prepare(
-      `INSERT INTO sync_logs (user_id, device_id, synced_at, data_size, status)
-       VALUES (?, ?, datetime('now'), ?, 'success')`
-    ).bind(userId, device_id, dataSize).run();
+      `INSERT INTO sync_logs (user_id, device_id, action, status, synced_at)
+       VALUES (?, ?, 'data_upload', 'success', datetime('now'))`
+    ).bind(userId, device_id).run();
     
     return new Response(JSON.stringify({
       success: true,
