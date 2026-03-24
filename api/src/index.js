@@ -286,8 +286,7 @@ router.post('/auth/login', async (request, env) => {
       user_id: user.id,
       email,
       token,
-      session_id: sessionId,
-      device_id: deviceId
+      session_id: sessionId
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
