@@ -59,9 +59,13 @@ async function initializeDatabase(env) {
       `CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
         user_id TEXT NOT NULL,
+        device_id TEXT,
+        device_name TEXT,
         token TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
         expires_at DATETIME,
+        is_active INTEGER DEFAULT 1,
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
       )`,
       `CREATE TABLE IF NOT EXISTS audit_logs (
@@ -84,7 +88,11 @@ async function initializeDatabase(env) {
     const alterTableStatements = [
       `ALTER TABLE users ADD COLUMN avatar_url TEXT`,
       `ALTER TABLE users ADD COLUMN subscription_tier TEXT DEFAULT 'free'`,
-      `ALTER TABLE users ADD COLUMN last_login DATETIME`
+      `ALTER TABLE users ADD COLUMN last_login DATETIME`,
+      `ALTER TABLE sessions ADD COLUMN is_active INTEGER DEFAULT 1`,
+      `ALTER TABLE sessions ADD COLUMN device_id TEXT`,
+      `ALTER TABLE sessions ADD COLUMN device_name TEXT`,
+      `ALTER TABLE sessions ADD COLUMN last_activity DATETIME DEFAULT CURRENT_TIMESTAMP`
     ];
 
     for (const sql of createTableStatements) {
