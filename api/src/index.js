@@ -12,10 +12,10 @@ const router = Router();
 let dbInitialized = false;
 
 async function initializeDatabase(env) {
-  if (dbInitialized) return;
-  
   try {
-    // Create tables with IF NOT EXISTS to prevent errors on subsequent calls
+    // Only run CREATE statements once
+    if (!dbInitialized) {
+      
     const createTableStatements = [
       `CREATE TABLE IF NOT EXISTS users (
         id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
@@ -101,6 +101,7 @@ async function initializeDatabase(env) {
       } catch (e) {
         // Log but don't fail - table might already exist
         console.log('Init note:', e.message);
+      }
       }
     }
 
