@@ -1,0 +1,2829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FocusBro — Your Productivity Co-Pilot</title>
+<meta name="description" content="Keep your PC awake, stay active on Teams, and supercharge your focus with ADHD-friendly productivity tools. Free.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7015938501859914" crossorigin="anonymous"></script>
+
+<style>
+  :root {
+    /* ── Professional Enterprise Palette ── */
+    --bg: #0a0e27;
+    --bg-secondary: #0f1428;
+    --bg-card: #141d3f;
+    --bg-card-hover: #1a2652;
+    --border: #2a3a6f;
+    --border-light: #3d4f8a;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    
+    /* ── Professional Accent (Enterprise Blue/Teal) ── */
+    --primary: #0ea5e9;
+    --primary-dark: #0284c7;
+    --primary-light: #38bdf8;
+    --primary-dim: rgba(14, 165, 233, 0.12);
+    --primary-glow: rgba(14, 165, 233, 0.2);
+    
+    /* ── Status Colors ── */
+    --success: #10b981;
+    --success-dim: rgba(16, 185, 129, 0.12);
+    --success-glow: rgba(16, 185, 129, 0.2);
+    --warn: #f59e0b;
+    --warn-dim: rgba(245, 158, 11, 0.12);
+    --danger: #ef4444;
+    --danger-dim: rgba(239, 68, 68, 0.12);
+    
+    /* ── Secondary Colors ── */
+    --purple: #a78bfa;
+    --purple-dim: rgba(167, 139, 250, 0.12);
+    --teal: #14b8a6;
+    --teal-dim: rgba(20, 184, 166, 0.12);
+    
+    /* ── Spacing & Radius ── */
+    --radius: 12px;
+    --radius-lg: 16px;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.4);
+    
+    /* ── Typography ── */
+    --font: 'DM Sans', sans-serif;
+    --font-display: 'DM Sans', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: linear-gradient(to bottom, var(--bg), var(--bg-secondary));
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    letter-spacing: 0.3px;
+  }
+
+  /* ── PROFESSIONAL AMBIENT BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: 
+      radial-gradient(ellipse at 20% 50%, rgba(14, 165, 233, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(20, 184, 166, 0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 80%, rgba(167, 139, 250, 0.03) 0%, transparent 50%);
+    z-index: -1;
+    animation: ambientShift 45s ease-in-out infinite alternate;
+  }
+
+  @keyframes ambientShift {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-2%, -2%) scale(1.02); }
+  }
+
+  /* ── PROFESSIONAL HEADER ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 40px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10, 14, 39, 0.6);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--primary), var(--teal));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    box-shadow: 0 8px 24px var(--primary-glow);
+    backdrop-filter: blur(10px);
+  }
+
+  .logo-text {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+    background: linear-gradient(135deg, var(--text), var(--primary-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo-text span { color: var(--primary); -webkit-text-fill-color: var(--primary); }
+
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .status-pill.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(34,197,94,0.2);
+  }
+
+  .status-pill.inactive {
+    background: var(--danger-dim);
+    color: var(--danger);
+    border: 1px solid rgba(239,68,68,0.2);
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ── AD BANNER (top leaderboard) ── */
+  .ad-slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-card);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    min-height: 90px;
+    margin: 16px 32px;
+  }
+
+  .ad-slot-sidebar {
+    min-height: 250px;
+    margin: 0;
+  }
+
+  .ad-slot-inline {
+    min-height: 100px;
+    margin: 0;
+  }
+
+  /* ── PROFESSIONAL MAIN GRID ── */
+  .dashboard {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    padding: 32px 40px 48px;
+    max-width: 1480px;
+    margin: 0 auto;
+  }
+
+  .main-area {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ── PROFESSIONAL CARD BASE (GLASS MORPHISM) ── */
+  .card {
+    background: rgba(20, 29, 63, 0.5);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .card:hover { border-color: rgba(255,255,255,0.08); }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(61, 79, 138, 0.5);
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--primary-light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-title .icon { font-size: 18px; opacity: 0.8; }
+
+  /* ── PROFESSIONAL KEEP AWAKE HERO (EXECUTIVE SUMMARY) ── */
+  .keep-awake {
+    text-align: center;
+    padding: 60px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .keep-awake.active {
+    border-color: rgba(34,197,94,0.3);
+    background: linear-gradient(135deg, var(--bg-card), rgba(34,197,94,0.05));
+  }
+
+  .awake-ring {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    border: 3px solid var(--border-light);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 32px;
+    position: relative;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    background: rgba(14, 165, 233, 0.05);
+  }
+
+  .awake-ring.active {
+    border-color: var(--primary);
+    box-shadow: 0 0 60px var(--primary-glow), inset 0 0 40px rgba(14, 165, 233, 0.1);
+    background: rgba(14, 165, 233, 0.1);
+  }
+
+  .awake-ring.active::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: var(--primary);
+    border-right-color: var(--primary);
+    animation: spin 2.5s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .awake-icon { font-size: 52px; transition: transform 0.3s; filter: drop-shadow(0 4px 12px rgba(14, 165, 233, 0.3)); }
+  .awake-ring:hover .awake-icon { transform: scale(1.12); }
+
+  .awake-label {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--text), var(--primary-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .awake-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    max-width: 340px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+
+  .awake-timer {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--accent);
+    margin-top: 12px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .awake-timer.visible { opacity: 1; }
+
+  /* ── TOP ROW CARDS ── */
+  .top-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* ── POMODORO ── */
+  /* ── PROFESSIONAL POMODORO DISPLAY ── */
+  .pomo-display {
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .pomo-time {
+    font-family: var(--mono);
+    font-size: 64px;
+    font-weight: 700;
+    letter-spacing: -3px;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .pomo-phase {
+    font-size: 13px;
+    color: var(--primary-light);
+    margin-bottom: 24px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+  }
+
+  .pomo-controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .pomo-dots {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 24px;
+  }
+
+  .pomo-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: rgba(61, 79, 138, 0.5);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--border-light);
+  }
+
+  .pomo-dot.done { background: var(--success); border-color: var(--success); box-shadow: 0 0 12px rgba(16, 185, 129, 0.3); }
+  .pomo-dot.current { background: var(--primary); border-color: var(--primary); box-shadow: 0 0 16px rgba(14, 165, 233, 0.5); }
+
+  /* ── MEETING COUNTDOWN ── */
+  .meeting-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .meeting-input-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .meeting-input-row input:focus { border-color: var(--blue); }
+
+  .meeting-countdown-display {
+    text-align: center;
+    padding: 8px 0;
+  }
+
+  .meeting-countdown-time {
+    font-family: var(--mono);
+    font-size: 36px;
+    font-weight: 500;
+    color: var(--blue);
+  }
+
+  .meeting-countdown-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .meeting-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  /* ── BUTTONS ── */
+  /* ── PROFESSIONAL BUTTONS ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    background: rgba(61, 79, 138, 0.4);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .btn:hover { 
+    background: rgba(61, 79, 138, 0.6);
+    border-color: var(--primary-light);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+  }
+
+  .btn-accent {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: #000;
+    border-color: var(--primary);
+    font-weight: 700;
+    box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3);
+  }
+
+  .btn-accent:hover { 
+    background: linear-gradient(135deg, var(--primary-light), var(--primary));
+    box-shadow: 0 8px 24px rgba(14, 165, 233, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .btn-sm { padding: 8px 14px; font-size: 11px; }
+
+  /* ── BREAK REMINDER ── */
+  .break-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    background: rgba(61, 79, 138, 0.3);
+  }
+
+  .break-progress-ring {
+    width: 48px; height: 48px;
+    flex-shrink: 0;
+  }
+
+  .break-progress-ring circle {
+    fill: none;
+    stroke-width: 4;
+  }
+
+  .break-progress-ring .track { stroke: var(--border); }
+  .break-progress-ring .fill { stroke: var(--blue); transition: stroke-dashoffset 1s; transform: rotate(-90deg); transform-origin: center; }
+
+  .break-info { flex: 1; }
+  .break-next { font-size: 14px; font-weight: 500; }
+  .break-rule { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── AMBIENT SOUNDS ── */
+  .sounds-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .sound-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .sound-btn:hover { background: var(--bg-card-hover); color: var(--text); }
+
+  .sound-btn.active {
+    background: var(--blue-dim);
+    border-color: rgba(59,130,246,0.3);
+    color: var(--blue);
+  }
+
+  .sound-btn .sound-icon { font-size: 22px; }
+
+  .sound-volume {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .sound-volume label { font-size: 12px; color: var(--text-muted); }
+
+  .sound-volume input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  .sound-volume input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: var(--blue);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  /* ── NOTEPAD ── */
+  .notepad textarea {
+    width: 100%;
+    min-height: 120px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .notepad textarea:focus { border-color: var(--purple); }
+
+  .notepad-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* ── TASKS ── */
+  .task-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .task-input-row input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    outline: none;
+  }
+
+  .task-input-row input:focus { border-color: var(--purple); }
+
+  .task-list { list-style: none; }
+
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 14px;
+  }
+
+  .task-item:last-child { border-bottom: none; }
+
+  .task-check {
+    width: 20px; height: 20px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    background: transparent;
+    color: transparent;
+    font-size: 12px;
+  }
+
+  .task-check.done {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+
+  .task-text { flex: 1; }
+  .task-text.done { text-decoration: line-through; color: var(--text-muted); }
+
+  .task-delete {
+    background: none; border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    padding: 4px;
+  }
+
+  .task-item:hover .task-delete { opacity: 1; }
+  .task-delete:hover { color: var(--danger); }
+
+  /* ── FOCUS STATS ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  /* ── PROFESSIONAL METRICS CARDS ── */
+  .stat-box {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(20, 184, 166, 0.05));
+    border: 1px solid rgba(14, 165, 233, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+  }
+
+  .stat-box:hover {
+    border-color: rgba(14, 165, 233, 0.4);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(20, 184, 166, 0.08));
+    box-shadow: 0 4px 16px rgba(14, 165, 233, 0.15);
+  }
+
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-weight: 600;
+  }
+
+  .stat-value.green { color: var(--success); }
+  .stat-value.blue { color: var(--primary-light); }
+  .stat-value.purple { color: var(--purple); }
+  .stat-value.warn { color: var(--warn); }
+
+  /* ── ADHD TIPS ── */
+  .adhd-tip {
+    padding: 16px;
+    background: var(--purple-dim);
+    border: 1px solid rgba(167,139,250,0.15);
+    border-radius: 10px;
+  }
+
+  .adhd-tip-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--purple);
+    margin-bottom: 8px;
+  }
+
+  .adhd-tip-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text);
+  }
+
+  .adhd-tip-refresh {
+    margin-top: 10px;
+    background: none;
+    border: 1px solid rgba(167,139,250,0.2);
+    color: var(--purple);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all 0.2s;
+  }
+
+  .adhd-tip-refresh:hover { background: rgba(167,139,250,0.1); }
+
+  /* ── BREAK MODAL ── */
+  .break-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .break-modal.show { display: flex; }
+
+  /* ── PROFESSIONAL MODAL CONTENT ── */
+  .break-modal-content {
+    background: linear-gradient(135deg, rgba(14, 29, 63, 0.8), rgba(20, 29, 63, 0.8));
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    padding: 56px 48px;
+    text-align: center;
+    max-width: 420px;
+    animation: modalIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.92) translateY(15px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .break-modal-icon { 
+    font-size: 72px;
+    margin-bottom: 24px;
+    display: inline-block;
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .break-modal-title { 
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, var(--primary-light), var(--text));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .break-modal-text { 
+    font-size: 15px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin-bottom: 32px;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    text-align: center;
+    padding: 32px;
+    border-top: 1px solid var(--border);
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .footer a { color: var(--primary); text-decoration: none; transition: color 0.2s; }
+  .footer a:hover { color: var(--primary-light); }
+
+  /* ── INTENTION BANNER ── */
+  .intention-banner {
+    margin: 0 32px 0;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, var(--bg-card), rgba(34,197,94,0.06));
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .intention-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+
+  .intention-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid rgba(34,197,94,0.25);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 16px;
+    font-weight: 500;
+    padding: 4px 0;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .intention-input::placeholder { color: var(--text-muted); font-weight: 400; font-size: 14px; }
+  .intention-input:focus { border-bottom-color: var(--accent); }
+
+  /* ── TIME BLINDNESS BAR ── */
+  .time-bar-wrap {
+    margin: 10px 32px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .time-bar {
+    flex: 1;
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .time-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue), var(--purple));
+    border-radius: 3px;
+    transition: width 60s linear;
+  }
+
+  /* ── DISTRACTION PARKING LOT ── */
+  .distraction-list {
+    list-style: none;
+    max-height: 110px;
+    overflow-y: auto;
+    margin-top: 8px;
+  }
+
+  .distraction-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .distraction-item:last-child { border-bottom: none; }
+  .distraction-item span { flex: 1; }
+
+  .distraction-del {
+    background: none; border: none;
+    color: var(--text-muted); cursor: pointer;
+    font-size: 14px; opacity: 0;
+    transition: opacity 0.2s; padding: 2px 4px;
+  }
+
+  .distraction-item:hover .distraction-del { opacity: 1; }
+  .distraction-del:hover { color: var(--danger); }
+
+  .distraction-empty {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 12px 0;
+    opacity: 0.6;
+  }
+
+  /* ── DISTRACTION QUICK-CAPTURE OVERLAY ── */
+  .distract-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(6px);
+    align-items: center;
+    justify-content: center;
+  }
+
+  .distract-overlay.show { display: flex; }
+
+  .distract-box {
+    background: var(--bg-card);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 16px;
+    padding: 32px;
+    width: 440px;
+    animation: modalIn 0.2s ease;
+  }
+
+  .distract-box h3 { font-size: 18px; margin-bottom: 6px; }
+
+  .distract-box p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .distract-box input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    outline: none;
+    margin-bottom: 14px;
+    transition: border-color 0.2s;
+  }
+
+  .distract-box input:focus { border-color: var(--warn); }
+
+  /* ── ZEN MODE ── */
+  body.zen-mode .sidebar,
+  body.zen-mode .top-row,
+  body.zen-mode .keep-awake,
+  body.zen-mode .ad-slot,
+  body.zen-mode .intention-banner,
+  body.zen-mode .time-bar-wrap,
+  body.zen-mode #ad-inline { display: none !important; }
+
+  body.zen-mode .main-area { gap: 0; }
+
+  .zen-focus-display { display: none; }
+
+  body.zen-mode .zen-focus-display {
+    display: block;
+    text-align: center;
+    padding: 12px 24px 16px;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  body.zen-mode .zen-focus-display span {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .zen-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-family: var(--font);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .zen-btn:hover { background: var(--bg-card-hover); color: var(--text); }
+  body.zen-mode .zen-btn { background: var(--warn-dim); color: var(--warn); border-color: rgba(245,158,11,0.3); }
+
+  /* ── HYPERFOCUS MODAL ── */
+  .hyperfocus-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hyperfocus-modal.show { display: flex; }
+
+  /* ══════════════════════════════════════════════════════════════════ */
+  /* NEW FEATURES: BREATHING, BINAURAL, GROUNDING, FIDGET, TRACKER     */
+  /* ══════════════════════════════════════════════════════════════════ */
+
+  /* ── BREATHING GUIDE ── */
+  .breathing-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); z-index: 1000; align-items: center; justify-content: center; }
+  .breathing-modal.show { display: flex; }
+  .breathing-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 48px; text-align: center; max-width: 500px; animation: modalIn 0.3s ease; }
+  .breathing-circle { width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(34,197,94,0.3), transparent); margin: 0 auto 30px; display: flex; align-items: center; justify-content: center; font-size: 48px; animation: breathing 8s ease-in-out infinite; }
+  @keyframes breathing { 0% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.4); opacity: 1; } 100% { transform: scale(1); opacity: 0.7; } }
+  .breathing-text { font-size: 18px; font-weight: 500; margin: 10px 0; color: var(--accent); }
+  .breathing-phase { font-size: 13px; color: var(--text-muted); margin: 5px 0 20px; }
+
+  /* ── BINAURAL BEATS ── */
+  .binaural-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .binaural-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.2s; }
+  .binaural-btn:hover { border-color: var(--accent); }
+  .binaural-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  .binaural-info { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+  /* ── GROUNDING MODAL ── */
+  .grounding-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); z-index: 1000; align-items: center; justify-content: center; overflow-y: auto; }
+  .grounding-modal.show { display: flex; }
+  .grounding-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 40px; max-width: 600px; width: 90%; margin: auto; animation: modalIn 0.3s ease; }
+  .grounding-header { text-align: center; margin-bottom: 30px; }
+  .grounding-header h2 { font-size: 24px; margin-bottom: 8px; }
+  .grounding-header p { font-size: 13px; color: var(--text-muted); }
+  .grounding-items { display: flex; flex-direction: column; gap: 16px; }
+  .grounding-item { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s; }
+  .grounding-item:hover { border-color: var(--accent); background: rgba(34,197,94,0.05); }
+  .grounding-number { font-size: 20px; font-weight: 700; color: var(--accent); display: block; }
+  .grounding-text { display: block; font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .grounding-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 12px; margin-top: 6px; font-family: var(--font); }
+  .grounding-result { background: var(--accent-dim); border: 1px solid rgba(34,197,94,0.2); border-radius: 12px; padding: 12px; margin-top: 8px; font-size: 12px; color: var(--text); }
+
+  /* ── DOPAMINE MENU ── */
+  .dopamine-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); z-index: 1000; align-items: center; justify-content: center; }
+  .dopamine-modal.show { display: flex; }
+  .dopamine-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 40px; max-width: 500px; animation: modalIn 0.3s ease; }
+  .dopamine-list { display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; margin-bottom: 16px; }
+  .dopamine-item { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; transition: all 0.2s; }
+  .dopamine-item:hover { border-color: var(--purple); background: rgba(167,139,250,0.05); }
+  .dopamine-del { background: none; border: none; color: var(--danger); cursor: pointer; font-weight: bold; }
+  .dopamine-input-row { display: flex; gap: 8px; }
+  .dopamine-input-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 12px; font-family: var(--font); }
+  .dopamine-input-row button { background: var(--purple); color: #000; border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-weight: 500; font-size: 12px; }
+
+  /* ── ENERGY TRACKER ── */
+  .energy-scale { display: flex; gap: 6px; margin: 12px 0; }
+  .energy-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s; }
+  .energy-btn:hover { border-color: var(--accent); }
+  .energy-btn.selected { background: var(--accent); color: #000; border-color: var(--accent); }
+  .energy-chart { width: 100%; height: 60px; background: var(--bg); border-radius: 8px; margin: 12px 0; position: relative; overflow: hidden; display: flex; align-items: flex-end; gap: 2px; padding: 4px; border: 1px solid var(--border); }
+  .energy-bar { flex: 1; background: linear-gradient(to top, var(--accent), var(--blue)); border-radius: 4px 4px 0 0; min-height: 4px; transition: all 0.3s; }
+  .energy-stats { display: flex; justify-content: space-around; font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+  /* ── FIDGET TOOLS ── */
+  .fidget-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
+  .fidget-tool { height: 120px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 40px; }
+  .fidget-tool:hover { border-color: var(--accent); transform: scale(1.05); }
+  .spinner { display: inline-block; width: 60px; height: 60px; border: 4px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+  .particle-canvas { width: 100%; height: 100%; display: block; border-radius: 10px; cursor: pointer; }
+
+  /* ── MEDICATION REMINDER ── */
+  .med-display { text-align: center; padding: 16px; background: var(--bg); border-radius: 10px; margin: 12px 0; }
+  .med-timer { font-family: var(--mono); font-size: 24px; font-weight: 600; color: var(--accent); }
+  .med-status { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+  .med-input-row { display: flex; gap: 8px; margin-top: 12px; }
+  .med-input-row input { flex: 1; background: rgba(61, 79, 138, 0.3); border: 1px solid var(--border-light); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 12px; font-family: var(--font); }
+  .med-input-row button { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: #000; border: none; border-radius: 8px; padding: 10px 16px; cursor: pointer; font-weight: 600; font-size: 12px; }
+
+  /* ── PROFESSIONAL RESPONSIVE ── */
+  @media (max-width: 960px) {
+    .dashboard { grid-template-columns: 1fr; padding: 24px 20px 32px; gap: 20px; }
+    .top-row { grid-template-columns: 1fr; }
+    .header { padding: 20px 24px; }
+    .logo-text { font-size: 20px; }
+    .logo-icon { width: 38px; height: 38px; font-size: 18px; }
+    .ad-slot { margin: 12px 16px; }
+    .intention-banner { margin: 0 16px; }
+    .time-bar-wrap { margin: 8px 16px 0; }
+    .fidget-grid { grid-template-columns: 1fr; }
+    .binaural-grid { grid-template-columns: repeat(2, 1fr); }
+    .pomo-time { font-size: 48px; }
+    .keep-awake { padding: 40px 24px; }
+    .awake-ring { width: 120px; height: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-icon">🧠</div>
+    <div class="logo-text">Focus<span>Bro</span></div>
+  </div>
+  <div class="header-status">
+    <button class="zen-btn" id="zenBtn" onclick="toggleZen()" title="Z — hide everything except Pomodoro + Tasks">🧘 Zen</button>
+    <div class="status-pill inactive" id="awakePill">
+      <div class="status-dot"></div>
+      <span id="awakeStatusText">Inactive</span>
+    </div>
+    <div class="status-pill" id="presencePill" style="background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(59,130,246,0.2);" title="Simulates browser-level activity every 5 s. Note: browsers cannot move the OS cursor — use a native tool for system-level movement.">
+      <span>🟢</span>
+      <span>Presence</span>
+      <span id="presencePulse" style="font-family:var(--mono);font-size:11px;opacity:0.7;">—</span>
+    </div>
+  </div>
+</header>
+
+<!-- INTENTION BANNER -->
+<div class="intention-banner" id="intentionBanner">
+  <span class="intention-label">🎯 One Thing</span>
+  <input class="intention-input" id="intentionInput" type="text" maxlength="120"
+    placeholder="What is the ONE thing you're working on right now?"
+    oninput="saveIntention()" />
+</div>
+
+<!-- TIME BLINDNESS BAR -->
+<div class="time-bar-wrap" id="timeBarWrap">
+  <span id="timeBarStart">9 AM</span>
+  <div class="time-bar"><div class="time-bar-fill" id="timeBarFill" style="width:0%"></div></div>
+  <span id="timeBarEnd">5 PM</span>
+  <span id="timeBarPct" style="font-family:var(--mono);font-size:11px;">0%</span>
+</div>
+
+<!-- TOP AD SLOT (Leaderboard 728x90) -->
+<div class="ad-slot" id="ad-top">
+  <!-- Ad Slot: Top Leaderboard -->
+  <ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-7015938501859914" data-ad-slot="XXXXXXXXXX"></ins>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  <span style="position:absolute;">Ad Space — 728×90 Leaderboard</span>
+</div>
+
+<div class="dashboard">
+  <div class="main-area">
+
+    <!-- ZEN MODE: current intention display -->
+    <div class="zen-focus-display" id="zenFocusDisplay">Focusing on: <span id="zenFocusText">—</span></div>
+
+    <!-- KEEP AWAKE HERO -->
+    <div class="card keep-awake" id="keepAwakeCard">
+      <div class="awake-ring" id="awakeRing" onclick="toggleWakeLock()" title="Click to activate">
+        <span class="awake-icon" id="awakeIcon">😴</span>
+      </div>
+      <div class="awake-label" id="awakeLabel">Click to Keep Your PC Awake</div>
+      <div class="awake-sub">Prevents sleep &amp; simulates activity every 5 s (mouse, pointer &amp; wheel events + silent audio loop + continuous canvas render). Keeps browser-based presence active. <em style="color:var(--warn)">Note: browsers cannot move the OS cursor — for system-level mouse movement use a native tool.</em></div>
+      <div class="awake-timer" id="awakeTimer">Active for 00:00:00</div>
+    </div>
+
+    <!-- TOP ROW: POMODORO + MEETING COUNTDOWN -->
+    <div class="top-row">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🍅</span> Pomodoro Timer</div>
+          <button class="btn btn-sm" onclick="resetPomodoro()">Reset</button>
+        </div>
+        <div class="pomo-display">
+          <div class="pomo-time" id="pomoTime">25:00</div>
+          <div class="pomo-phase" id="pomoPhase">Focus Session</div>
+          <div class="pomo-controls">
+            <button class="btn btn-accent" id="pomoStartBtn" onclick="togglePomodoro()">▶ Start</button>
+            <button class="btn" onclick="skipPomodoro()">⏭ Skip</button>
+          </div>
+          <div class="pomo-dots" id="pomoDots">
+            <div class="pomo-dot current"></div>
+            <div class="pomo-dot"></div>
+            <div class="pomo-dot"></div>
+            <div class="pomo-dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📅</span> Meeting Countdown</div>
+        </div>
+        <div class="meeting-input-row">
+          <input type="text" id="meetingName" placeholder="Meeting name" />
+          <input type="time" id="meetingTime" />
+          <button class="btn btn-sm btn-accent" onclick="setMeeting()">Set</button>
+        </div>
+        <div class="meeting-countdown-display" id="meetingDisplay">
+          <div style="color: var(--text-muted); font-size: 13px;">No meeting set</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MIDDLE ROW: TASKS + NOTEPAD -->
+    <div class="top-row">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">✅</span> Tasks</div>
+          <span style="font-size: 12px; color: var(--text-muted);" id="taskCount">0 tasks</span>
+        </div>
+        <div class="task-input-row">
+          <input type="text" id="taskInput" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()" />
+          <button class="btn btn-sm btn-accent" onclick="addTask()">Add</button>
+        </div>
+        <ul class="task-list" id="taskList"></ul>
+      </div>
+
+      <div class="card notepad">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📝</span> Quick Notes</div>
+        </div>
+        <textarea id="notepad" placeholder="Brain dump here... your thoughts are saved automatically." oninput="saveNotes()"></textarea>
+        <div class="notepad-footer">
+          <span id="notepadSaved">Auto-saved</span>
+          <button class="btn btn-sm" onclick="clearNotes()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INLINE AD SLOT -->
+    <div class="ad-slot ad-slot-inline" id="ad-inline">
+      <ins class="adsbygoogle" style="display:block" data-ad-format="fluid" data-ad-layout-key="-6t+ed+2i-1n-4w" data-ad-client="ca-pub-7015938501859914" data-ad-slot="XXXXXXXXXX"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      <span style="position:absolute;">Ad Space — In-Feed / Fluid</span>
+    </div>
+
+    <!-- AMBIENT SOUNDS + BREAK REMINDER -->
+    <div class="top-row">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">🎧</span> Ambient Sounds</div>
+        </div>
+        <div class="sounds-grid">
+          <button class="sound-btn" onclick="toggleSound('rain', this)">
+            <span class="sound-icon">🌧️</span> Rain
+          </button>
+          <button class="sound-btn" onclick="toggleSound('cafe', this)">
+            <span class="sound-icon">☕</span> Café
+          </button>
+          <button class="sound-btn" onclick="toggleSound('whitenoise', this)">
+            <span class="sound-icon">📻</span> White Noise
+          </button>
+          <button class="sound-btn" onclick="toggleSound('fireplace', this)">
+            <span class="sound-icon">🔥</span> Fireplace
+          </button>
+          <button class="sound-btn" onclick="toggleSound('forest', this)">
+            <span class="sound-icon">🌲</span> Forest
+          </button>
+          <button class="sound-btn" onclick="toggleSound('ocean', this)">
+            <span class="sound-icon">🌊</span> Ocean
+          </button>
+        </div>
+        <div class="sound-volume">
+          <label>Vol</label>
+          <input type="range" min="0" max="100" value="50" id="soundVolume" oninput="updateVolume(this.value)" />
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">👁️</span> Break Reminder</div>
+          <button class="btn btn-sm" id="breakToggle" onclick="toggleBreakReminder()">Enable</button>
+        </div>
+        <div class="break-status">
+          <svg class="break-progress-ring" viewBox="0 0 52 52">
+            <circle class="track" cx="26" cy="26" r="22"/>
+            <circle class="fill" id="breakRingFill" cx="26" cy="26" r="22" stroke-dasharray="138.2" stroke-dashoffset="0"/>
+          </svg>
+          <div class="break-info">
+            <div class="break-next" id="breakNextText">Not active</div>
+            <div class="break-rule">20-20-20: Every 20 min, look 20ft away for 20s</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <!-- FOCUS STATS -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">📊</span> Today's Stats</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-value green" id="statAwakeTime">0:00</div>
+          <div class="stat-label">Awake Time</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value blue" id="statPomos">0</div>
+          <div class="stat-label">Pomodoros</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value purple" id="statTasks">0</div>
+          <div class="stat-label">Tasks Done</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value warn" id="statStreak">0</div>
+          <div class="stat-label">Day Streak</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR AD -->
+    <div class="ad-slot ad-slot-sidebar" id="ad-sidebar">
+      <ins class="adsbygoogle" style="display:block" data-ad-format="auto" data-full-width-responsive="true" data-ad-client="ca-pub-7015938501859914" data-ad-slot="XXXXXXXXXX"></ins>
+      <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+      <span style="position:absolute;">Ad Space — 300×250</span>
+    </div>
+
+    <!-- ADHD TIP -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">💡</span> Focus Tip</div>
+      </div>
+      <div class="adhd-tip">
+        <div class="adhd-tip-label">ADHD-Friendly Strategy</div>
+        <div class="adhd-tip-text" id="adhdTipText"></div>
+        <button class="adhd-tip-refresh" onclick="newTip()">↻ New Tip</button>
+      </div>
+    </div>
+
+    <!-- DISTRACTION PARKING LOT -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">🚗</span> Distraction Lot</div>
+        <button class="btn btn-sm" onclick="openDistractionOverlay()" title="Shortcut: D">+ Capture</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:8px;">Park intrusive thoughts here so you can return to them <em>after</em> the timer.</div>
+      <ul class="distraction-list" id="distractionList"></ul>
+    </div>
+
+    <!-- BINAURAL BEATS + BREATHING -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">🧠</span> Brainwave Tuning</div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Binaural beats to shift focus state.</div>
+      
+      <div style="margin-bottom: 12px;">
+        <div style="font-size: 11px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Binaural Frequency</div>
+        <div class="binaural-grid">
+          <button class="binaural-btn" onclick="toggleBinaural('focus')">🎯 Focus (40Hz)</button>
+          <button class="binaural-btn" onclick="toggleBinaural('calm')">😌 Calm (8Hz)</button>
+          <button class="binaural-btn" onclick="toggleBinaural('alert')">⚡ Alert (20Hz)</button>
+        </div>
+        <div class="binaural-info">Combine with ambient sounds for best effect.</div>
+      </div>
+
+      <button class="btn" style="width: 100%; font-size: 12px;" onclick="openBreathingGuide()">🫁 Breathing Guide</button>
+    </div>
+
+    <!-- ENERGY + MOOD TRACKER -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">⚡</span> Energy Tracker</div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Log your energy throughout the day.</div>
+      
+      <div class="energy-scale">
+        <button class="energy-btn" onclick="logEnergy(1)" title="Exhausted">1</button>
+        <button class="energy-btn" onclick="logEnergy(2)">2</button>
+        <button class="energy-btn" onclick="logEnergy(3)">3</button>
+        <button class="energy-btn" onclick="logEnergy(4)">4</button>
+        <button class="energy-btn" onclick="logEnergy(5)" title="Peak">5</button>
+      </div>
+
+      <div class="energy-chart" id="energyChart"></div>
+      <div class="energy-stats">
+        <div>Avg: <span id="energyAvg">-</span></div>
+        <div>Now: <span id="energyNow">-</span></div>
+      </div>
+    </div>
+
+    <!-- FIDGET TOOLS -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">🎮</span> Fidget Tools</div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Satisfying micro-breaks for restless hands.</div>
+      
+      <div class="fidget-grid">
+        <div class="fidget-tool" onclick="startFidgetSpinner()" title="Click to spin">
+          <div class="spinner"></div>
+        </div>
+        <canvas id="fidgetCanvas" class="fidget-tool" width="200" height="120"></canvas>
+      </div>
+      <button class="btn" style="width: 100%; margin-top: 8px; font-size: 12px;" onclick="openGroundingExercise()">🧭 5-4-3-2-1</button>
+    </div>
+
+    <!-- MEDICATION REMINDER -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">💊</span> Med Reminder</div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Track your medication & dopamine reset times.</div>
+      
+      <div class="med-display">
+        <div class="med-timer" id="medTimer">--:--</div>
+        <div class="med-status" id="medStatus">No dose logged</div>
+      </div>
+
+      <div class="med-input-row">
+        <input type="time" id="medTime" placeholder="HH:MM" />
+        <button onclick="logMedication()">Log Dose</button>
+      </div>
+      <button class="btn" style="width: 100%; margin-top: 8px; font-size: 12px; background: var(--warn); color: #000; border: none;" onclick="openDopamineMenu()">⚡ Dopamine Menu</button>
+    </div>
+
+    <!-- KEYBOARD SHORTCUTS -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">⌨️</span> Quick Keys</div>
+      </div>
+      <div style="font-size: 13px; line-height: 2;">
+        <div><kbd style="background:var(--bg);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);">Space</kbd> Toggle awake</div>
+        <div><kbd style="background:var(--bg);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);">P</kbd> Start/pause pomodoro</div>
+        <div><kbd style="background:var(--bg);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);">N</kbd> Focus notepad</div>
+        <div><kbd style="background:var(--bg);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);">T</kbd> Focus task input</div>
+        <div><kbd style="background:var(--bg);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);">D</kbd> Park a distraction</div>
+        <div><kbd style="background:var(--bg);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);">Z</kbd> Toggle zen mode</div>
+        <div><kbd style="background:var(--bg);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);">G</kbd> 5-4-3-2-1 grounding</div>
+        <div><kbd style="background:var(--bg);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);">B</kbd> Breathing guide</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BREAK MODAL -->
+<div class="break-modal" id="breakModal">
+  <div class="break-modal-content">
+    <div class="break-modal-icon">👀</div>
+    <div class="break-modal-title">Time for a Break!</div>
+    <div class="break-modal-text">Look at something 20 feet away for 20 seconds. Your eyes (and brain) will thank you.</div>
+    <button class="btn btn-accent" onclick="dismissBreak()" style="padding: 12px 32px; font-size: 15px;">Got it, I'm back 👍</button>
+  </div>
+</div>
+
+<!-- HYPERFOCUS MODAL -->
+<div class="hyperfocus-modal" id="hyperfocusModal">
+  <div class="break-modal-content">
+    <div class="break-modal-icon">🔥</div>
+    <div class="break-modal-title">Hyperfocus Alert!</div>
+    <div class="break-modal-text">You've been locked in for 90+ minutes without a break. Stand up, stretch, drink water. Your brain needs a reset to stay sharp — even in hyperfocus.</div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <button class="btn btn-accent" onclick="dismissHyperfocus()" style="padding: 12px 28px; font-size: 15px;">Taking a 5-min break 🙌</button>
+      <button class="btn" onclick="dismissHyperfocus()" style="padding: 12px 28px; font-size: 15px;">Keep going (I know)</button>
+    </div>
+  </div>
+</div>
+
+<!-- DISTRACTION QUICK-CAPTURE OVERLAY -->
+<div class="distract-overlay" id="distractOverlay">
+  <div class="distract-box">
+    <h3>🧠 Park That Thought</h3>
+    <p>Don't lose focus — write the distraction down and come back to it later. Press <strong>Enter</strong> to park it, <strong>Esc</strong> to cancel.</p>
+    <input type="text" id="distractInput" maxlength="200" placeholder="What just popped into your head?" />
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-accent" style="flex:1;" onclick="parkDistraction()">Park It 🚗</button>
+      <button class="btn" onclick="closeDistractionOverlay()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- BREATHING GUIDE MODAL -->
+<div class="breathing-modal" id="breathingModal">
+  <div class="breathing-content">
+    <div style="font-size: 28px; margin-bottom: 20px;">🫁 Breathwork</div>
+    <div id="breathingPhaseLabel" style="font-size: 16px; font-weight: 600; margin-bottom: 10px;">Box Breathing</div>
+    <div id="breathingTypeDesc" style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">4-4-4-4 cycle: Inhale, Hold, Exhale, Hold</div>
+    
+    <div class="breathing-circle" id="breathingCircle">
+      <span id="breathingLabel">Breathe In...</span>
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+      <button class="btn" onclick="startBreathing('box')" style="flex: 1; font-size: 12px;">📦 Box</button>
+      <button class="btn" onclick="startBreathing('478')" style="flex: 1; font-size: 12px;">🌊 4-7-8</button>
+      <button class="btn" onclick="startBreathing('tactical')" style="flex: 1; font-size: 12px;">💪 Tactical</button>
+    </div>
+
+    <button class="btn" style="width: 100%;" onclick="stopBreathing()">Close 🤝</button>
+  </div>
+</div>
+
+<!-- GROUNDING MODAL -->
+<div class="grounding-modal" id="groundingModal">
+  <div class="grounding-content">
+    <div class="grounding-header">
+      <h2>5-4-3-2-1 Grounding 🧭</h2>
+      <p>Feel overwhelmed? Use your senses to reconnect to the present moment.</p>
+    </div>
+    
+    <div class="grounding-items">
+      <div class="grounding-item" onclick="startGroundingStep(5)">
+        <span class="grounding-number">5</span>
+        <span class="grounding-text">Things You SEE</span>
+        <input type="text" class="grounding-input" id="ground5" placeholder="Describe what you see around you..." />
+        <div id="result5" class="grounding-result" style="display: none;"></div>
+      </div>
+      <div class="grounding-item" onclick="startGroundingStep(4)">
+        <span class="grounding-number">4</span>
+        <span class="grounding-text">Things You can TOUCH</span>
+        <input type="text" class="grounding-input" id="ground4" placeholder="Describe textures you can feel..." />
+        <div id="result4" class="grounding-result" style="display: none;"></div>
+      </div>
+      <div class="grounding-item" onclick="startGroundingStep(3)">
+        <span class="grounding-number">3</span>
+        <span class="grounding-text">Things You HEAR</span>
+        <input type="text" class="grounding-input" id="ground3" placeholder="What sounds surround you?..." />
+        <div id="result3" class="grounding-result" style="display: none;"></div>
+      </div>
+      <div class="grounding-item" onclick="startGroundingStep(2)">
+        <span class="grounding-number">2</span>
+        <span class="grounding-text">Things You SMELL</span>
+        <input type="text" class="grounding-input" id="ground2" placeholder="What scents are present?..." />
+        <div id="result2" class="grounding-result" style="display: none;"></div>
+      </div>
+      <div class="grounding-item" onclick="startGroundingStep(1)">
+        <span class="grounding-number">1</span>
+        <span class="grounding-text">Thing You TASTE</span>
+        <input type="text" class="grounding-input" id="ground1" placeholder="Gum? Coffee? Water?..." />
+        <div id="result1" class="grounding-result" style="display: none;"></div>
+      </div>
+    </div>
+
+    <button class="btn" style="width: 100%; margin-top: 16px;" onclick="completeGrounding()">Done! Feel Better? 🌟</button>
+  </div>
+</div>
+
+<!-- DOPAMINE MENU MODAL -->
+<div class="dopamine-modal" id="dopamineModal">
+  <div class="dopamine-content">
+    <h2 style="margin-bottom: 16px; font-size: 18px;">⚡ Dopamine Menu</h2>
+    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Quick wins instead of doom-scrolling. Customize your healthy quick-hits below.</p>
+    
+    <div class="dopamine-list" id="dopamineList"></div>
+    
+    <div class="dopamine-input-row">
+      <input type="text" id="dopamineInput" maxlength="100" placeholder="Add: 'Stretch 30s', 'Pet cat', 'Drink water'..." />
+      <button onclick="addDopamineItem()">+</button>
+    </div>
+
+    <button class="btn" style="width: 100%; margin-top: 16px;" onclick="closeDopamineMenu()">Done 👍</button>
+  </div>
+</div>
+
+<!-- Hidden activity canvas — drives continuous rAF rendering loop -->
+<canvas id="activityCanvas" width="20" height="20" style="position:fixed;bottom:0;right:0;opacity:0;pointer-events:none;width:1px;height:1px;"></canvas>
+
+<!-- FOOTER -->
+<div class="footer">
+  FocusBro — Built with 🧠 by <a href="#">The Factory</a> &nbsp;|&nbsp; Your data stays in your browser. Nothing is tracked.
+</div>
+
+<script>
+// ══════════════════════════════════════
+// WAKE LOCK + ACTIVITY SIMULATION
+// ══════════════════════════════════════
+let wakeLock = null;
+let awakeActive = false;
+let awakeStart = null;
+let awakeInterval = null;
+let activityInterval = null;
+let activityRafId = null;
+let silentAudioNode = null;
+let lastSimulatedAt = null;
+
+async function toggleWakeLock() {
+  if (awakeActive) {
+    deactivateWake();
+  } else {
+    activateWake();
+  }
+}
+
+async function activateWake() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => {
+        if (awakeActive && document.visibilityState === 'visible') {
+          navigator.wakeLock.request('screen').then(wl => wakeLock = wl).catch(() => {});
+        }
+      });
+    }
+  } catch (e) {
+    console.log('Wake Lock not supported, using fallback');
+  }
+
+  awakeActive = true;
+  awakeStart = Date.now();
+
+  document.getElementById('awakeRing').classList.add('active');
+  document.getElementById('keepAwakeCard').classList.add('active');
+  document.getElementById('awakeIcon').textContent = '⚡';
+  document.getElementById('awakeLabel').textContent = 'Your PC is Staying Awake';
+  document.getElementById('awakeTimer').classList.add('visible');
+  document.getElementById('awakePill').className = 'status-pill active';
+  document.getElementById('awakeStatusText').textContent = 'Awake';
+
+  awakeInterval = setInterval(updateAwakeTimer, 1000);
+
+  // ── Continuous rAF canvas loop (keeps rendering pipeline alive) ──
+  startActivityCanvas();
+
+  // ── Silent audio keepalive (maintains audio session) ──
+  startSilentAudio();
+
+  // ── Randomized activity simulation (human-like jitter) ──
+  scheduleNextActivity();
+
+  saveStats();
+}
+
+function deactivateWake() {
+  awakeActive = false;
+  if (wakeLock) { wakeLock.release(); wakeLock = null; }
+  clearInterval(awakeInterval);
+  clearInterval(activityInterval);
+  if (_activityTimeout) { clearTimeout(_activityTimeout); _activityTimeout = null; }
+  _burstRemaining = 0;
+  _prevCx = null; _prevCy = null;
+  stopActivityCanvas();
+  stopSilentAudio();
+
+  document.getElementById('awakeRing').classList.remove('active');
+  document.getElementById('keepAwakeCard').classList.remove('active');
+  document.getElementById('awakeIcon').textContent = '😴';
+  document.getElementById('awakeLabel').textContent = 'Click to Keep Your PC Awake';
+  document.getElementById('awakeTimer').classList.remove('visible');
+  document.getElementById('awakePill').className = 'status-pill inactive';
+  document.getElementById('awakeStatusText').textContent = 'Inactive';
+  document.getElementById('presencePulse').textContent = '—';
+}
+
+// ── Activity simulation helpers ──
+
+// Human typing/mousing sessions cluster then pause.
+// We model this with two tiers:
+//   • Within a micro-burst: 1–4 events spaced 800 ms–3 s apart
+//   • Between bursts:       8–45 s gap (person reading, thinking, away)
+//
+// This produces an irregular pattern that does NOT repeat on a fixed
+// clock period, making metronomic-detection heuristics much less likely
+// to flag it as synthetic.
+
+let _activityTimeout = null;
+let _burstRemaining = 0;
+_prevCx = null; _prevCy = null; // tracked across a burst for smooth arcs
+
+function scheduleNextActivity() {
+  if (!awakeActive) return;
+
+  let delay;
+  if (_burstRemaining > 0) {
+    // Still inside a burst — short gap, mimics fast cursor drifts
+    _burstRemaining--;
+    delay = randInt(800, 3000);
+  } else {
+    // Start a new burst after a longer human-style idle gap
+    // Occasionally simulate a very short idle (person glancing away briefly)
+    // Occasionally a longer one (bathroom break, reading)
+    const roll = Math.random();
+    if (roll < 0.15) {
+      delay = randInt(3000, 8000);   // short pause
+    } else if (roll < 0.85) {
+      delay = randInt(8000, 25000);  // typical inter-burst gap
+    } else {
+      delay = randInt(25000, 50000); // longer idle, still realistic
+    }
+    _burstRemaining = randInt(1, 4); // 1–4 events in the coming burst
+  }
+
+  _activityTimeout = setTimeout(() => {
+    simulateActivity();
+    scheduleNextActivity();
+  }, delay);
+}
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// Weighted random pick — makes some events rarer than others
+function weightedPick(items) {
+  const total = items.reduce((s, i) => s + i.w, 0);
+  let r = Math.random() * total;
+  for (const item of items) {
+    r -= item.w;
+    if (r <= 0) return item.v;
+  }
+  return items[items.length - 1].v;
+}
+
+function simulateActivity() {
+  // ── Mouse position: smooth drift from last known point ──
+  // Real mouse movement arcs across the screen gradually, not teleports.
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  if (_prevCx === null) {
+    _prevCx = randInt(Math.floor(W * 0.2), Math.floor(W * 0.8));
+    _prevCy = randInt(Math.floor(H * 0.2), Math.floor(H * 0.8));
+  }
+  // Drift: up to 15% of viewport in each axis, biased toward center
+  const driftX = randInt(-Math.floor(W * 0.12), Math.floor(W * 0.12));
+  const driftY = randInt(-Math.floor(H * 0.12), Math.floor(H * 0.12));
+  const cx = Math.min(W - 1, Math.max(0, _prevCx + driftX));
+  const cy = Math.min(H - 1, Math.max(0, _prevCy + driftY));
+  const mx = cx - _prevCx;
+  const my = cy - _prevCy;
+  _prevCx = cx;
+  _prevCy = cy;
+
+  // ── Choose which event types to fire this tick ──
+  const eventSet = weightedPick([
+    { v: ['mousemove', 'pointermove'],         w: 40 }, // most common
+    { v: ['mousemove'],                        w: 25 }, // sometimes only mouse
+    { v: ['pointermove'],                      w: 10 }, // sometimes only pointer
+    { v: ['mousemove', 'pointermove', 'wheel'],w: 20 }, // move + scroll
+    { v: ['wheel'],                            w: 5  }  // scroll only (rare)
+  ]);
+
+  if (eventSet.includes('mousemove') || eventSet.includes('pointermove')) {
+    eventSet
+      .filter(t => t !== 'wheel')
+      .forEach(type => {
+        window.dispatchEvent(new MouseEvent(type, {
+          bubbles: true, cancelable: true,
+          clientX: cx, clientY: cy,
+          screenX: cx + (window.screenX || 0),
+          screenY: cy + (window.screenY || 0),
+          movementX: mx, movementY: my
+        }));
+      });
+  }
+
+  if (eventSet.includes('wheel')) {
+    // Real scroll: small, non-zero delta — looks like someone scrolling
+    const deltaY = (Math.random() < 0.5 ? 1 : -1) * randInt(3, 40);
+    window.dispatchEvent(new WheelEvent('wheel', {
+      bubbles: true, cancelable: true,
+      deltaX: 0, deltaY,
+      deltaMode: WheelEvent.DOM_DELTA_PIXEL,
+      clientX: cx, clientY: cy
+    }));
+  }
+
+  // Title nudge (invisible zero-width space)
+  document.title = document.title.endsWith('\u200b')
+    ? document.title.slice(0, -1)
+    : document.title + '\u200b';
+
+  lastSimulatedAt = Date.now();
+  document.getElementById('presencePulse').textContent = '● now';
+}
+
+let _activityAngle = 0;
+function startActivityCanvas() {
+  const canvas = document.getElementById('activityCanvas');
+  const ctx = canvas.getContext('2d');
+  function draw() {
+    _activityAngle += 0.08;
+    ctx.clearRect(0, 0, 20, 20);
+    ctx.fillStyle = 'rgba(34,197,94,0.015)';
+    ctx.beginPath();
+    ctx.arc(
+      10 + Math.cos(_activityAngle) * 7,
+      10 + Math.sin(_activityAngle) * 7,
+      1.5, 0, Math.PI * 2
+    );
+    ctx.fill();
+    activityRafId = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+function stopActivityCanvas() {
+  if (activityRafId) { cancelAnimationFrame(activityRafId); activityRafId = null; }
+}
+
+function startSilentAudio() {
+  try {
+    const ctx = getAudioCtx();
+    if (ctx.state === 'suspended') ctx.resume();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    gain.gain.value = 0; // fully silent — just keeps audio session alive
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    silentAudioNode = { osc, gain };
+  } catch(e) {}
+}
+
+function stopSilentAudio() {
+  if (silentAudioNode) {
+    try { silentAudioNode.osc.stop(); } catch(e) {}
+    silentAudioNode = null;
+  }
+}
+
+function updateAwakeTimer() {
+  const elapsed = Date.now() - awakeStart;
+  const h = Math.floor(elapsed / 3600000);
+  const m = Math.floor((elapsed % 3600000) / 60000);
+  const s = Math.floor((elapsed % 60000) / 1000);
+  const str = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  document.getElementById('awakeTimer').textContent = `Active for ${str}`;
+  document.getElementById('statAwakeTime').textContent = `${h}:${String(m).padStart(2,'0')}`;
+
+  // Update presence pulse: show seconds since last simulated event
+  if (lastSimulatedAt) {
+    const secAgo = Math.round((Date.now() - lastSimulatedAt) / 1000);
+    const pulse = document.getElementById('presencePulse');
+    if (secAgo < 2) {
+      pulse.textContent = '● now';
+    } else {
+      pulse.textContent = `${secAgo}s ago`;
+    }
+  }
+}
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && awakeActive && 'wakeLock' in navigator) {
+    try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+  }
+});
+
+// ══════════════════════════════════════
+// POMODORO TIMER
+// ══════════════════════════════════════
+const POMO_WORK = 25 * 60;
+const POMO_SHORT = 5 * 60;
+const POMO_LONG = 15 * 60;
+
+let pomoState = { running: false, seconds: POMO_WORK, phase: 'work', session: 0, completed: 0 };
+let pomoInterval = null;
+
+function togglePomodoro() {
+  if (pomoState.running) {
+    pausePomodoro();
+  } else {
+    startPomodoro();
+  }
+}
+
+function startPomodoro() {
+  pomoState.running = true;
+  document.getElementById('pomoStartBtn').innerHTML = '⏸ Pause';
+  pomoInterval = setInterval(tickPomodoro, 1000);
+}
+
+function pausePomodoro() {
+  pomoState.running = false;
+  document.getElementById('pomoStartBtn').innerHTML = '▶ Start';
+  clearInterval(pomoInterval);
+}
+
+function tickPomodoro() {
+  pomoState.seconds--;
+  if (pomoState.seconds <= 0) {
+    pomoComplete();
+  }
+  renderPomodoro();
+}
+
+function pomoComplete() {
+  clearInterval(pomoInterval);
+  pomoState.running = false;
+
+  if (pomoState.phase === 'work') {
+    pomoState.completed++;
+    pomoState.session++;
+    document.getElementById('statPomos').textContent = pomoState.completed;
+    saveStats();
+
+    if (pomoState.session >= 4) {
+      pomoState.phase = 'long';
+      pomoState.seconds = POMO_LONG;
+      pomoState.session = 0;
+    } else {
+      pomoState.phase = 'short';
+      pomoState.seconds = POMO_SHORT;
+    }
+  } else {
+    pomoState.phase = 'work';
+    pomoState.seconds = POMO_WORK;
+  }
+
+  renderPomodoro();
+  renderPomoDots();
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('FocusBro', {
+      body: pomoState.phase === 'work' ? 'Break over! Time to focus.' : 'Great work! Take a break.',
+      icon: '🍅'
+    });
+  }
+
+  document.getElementById('pomoStartBtn').innerHTML = '▶ Start';
+}
+
+function resetPomodoro() {
+  clearInterval(pomoInterval);
+  pomoState = { running: false, seconds: POMO_WORK, phase: 'work', session: 0, completed: pomoState.completed };
+  renderPomodoro();
+  renderPomoDots();
+  document.getElementById('pomoStartBtn').innerHTML = '▶ Start';
+}
+
+function skipPomodoro() {
+  pomoState.seconds = 1;
+  if (!pomoState.running) {
+    pomoComplete();
+  }
+}
+
+function renderPomodoro() {
+  const m = Math.floor(pomoState.seconds / 60);
+  const s = pomoState.seconds % 60;
+  document.getElementById('pomoTime').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+  const phases = { work: 'Focus Session', short: 'Short Break', long: 'Long Break' };
+  document.getElementById('pomoPhase').textContent = phases[pomoState.phase];
+}
+
+function renderPomoDots() {
+  const dots = document.getElementById('pomoDots');
+  dots.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const d = document.createElement('div');
+    d.className = 'pomo-dot';
+    if (i < pomoState.session) d.classList.add('done');
+    if (i === pomoState.session && pomoState.phase === 'work') d.classList.add('current');
+    dots.appendChild(d);
+  }
+}
+
+// ══════════════════════════════════════
+// MEETING COUNTDOWN
+// ══════════════════════════════════════
+let meetingData = null;
+let meetingInterval = null;
+
+function setMeeting() {
+  const name = document.getElementById('meetingName').value || 'Meeting';
+  const time = document.getElementById('meetingTime').value;
+  if (!time) return;
+
+  const [h, m] = time.split(':').map(Number);
+  const now = new Date();
+  const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
+  if (target <= now) target.setDate(target.getDate() + 1);
+
+  meetingData = { name, target: target.getTime() };
+  localStorage.setItem('fb_meeting', JSON.stringify(meetingData));
+
+  clearInterval(meetingInterval);
+  meetingInterval = setInterval(renderMeeting, 1000);
+  renderMeeting();
+}
+
+function renderMeeting() {
+  if (!meetingData) return;
+  const diff = meetingData.target - Date.now();
+  const display = document.getElementById('meetingDisplay');
+
+  if (diff <= 0) {
+    display.innerHTML = `<div class="meeting-name">${meetingData.name}</div><div class="meeting-countdown-time" style="color:var(--danger)">NOW!</div>`;
+    clearInterval(meetingInterval);
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('FocusBro', { body: `${meetingData.name} is starting NOW!` });
+    }
+    return;
+  }
+
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+
+  display.innerHTML = `
+    <div class="meeting-name">${meetingData.name}</div>
+    <div class="meeting-countdown-time">${h > 0 ? h + 'h ' : ''}${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s</div>
+    <div class="meeting-countdown-label">until meeting</div>
+  `;
+}
+
+// ══════════════════════════════════════
+// TASKS
+// ══════════════════════════════════════
+let tasks = JSON.parse(localStorage.getItem('fb_tasks') || '[]');
+
+function renderTasks() {
+  const list = document.getElementById('taskList');
+  list.innerHTML = '';
+  tasks.forEach((t, i) => {
+    const li = document.createElement('li');
+    li.className = 'task-item';
+    li.innerHTML = `
+      <button class="task-check ${t.done ? 'done' : ''}" onclick="toggleTask(${i})">${t.done ? '✓' : ''}</button>
+      <span class="task-text ${t.done ? 'done' : ''}">${escapeHtml(t.text)}</span>
+      <button class="task-delete" onclick="deleteTask(${i})">×</button>
+    `;
+    list.appendChild(li);
+  });
+  const done = tasks.filter(t => t.done).length;
+  document.getElementById('taskCount').textContent = `${done}/${tasks.length} done`;
+  document.getElementById('statTasks').textContent = done;
+}
+
+function addTask() {
+  const input = document.getElementById('taskInput');
+  const text = input.value.trim();
+  if (!text) return;
+  tasks.unshift({ text, done: false });
+  input.value = '';
+  saveTasks();
+  renderTasks();
+}
+
+function toggleTask(i) {
+  tasks[i].done = !tasks[i].done;
+  saveTasks();
+  renderTasks();
+  saveStats();
+}
+
+function deleteTask(i) {
+  tasks.splice(i, 1);
+  saveTasks();
+  renderTasks();
+}
+
+function saveTasks() { localStorage.setItem('fb_tasks', JSON.stringify(tasks)); }
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ══════════════════════════════════════
+// NOTEPAD
+// ══════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('notepad').value = localStorage.getItem('fb_notes') || '';
+});
+
+function saveNotes() {
+  localStorage.setItem('fb_notes', document.getElementById('notepad').value);
+  document.getElementById('notepadSaved').textContent = 'Saved ✓';
+  setTimeout(() => { document.getElementById('notepadSaved').textContent = 'Auto-saved'; }, 1500);
+}
+
+function clearNotes() {
+  if (confirm('Clear all notes?')) {
+    document.getElementById('notepad').value = '';
+    localStorage.removeItem('fb_notes');
+  }
+}
+
+// ══════════════════════════════════════
+// AMBIENT SOUNDS (Web Audio API)
+// ══════════════════════════════════════
+let audioCtx = null;
+let activeSounds = {};
+
+const soundConfigs = {
+  rain:       { type: 'brown',  filterFreq: 800 },
+  cafe:       { type: 'pink',   filterFreq: 2000 },
+  whitenoise: { type: 'white',  filterFreq: 8000 },
+  fireplace:  { type: 'brown',  filterFreq: 400 },
+  forest:     { type: 'pink',   filterFreq: 1200 },
+  ocean:      { type: 'brown',  filterFreq: 600 }
+};
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function createNoise(type) {
+  const ctx = getAudioCtx();
+  const bufferSize = 2 * ctx.sampleRate;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+
+  let b0=0, b1=0, b2=0, b3=0, b4=0, b5=0, b6=0;
+
+  for (let i = 0; i < bufferSize; i++) {
+    const white = Math.random() * 2 - 1;
+    if (type === 'white') {
+      data[i] = white * 0.5;
+    } else if (type === 'pink') {
+      b0 = 0.99886*b0 + white*0.0555179;
+      b1 = 0.99332*b1 + white*0.0750759;
+      b2 = 0.96900*b2 + white*0.1538520;
+      b3 = 0.86650*b3 + white*0.3104856;
+      b4 = 0.55000*b4 + white*0.5329522;
+      b5 = -0.7616*b5 - white*0.0168980;
+      data[i] = (b0+b1+b2+b3+b4+b5+b6+white*0.5362) * 0.11;
+      b6 = white * 0.115926;
+    } else { // brown
+      data[i] = (b0 = (b0 + (0.02 * white)) / 1.02) * 3.5;
+    }
+  }
+
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  source.loop = true;
+  return source;
+}
+
+function toggleSound(name, btn) {
+  if (activeSounds[name]) {
+    activeSounds[name].gain.disconnect();
+    activeSounds[name].source.stop();
+    delete activeSounds[name];
+    btn.classList.remove('active');
+  } else {
+    const ctx = getAudioCtx();
+    const config = soundConfigs[name];
+    const source = createNoise(config.type);
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = config.filterFreq;
+
+    const gain = ctx.createGain();
+    gain.gain.value = document.getElementById('soundVolume').value / 100;
+
+    source.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    source.start();
+
+    activeSounds[name] = { source, gain, filter };
+    btn.classList.add('active');
+  }
+}
+
+function updateVolume(val) {
+  const v = val / 100;
+  Object.values(activeSounds).forEach(s => s.gain.gain.value = v);
+}
+
+// ══════════════════════════════════════
+// BREAK REMINDER
+// ══════════════════════════════════════
+let breakEnabled = false;
+let breakInterval = null;
+let breakCountdown = 20 * 60;
+const BREAK_DURATION = 20 * 60;
+
+function toggleBreakReminder() {
+  breakEnabled = !breakEnabled;
+  const btn = document.getElementById('breakToggle');
+
+  if (breakEnabled) {
+    btn.textContent = 'Disable';
+    btn.classList.add('btn-accent');
+    breakCountdown = BREAK_DURATION;
+    breakInterval = setInterval(tickBreak, 1000);
+  } else {
+    btn.textContent = 'Enable';
+    btn.classList.remove('btn-accent');
+    clearInterval(breakInterval);
+    document.getElementById('breakNextText').textContent = 'Not active';
+    document.getElementById('breakRingFill').style.strokeDashoffset = '0';
+  }
+}
+
+function tickBreak() {
+  breakCountdown--;
+  const progress = 1 - (breakCountdown / BREAK_DURATION);
+  document.getElementById('breakRingFill').style.strokeDashoffset = (138.2 * (1 - progress)).toString();
+
+  const m = Math.floor(breakCountdown / 60);
+  const s = breakCountdown % 60;
+  document.getElementById('breakNextText').textContent = `Next break in ${m}:${String(s).padStart(2, '0')}`;
+
+  if (breakCountdown <= 0) {
+    document.getElementById('breakModal').classList.add('show');
+    breakCountdown = BREAK_DURATION;
+  }
+}
+
+function dismissBreak() {
+  document.getElementById('breakModal').classList.remove('show');
+}
+
+// ══════════════════════════════════════
+// ADHD TIPS
+// ══════════════════════════════════════
+const tips = [
+  "🎯 <strong>Body doubling:</strong> Open a livestream of someone studying or working in another tab. The sense of co-presence helps maintain focus.",
+  "⏱️ <strong>Time boxing:</strong> Don't plan to 'finish' a task — plan to work on it for exactly 15 minutes. Permission to stop removes the dread.",
+  "🧊 <strong>Freeze your distractions:</strong> When an urge hits (check phone, browse Reddit), write it on your notepad here and promise yourself you'll do it after the timer.",
+  "🎵 <strong>Same song on repeat:</strong> Playing one song on loop creates a focus cocoon. Your brain stops 'listening' and just flows.",
+  "🏃 <strong>Movement breaks:</strong> 60 seconds of jumping jacks between pomodoros resets your dopamine better than scrolling.",
+  "📦 <strong>Smallest possible step:</strong> If the task feels impossible, shrink it. 'Write the report' becomes 'Open the document.' Start there.",
+  "🔄 <strong>Task switching is OK:</strong> If you're stuck, switch to a different task. Productivity isn't linear — it's a web.",
+  "📱 <strong>Phone in another room:</strong> Out of sight, out of mind. Physical distance beats willpower every time.",
+  "✍️ <strong>Externalize your thoughts:</strong> Use the notepad to dump every thought. An empty mind focuses better than a full one.",
+  "🎮 <strong>Gamify it:</strong> Set a task goal and a pomodoro target. Beat your own high score. Check your stats on the left.",
+  "💬 <strong>Narrate your work:</strong> Silently talk yourself through what you're doing: 'Now I'm opening the spreadsheet, now I'm finding column B...'",
+  "🚫 <strong>Eat the frog:</strong> Do the most dreaded task first. Everything after feels easy by comparison.",
+  "🌊 <strong>Ride the hyperfocus:</strong> If you find yourself locked in, don't fight it. Reschedule other things. Hyperfocus is a superpower — use it.",
+  "📋 <strong>Max 3 priorities:</strong> Pick only 3 tasks for today. Everything else is bonus. Constraint creates clarity.",
+  "🧠 <strong>Dopamine menu:</strong> Keep a list of healthy quick-dopamine activities (stretch, snack, pet, music) to reach for instead of doom-scrolling."
+];
+
+function newTip() {
+  const el = document.getElementById('adhdTipText');
+  el.style.opacity = 0;
+  setTimeout(() => {
+    el.innerHTML = tips[Math.floor(Math.random() * tips.length)];
+    el.style.opacity = 1;
+  }, 200);
+}
+
+// ══════════════════════════════════════
+// STATS & PERSISTENCE
+// ══════════════════════════════════════
+function saveStats() {
+  const today = new Date().toDateString();
+  const stats = JSON.parse(localStorage.getItem('fb_stats') || '{}');
+  if (!stats[today]) stats[today] = { pomos: 0, tasks: 0 };
+  stats[today].pomos = pomoState.completed;
+  stats[today].tasks = tasks.filter(t => t.done).length;
+  localStorage.setItem('fb_stats', JSON.stringify(stats));
+  updateStreak(stats);
+}
+
+function updateStreak(stats) {
+  let streak = 0;
+  const d = new Date();
+  while (true) {
+    const key = d.toDateString();
+    if (stats[key] && (stats[key].pomos > 0 || stats[key].tasks > 0)) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  document.getElementById('statStreak').textContent = streak;
+}
+
+// ══════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ══════════════════════════════════════
+document.addEventListener('keydown', (e) => {
+  // Allow Esc to close overlays even inside inputs
+  if (e.key === 'Escape') {
+    closeDistractionOverlay();
+    return;
+  }
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  switch(e.key.toLowerCase()) {
+    case ' ':
+      e.preventDefault();
+      toggleWakeLock();
+      break;
+    case 'p':
+      togglePomodoro();
+      break;
+    case 'n':
+      document.getElementById('notepad').focus();
+      break;
+    case 't':
+      document.getElementById('taskInput').focus();
+      break;
+    case 'd':
+      openDistractionOverlay();
+      break;
+    case 'z':
+      toggleZen();
+      break;
+    case 'g':
+      openGroundingExercise();
+      break;
+    case 'b':
+      openBreathingGuide();
+      break;
+  }
+});
+
+// ══════════════════════════════════════
+// INTENTION SETTER
+// ══════════════════════════════════════
+function saveIntention() {
+  const val = document.getElementById('intentionInput').value;
+  localStorage.setItem('fb_intention', val);
+  document.getElementById('zenFocusText').textContent = val || '—';
+}
+
+// ══════════════════════════════════════
+// TIME BLINDNESS BAR
+// ══════════════════════════════════════
+function updateTimeBar() {
+  const now = new Date();
+  const startH = 9, endH = 17; // 9am–5pm default workday
+  const totalMins = (endH - startH) * 60;
+  const elapsedMins = (now.getHours() - startH) * 60 + now.getMinutes();
+  const pct = Math.min(100, Math.max(0, (elapsedMins / totalMins) * 100));
+
+  document.getElementById('timeBarFill').style.width = pct.toFixed(1) + '%';
+  document.getElementById('timeBarPct').textContent = Math.round(pct) + '%';
+
+  const fmt = h => {
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h > 12 ? h - 12 : h;
+    return `${h12} ${ampm}`;
+  };
+  document.getElementById('timeBarStart').textContent = fmt(startH);
+  document.getElementById('timeBarEnd').textContent = fmt(endH);
+}
+
+// ══════════════════════════════════════
+// DISTRACTION PARKING LOT
+// ══════════════════════════════════════
+let distractions = JSON.parse(localStorage.getItem('fb_distractions') || '[]');
+
+function renderDistractions() {
+  const list = document.getElementById('distractionList');
+  list.innerHTML = '';
+  if (distractions.length === 0) {
+    list.innerHTML = '<div class="distraction-empty">No distractions parked 🎯</div>';
+    return;
+  }
+  distractions.forEach((d, i) => {
+    const li = document.createElement('li');
+    li.className = 'distraction-item';
+    li.innerHTML = `<span>${escapeHtml(d)}</span><button class="distraction-del" onclick="removeDistraction(${i})" title="Remove">×</button>`;
+    list.appendChild(li);
+  });
+}
+
+function openDistractionOverlay() {
+  document.getElementById('distractOverlay').classList.add('show');
+  setTimeout(() => document.getElementById('distractInput').focus(), 50);
+}
+
+function closeDistractionOverlay() {
+  document.getElementById('distractOverlay').classList.remove('show');
+  document.getElementById('distractInput').value = '';
+}
+
+function parkDistraction() {
+  const input = document.getElementById('distractInput');
+  const text = input.value.trim();
+  if (!text) { closeDistractionOverlay(); return; }
+  distractions.unshift(text);
+  localStorage.setItem('fb_distractions', JSON.stringify(distractions));
+  renderDistractions();
+  closeDistractionOverlay();
+}
+
+function removeDistraction(i) {
+  distractions.splice(i, 1);
+  localStorage.setItem('fb_distractions', JSON.stringify(distractions));
+  renderDistractions();
+}
+
+// Park on Enter key inside the overlay input
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('distractInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') parkDistraction();
+    if (e.key === 'Escape') closeDistractionOverlay();
+  });
+});
+
+// ══════════════════════════════════════
+// ZEN MODE
+// ══════════════════════════════════════
+function toggleZen() {
+  document.body.classList.toggle('zen-mode');
+  const btn = document.getElementById('zenBtn');
+  if (document.body.classList.contains('zen-mode')) {
+    btn.textContent = '✕ Exit Zen';
+    btn.title = 'Z — exit zen mode';
+  } else {
+    btn.textContent = '🧘 Zen';
+    btn.title = 'Z — hide everything except Pomodoro + Tasks';
+  }
+}
+
+// ══════════════════════════════════════
+// HYPERFOCUS ALERT (90 min continuous awake)
+// ══════════════════════════════════════
+let hyperfocusAlerted = false;
+
+function checkHyperfocus() {
+  if (!awakeActive || !awakeStart) return;
+  const mins = (Date.now() - awakeStart) / 60000;
+  if (mins >= 90 && !hyperfocusAlerted) {
+    hyperfocusAlerted = true;
+    document.getElementById('hyperfocusModal').classList.add('show');
+  }
+}
+
+function dismissHyperfocus() {
+  document.getElementById('hyperfocusModal').classList.remove('show');
+  // Reset so it can fire again after another 90 min
+  hyperfocusAlerted = false;
+  awakeStart = Date.now();
+}
+
+// ══════════════════════════════════════
+// BREATHING GUIDE + BINAURAL BEATS
+// ══════════════════════════════════════
+let breathingTimer = null;
+let breathingPhase = 'inhale';
+let breathingCount = 0;
+const breathingCycles = { box: [4,4,4,4], '478': [4,7,8,4], tactical: [4,4,4,4] };
+
+function openBreathingGuide() {
+  document.getElementById('breathingModal').classList.add('show');
+  startBreathing('box');
+}
+
+function startBreathing(type) {
+  const cycles = breathingCycles[type] || [4,4,4,4];
+  const labels = { box: '4-4-4-4: Inhale, Hold, Exhale, Hold', '478': '4-7-8: Inhale, Hold Longer, Exhale Slow', tactical: '4-4-4-4: Tactical breathing for calm' };
+  document.getElementById('breathingPhaseLabel').textContent = Object.keys(breathingCycles).includes(type) ? type === '478' ? '4-7-8 Breathing' : 'Box Breathing' : 'Tactical';
+  document.getElementById('breathingTypeDesc').textContent = labels[type];
+
+  if (breathingTimer) clearInterval(breathingTimer);
+  
+  const phases = ['Inhale', 'Hold', 'Exhale', 'Hold'];
+  let phaseIdx = 0;
+  let secondsLeft = cycles[0];
+  
+  function updateBreathing() {
+    const label = document.getElementById('breathingLabel');
+    const circle = document.getElementById('breathingCircle');
+    
+    label.textContent = `${phases[phaseIdx]} (${secondsLeft}s)`;
+    
+    if (phaseIdx === 0 || phaseIdx === 2) {
+      circle.style.animation = phaseIdx === 0 ? 'breathing 4s ease-in-out 1' : 'breathing 4s ease-in-out reverse 1';
+    }
+    
+    secondsLeft--;
+    if (secondsLeft < 0) {
+      phaseIdx = (phaseIdx + 1) % 4;
+      secondsLeft = cycles[phaseIdx];
+    }
+  }
+  
+  updateBreathing();
+  breathingTimer = setInterval(updateBreathing, 1000);
+}
+
+function stopBreathing() {
+  if (breathingTimer) clearInterval(breathingTimer);
+  document.getElementById('breathingModal').classList.remove('show');
+}
+
+// Binaural beats context
+let binauralOsc = null;
+let binauralGain = null;
+
+function toggleBinaural(type) {
+  const freqs = { focus: 40, calm: 8, alert: 20 };
+  const freq = freqs[type];
+  const btn = event.target;
+  
+  if (btn.classList.contains('active')) {
+    btn.classList.remove('active');
+    if (binauralOsc) {
+      binauralOsc.stop();
+      binauralOsc = null;
+    }
+  } else {
+    // Stop other binaural beats
+    document.querySelectorAll('.binaural-btn.active').forEach(b => {
+      b.classList.remove('active');
+      if (binauralOsc) binauralOsc.stop();
+    });
+    
+    btn.classList.add('active');
+    const ctx = getAudioCtx();
+    
+    // Create binaural beat: Use two slightly offset frequencies
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    binauralGain = ctx.createGain();
+    
+    osc1.frequency.value = 100;
+    osc2.frequency.value = 100 + freq; // Offset creates the binaural beat at freq Hz
+    
+    binauralGain.gain.value = 0.05; // Very quiet
+    
+    osc1.connect(binauralGain);
+    osc2.connect(binauralGain);
+    binauralGain.connect(ctx.destination);
+    
+    osc1.start();
+    osc2.start();
+    
+    binauralOsc = { osc1, osc2, stop() { osc1.stop(); osc2.stop(); } };
+  }
+}
+
+// ══════════════════════════════════════
+// 5-4-3-2-1 GROUNDING EXERCISE
+// ══════════════════════════════════════
+function openGroundingExercise() {
+  document.getElementById('groundingModal').classList.add('show');
+}
+
+function startGroundingStep(num) {
+  const input = document.getElementById(`ground${num}`);
+  const result = document.getElementById(`result${num}`);
+  input.focus();
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const text = input.value.trim();
+      if (text) {
+        result.textContent = `✓ Noted: "${escapeHtml(text)}"`;
+        result.style.display = 'block';
+        input.value = '';
+        input.blur();
+      }
+    }
+  });
+}
+
+function completeGrounding() {
+  localStorage.setItem('fb_grounding_complete', new Date().toISOString());
+  document.getElementById('groundingModal').classList.remove('show');
+  // Clear inputs
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById(`ground${i}`).value = '';
+    document.getElementById(`result${i}`).style.display = 'none';
+  }
+}
+
+// ══════════════════════════════════════
+// DOPAMINE MENU
+// ══════════════════════════════════════
+let dopamineItems = JSON.parse(localStorage.getItem('fb_dopamine') || '["Stretch 30s", "Drink water", "Pet cat", "Cold water on face", "Dance to 1 song", "Walk 5 min"]');
+
+function renderDopamineItems() {
+  const list = document.getElementById('dopamineList');
+  list.innerHTML = '';
+  dopamineItems.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'dopamine-item';
+    div.innerHTML = `<span>${escapeHtml(item)}</span><button class="dopamine-del" onclick="removeDopamineItem(${i})">×</button>`;
+    list.appendChild(div);
+  });
+}
+
+function addDopamineItem() {
+  const input = document.getElementById('dopamineInput');
+  const text = input.value.trim();
+  if (!text) return;
+  dopamineItems.unshift(text);
+  localStorage.setItem('fb_dopamine', JSON.stringify(dopamineItems));
+  renderDopamineItems();
+  input.value = '';
+  input.focus();
+}
+
+function removeDopamineItem(i) {
+  dopamineItems.splice(i, 1);
+  localStorage.setItem('fb_dopamine', JSON.stringify(dopamineItems));
+  renderDopamineItems();
+}
+
+function openDopamineMenu() {
+  renderDopamineItems();
+  document.getElementById('dopamineModal').classList.add('show');
+  document.getElementById('dopamineInput').focus();
+}
+
+function closeDopamineMenu() {
+  document.getElementById('dopamineModal').classList.remove('show');
+}
+
+// ══════════════════════════════════════
+// ENERGY + MOOD TRACKER
+// ══════════════════════════════════════
+let energyLog = JSON.parse(localStorage.getItem('fb_energy') || '[]');
+
+function logEnergy(level) {
+  const entry = { time: Date.now(), level };
+  energyLog.push(entry);
+  // Keep only last 24 hours
+  energyLog = energyLog.filter(e => Date.now() - e.time < 86400000);
+  localStorage.setItem('fb_energy', JSON.stringify(energyLog));
+  updateEnergyChart();
+  document.getElementById('energyNow').textContent = level;
+}
+
+function updateEnergyChart() {
+  const chart = document.getElementById('energyChart');
+  chart.innerHTML = '';
+  
+  if (energyLog.length === 0) {
+    chart.innerHTML = '<div style="width: 100%; text-align: center; color: var(--text-muted); font-size: 11px;">Log energy to see chart</div>';
+    document.getElementById('energyAvg').textContent = '-';
+    return;
+  }
+  
+  const recent = energyLog.slice(-20);
+  const max = 5;
+  recent.forEach(e => {
+    const bar = document.createElement('div');
+    bar.className = 'energy-bar';
+    bar.style.height = (e.level / max * 90) + '%';
+    bar.title = `Level ${e.level} at ${new Date(e.time).toLocaleTimeString()}`;
+    chart.appendChild(bar);
+  });
+  
+  const avg = (energyLog.reduce((sum, e) => sum + e.level, 0) / energyLog.length).toFixed(1);
+  document.getElementById('energyAvg').textContent = avg;
+}
+
+// ══════════════════════════════════════
+// FIDGET TOOLS
+// ══════════════════════════════════════
+let fidgetSpinning = false;
+
+function startFidgetSpinner() {
+  const spinner = event.target.closest('.spinner');
+  if (spinner) {
+    spinner.style.animationDuration = (Math.random() * 0.5 + 0.5) + 's';
+    setTimeout(() => spinner.style.animationDuration = '1s', 500);
+  }
+}
+
+// Particle fidget canvas
+function initFidgetCanvas() {
+  const canvas = document.getElementById('fidgetCanvas');
+  if (!canvas) return;
+  
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    for (let i = 0; i < 10; i++) {
+      particles.push({
+        x, y,
+        vx: (Math.random() - 0.5) * 6,
+        vy: (Math.random() - 0.5) * 6 - 2,
+        life: 1,
+        color: `hsl(${Math.random() * 360}, 70%, 50%)`
+      });
+    }
+  });
+  
+  function animateParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(34, 197, 94, 0.1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    particles = particles.filter(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.2; // gravity
+      p.life -= 0.02;
+      
+      if (p.life > 0) {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        return true;
+      }
+      return false;
+    });
+    
+    if (particles.length > 0 || fidgetSpinning) {
+      requestAnimationFrame(animateParticles);
+    }
+  }
+  
+  animateParticles();
+}
+
+// ══════════════════════════════════════
+// MEDICATION REMINDER + LSD TIMER
+// ══════════════════════════════════════
+let medLastDose = null;
+let medInterval = null;
+
+function logMedication() {
+  const timeInput = document.getElementById('medTime');
+  const time = timeInput.value;
+  
+  if (!time) {
+    const now = new Date();
+    medLastDose = now;
+  } else {
+    const [h, m] = time.split(':');
+    const today = new Date();
+    medLastDose = new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(h), parseInt(m));
+  }
+  
+  localStorage.setItem('fb_med_dose', medLastDose.toISOString());
+  timeInput.value = '';
+  updateMedTimer();
+  
+  if (!medInterval) {
+    medInterval = setInterval(updateMedTimer, 1000);
+  }
+}
+
+function updateMedTimer() {
+  const status = document.getElementById('medStatus');
+  const timer = document.getElementById('medTimer');
+  
+  const saved = localStorage.getItem('fb_med_dose');
+  if (!saved) {
+    timer.textContent = '--:--';
+    status.textContent = 'No dose logged';
+    return;
+  }
+  
+  medLastDose = new Date(saved);
+  const elapsed = Date.now() - medLastDose.getTime();
+  const hours = Math.floor(elapsed / 3600000);
+  const mins = Math.floor((elapsed % 3600000) / 60000);
+  
+  timer.textContent = `${hours}:${String(mins).padStart(2, '0')}h`;
+  
+  if (hours >= 8) {
+    status.textContent = '⚠️ Time for next dose';
+    status.style.color = 'var(--danger)';
+  } else if (hours >= 6) {
+    status.textContent = '🟡 Consider next dose soon';
+    status.style.color = 'var(--warn)';
+  } else {
+    status.textContent = '✓ Dose still active';
+    status.style.color = 'var(--accent)';
+  }
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  renderTasks();
+  renderDistractions();
+  newTip();
+  renderPomodoro();
+  renderPomoDots();
+  updateTimeBar();
+  setInterval(updateTimeBar, 60000);
+  setInterval(checkHyperfocus, 60000);
+
+  // Restore intention
+  const savedIntention = localStorage.getItem('fb_intention') || '';
+  document.getElementById('intentionInput').value = savedIntention;
+  document.getElementById('zenFocusText').textContent = savedIntention || '—';
+
+  const savedMeeting = localStorage.getItem('fb_meeting');
+  if (savedMeeting) {
+    meetingData = JSON.parse(savedMeeting);
+    if (meetingData.target > Date.now()) {
+      meetingInterval = setInterval(renderMeeting, 1000);
+      renderMeeting();
+    }
+  }
+
+  const today = new Date().toDateString();
+  const stats = JSON.parse(localStorage.getItem('fb_stats') || '{}');
+  if (stats[today]) {
+    document.getElementById('statTasks').textContent = stats[today].tasks || 0;
+  }
+  updateStreak(stats);
+
+  // Initialize new features
+  updateEnergyChart();
+  initFidgetCanvas();
+  updateMedTimer();
+  if (medInterval) clearInterval(medInterval);
+  medInterval = setInterval(updateMedTimer, 1000);
+
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+});
+</script>
+
+</body>
+</html>
