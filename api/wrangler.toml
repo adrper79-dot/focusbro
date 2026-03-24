@@ -5,6 +5,12 @@ account_id = "a1c8a33cbe8a3c9e260480433a0dbb06"
 
 # ── ENVIRONMENT: PRODUCTION ──
 [env.production]
+# ── DATABASE ──
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "focusbro-db"
+database_id = "2ac20b08-66e3-4abd-92de-f0e6380bdad0"
+
 # ── KEY-VALUE STORE ──
 [[env.production.kv_namespaces]]
 binding = "KV_CACHE"
