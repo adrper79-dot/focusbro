@@ -922,6 +922,77 @@
 
   .hyperfocus-modal.show { display: flex; }
 
+  /* ══════════════════════════════════════════════════════════════════ */
+  /* NEW FEATURES: BREATHING, BINAURAL, GROUNDING, FIDGET, TRACKER     */
+  /* ══════════════════════════════════════════════════════════════════ */
+
+  /* ── BREATHING GUIDE ── */
+  .breathing-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); z-index: 1000; align-items: center; justify-content: center; }
+  .breathing-modal.show { display: flex; }
+  .breathing-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 48px; text-align: center; max-width: 500px; animation: modalIn 0.3s ease; }
+  .breathing-circle { width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(34,197,94,0.3), transparent); margin: 0 auto 30px; display: flex; align-items: center; justify-content: center; font-size: 48px; animation: breathing 8s ease-in-out infinite; }
+  @keyframes breathing { 0% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.4); opacity: 1; } 100% { transform: scale(1); opacity: 0.7; } }
+  .breathing-text { font-size: 18px; font-weight: 500; margin: 10px 0; color: var(--accent); }
+  .breathing-phase { font-size: 13px; color: var(--text-muted); margin: 5px 0 20px; }
+
+  /* ── BINAURAL BEATS ── */
+  .binaural-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .binaural-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 10px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.2s; }
+  .binaural-btn:hover { border-color: var(--accent); }
+  .binaural-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  .binaural-info { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+  /* ── GROUNDING MODAL ── */
+  .grounding-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); z-index: 1000; align-items: center; justify-content: center; overflow-y: auto; }
+  .grounding-modal.show { display: flex; }
+  .grounding-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 40px; max-width: 600px; width: 90%; margin: auto; animation: modalIn 0.3s ease; }
+  .grounding-header { text-align: center; margin-bottom: 30px; }
+  .grounding-header h2 { font-size: 24px; margin-bottom: 8px; }
+  .grounding-header p { font-size: 13px; color: var(--text-muted); }
+  .grounding-items { display: flex; flex-direction: column; gap: 16px; }
+  .grounding-item { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.2s; }
+  .grounding-item:hover { border-color: var(--accent); background: rgba(34,197,94,0.05); }
+  .grounding-number { font-size: 20px; font-weight: 700; color: var(--accent); display: block; }
+  .grounding-text { display: block; font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .grounding-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 12px; margin-top: 6px; font-family: var(--font); }
+  .grounding-result { background: var(--accent-dim); border: 1px solid rgba(34,197,94,0.2); border-radius: 12px; padding: 12px; margin-top: 8px; font-size: 12px; color: var(--text); }
+
+  /* ── DOPAMINE MENU ── */
+  .dopamine-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); z-index: 1000; align-items: center; justify-content: center; }
+  .dopamine-modal.show { display: flex; }
+  .dopamine-content { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 40px; max-width: 500px; animation: modalIn 0.3s ease; }
+  .dopamine-list { display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; margin-bottom: 16px; }
+  .dopamine-item { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; transition: all 0.2s; }
+  .dopamine-item:hover { border-color: var(--purple); background: rgba(167,139,250,0.05); }
+  .dopamine-del { background: none; border: none; color: var(--danger); cursor: pointer; font-weight: bold; }
+  .dopamine-input-row { display: flex; gap: 8px; }
+  .dopamine-input-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 12px; font-family: var(--font); }
+  .dopamine-input-row button { background: var(--purple); color: #000; border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-weight: 500; font-size: 12px; }
+
+  /* ── ENERGY TRACKER ── */
+  .energy-scale { display: flex; gap: 6px; margin: 12px 0; }
+  .energy-btn { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; font-size: 11px; font-weight: 500; transition: all 0.2s; }
+  .energy-btn:hover { border-color: var(--accent); }
+  .energy-btn.selected { background: var(--accent); color: #000; border-color: var(--accent); }
+  .energy-chart { width: 100%; height: 60px; background: var(--bg); border-radius: 8px; margin: 12px 0; position: relative; overflow: hidden; display: flex; align-items: flex-end; gap: 2px; padding: 4px; border: 1px solid var(--border); }
+  .energy-bar { flex: 1; background: linear-gradient(to top, var(--accent), var(--blue)); border-radius: 4px 4px 0 0; min-height: 4px; transition: all 0.3s; }
+  .energy-stats { display: flex; justify-content: space-around; font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+  /* ── FIDGET TOOLS ── */
+  .fidget-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 12px; }
+  .fidget-tool { height: 120px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-size: 40px; }
+  .fidget-tool:hover { border-color: var(--accent); transform: scale(1.05); }
+  .spinner { display: inline-block; width: 60px; height: 60px; border: 4px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+  .particle-canvas { width: 100%; height: 100%; display: block; border-radius: 10px; cursor: pointer; }
+
+  /* ── MEDICATION REMINDER ── */
+  .med-display { text-align: center; padding: 16px; background: var(--bg); border-radius: 10px; margin: 12px 0; }
+  .med-timer { font-family: var(--mono); font-size: 24px; font-weight: 600; color: var(--accent); }
+  .med-status { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+  .med-input-row { display: flex; gap: 8px; margin-top: 12px; }
+  .med-input-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; color: var(--text); font-size: 12px; font-family: var(--font); }
+  .med-input-row button { background: var(--accent); color: #000; border: none; border-radius: 8px; padding: 8px 16px; cursor: pointer; font-weight: 500; font-size: 12px; }
+
   /* ── RESPONSIVE ── */
   @media (max-width: 960px) {
     .dashboard { grid-template-columns: 1fr; padding: 0 16px 16px; }
@@ -930,6 +1001,8 @@
     .ad-slot { margin: 12px 16px; }
     .intention-banner { margin: 0 16px; }
     .time-bar-wrap { margin: 8px 16px 0; }
+    .fidget-grid { grid-template-columns: 1fr; }
+    .binaural-grid { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 </head>
@@ -1174,6 +1247,83 @@
       <ul class="distraction-list" id="distractionList"></ul>
     </div>
 
+    <!-- BINAURAL BEATS + BREATHING -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">🧠</span> Brainwave Tuning</div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Binaural beats to shift focus state.</div>
+      
+      <div style="margin-bottom: 12px;">
+        <div style="font-size: 11px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Binaural Frequency</div>
+        <div class="binaural-grid">
+          <button class="binaural-btn" onclick="toggleBinaural('focus')">🎯 Focus (40Hz)</button>
+          <button class="binaural-btn" onclick="toggleBinaural('calm')">😌 Calm (8Hz)</button>
+          <button class="binaural-btn" onclick="toggleBinaural('alert')">⚡ Alert (20Hz)</button>
+        </div>
+        <div class="binaural-info">Combine with ambient sounds for best effect.</div>
+      </div>
+
+      <button class="btn" style="width: 100%; font-size: 12px;" onclick="openBreathingGuide()">🫁 Breathing Guide</button>
+    </div>
+
+    <!-- ENERGY + MOOD TRACKER -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">⚡</span> Energy Tracker</div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Log your energy throughout the day.</div>
+      
+      <div class="energy-scale">
+        <button class="energy-btn" onclick="logEnergy(1)" title="Exhausted">1</button>
+        <button class="energy-btn" onclick="logEnergy(2)">2</button>
+        <button class="energy-btn" onclick="logEnergy(3)">3</button>
+        <button class="energy-btn" onclick="logEnergy(4)">4</button>
+        <button class="energy-btn" onclick="logEnergy(5)" title="Peak">5</button>
+      </div>
+
+      <div class="energy-chart" id="energyChart"></div>
+      <div class="energy-stats">
+        <div>Avg: <span id="energyAvg">-</span></div>
+        <div>Now: <span id="energyNow">-</span></div>
+      </div>
+    </div>
+
+    <!-- FIDGET TOOLS -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">🎮</span> Fidget Tools</div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Satisfying micro-breaks for restless hands.</div>
+      
+      <div class="fidget-grid">
+        <div class="fidget-tool" onclick="startFidgetSpinner()" title="Click to spin">
+          <div class="spinner"></div>
+        </div>
+        <canvas id="fidgetCanvas" class="fidget-tool" width="200" height="120"></canvas>
+      </div>
+      <button class="btn" style="width: 100%; margin-top: 8px; font-size: 12px;" onclick="openGroundingExercise()">🧭 5-4-3-2-1</button>
+    </div>
+
+    <!-- MEDICATION REMINDER -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span class="icon">💊</span> Med Reminder</div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Track your medication & dopamine reset times.</div>
+      
+      <div class="med-display">
+        <div class="med-timer" id="medTimer">--:--</div>
+        <div class="med-status" id="medStatus">No dose logged</div>
+      </div>
+
+      <div class="med-input-row">
+        <input type="time" id="medTime" placeholder="HH:MM" />
+        <button onclick="logMedication()">Log Dose</button>
+      </div>
+      <button class="btn" style="width: 100%; margin-top: 8px; font-size: 12px; background: var(--warn); color: #000; border: none;" onclick="openDopamineMenu()">⚡ Dopamine Menu</button>
+    </div>
+
     <!-- KEYBOARD SHORTCUTS -->
     <div class="card">
       <div class="card-header">
@@ -1186,6 +1336,8 @@
         <div><kbd style="background:var(--bg);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);">T</kbd> Focus task input</div>
         <div><kbd style="background:var(--bg);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);">D</kbd> Park a distraction</div>
         <div><kbd style="background:var(--bg);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);">Z</kbd> Toggle zen mode</div>
+        <div><kbd style="background:var(--bg);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);">G</kbd> 5-4-3-2-1 grounding</div>
+        <div><kbd style="background:var(--bg);padding:2px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;border:1px solid var(--border);">B</kbd> Breathing guide</div>
       </div>
     </div>
   </div>
@@ -1224,6 +1376,89 @@
       <button class="btn btn-accent" style="flex:1;" onclick="parkDistraction()">Park It 🚗</button>
       <button class="btn" onclick="closeDistractionOverlay()">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- BREATHING GUIDE MODAL -->
+<div class="breathing-modal" id="breathingModal">
+  <div class="breathing-content">
+    <div style="font-size: 28px; margin-bottom: 20px;">🫁 Breathwork</div>
+    <div id="breathingPhaseLabel" style="font-size: 16px; font-weight: 600; margin-bottom: 10px;">Box Breathing</div>
+    <div id="breathingTypeDesc" style="font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">4-4-4-4 cycle: Inhale, Hold, Exhale, Hold</div>
+    
+    <div class="breathing-circle" id="breathingCircle">
+      <span id="breathingLabel">Breathe In...</span>
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+      <button class="btn" onclick="startBreathing('box')" style="flex: 1; font-size: 12px;">📦 Box</button>
+      <button class="btn" onclick="startBreathing('478')" style="flex: 1; font-size: 12px;">🌊 4-7-8</button>
+      <button class="btn" onclick="startBreathing('tactical')" style="flex: 1; font-size: 12px;">💪 Tactical</button>
+    </div>
+
+    <button class="btn" style="width: 100%;" onclick="stopBreathing()">Close 🤝</button>
+  </div>
+</div>
+
+<!-- GROUNDING MODAL -->
+<div class="grounding-modal" id="groundingModal">
+  <div class="grounding-content">
+    <div class="grounding-header">
+      <h2>5-4-3-2-1 Grounding 🧭</h2>
+      <p>Feel overwhelmed? Use your senses to reconnect to the present moment.</p>
+    </div>
+    
+    <div class="grounding-items">
+      <div class="grounding-item" onclick="startGroundingStep(5)">
+        <span class="grounding-number">5</span>
+        <span class="grounding-text">Things You SEE</span>
+        <input type="text" class="grounding-input" id="ground5" placeholder="Describe what you see around you..." />
+        <div id="result5" class="grounding-result" style="display: none;"></div>
+      </div>
+      <div class="grounding-item" onclick="startGroundingStep(4)">
+        <span class="grounding-number">4</span>
+        <span class="grounding-text">Things You can TOUCH</span>
+        <input type="text" class="grounding-input" id="ground4" placeholder="Describe textures you can feel..." />
+        <div id="result4" class="grounding-result" style="display: none;"></div>
+      </div>
+      <div class="grounding-item" onclick="startGroundingStep(3)">
+        <span class="grounding-number">3</span>
+        <span class="grounding-text">Things You HEAR</span>
+        <input type="text" class="grounding-input" id="ground3" placeholder="What sounds surround you?..." />
+        <div id="result3" class="grounding-result" style="display: none;"></div>
+      </div>
+      <div class="grounding-item" onclick="startGroundingStep(2)">
+        <span class="grounding-number">2</span>
+        <span class="grounding-text">Things You SMELL</span>
+        <input type="text" class="grounding-input" id="ground2" placeholder="What scents are present?..." />
+        <div id="result2" class="grounding-result" style="display: none;"></div>
+      </div>
+      <div class="grounding-item" onclick="startGroundingStep(1)">
+        <span class="grounding-number">1</span>
+        <span class="grounding-text">Thing You TASTE</span>
+        <input type="text" class="grounding-input" id="ground1" placeholder="Gum? Coffee? Water?..." />
+        <div id="result1" class="grounding-result" style="display: none;"></div>
+      </div>
+    </div>
+
+    <button class="btn" style="width: 100%; margin-top: 16px;" onclick="completeGrounding()">Done! Feel Better? 🌟</button>
+  </div>
+</div>
+
+<!-- DOPAMINE MENU MODAL -->
+<div class="dopamine-modal" id="dopamineModal">
+  <div class="dopamine-content">
+    <h2 style="margin-bottom: 16px; font-size: 18px;">⚡ Dopamine Menu</h2>
+    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Quick wins instead of doom-scrolling. Customize your healthy quick-hits below.</p>
+    
+    <div class="dopamine-list" id="dopamineList"></div>
+    
+    <div class="dopamine-input-row">
+      <input type="text" id="dopamineInput" maxlength="100" placeholder="Add: 'Stretch 30s', 'Pet cat', 'Drink water'..." />
+      <button onclick="addDopamineItem()">+</button>
+    </div>
+
+    <button class="btn" style="width: 100%; margin-top: 16px;" onclick="closeDopamineMenu()">Done 👍</button>
   </div>
 </div>
 
@@ -1961,6 +2196,12 @@ document.addEventListener('keydown', (e) => {
     case 'z':
       toggleZen();
       break;
+    case 'g':
+      openGroundingExercise();
+      break;
+    case 'b':
+      openBreathingGuide();
+      break;
   }
 });
 
@@ -2086,6 +2327,345 @@ function dismissHyperfocus() {
 }
 
 // ══════════════════════════════════════
+// BREATHING GUIDE + BINAURAL BEATS
+// ══════════════════════════════════════
+let breathingTimer = null;
+let breathingPhase = 'inhale';
+let breathingCount = 0;
+const breathingCycles = { box: [4,4,4,4], '478': [4,7,8,4], tactical: [4,4,4,4] };
+
+function openBreathingGuide() {
+  document.getElementById('breathingModal').classList.add('show');
+  startBreathing('box');
+}
+
+function startBreathing(type) {
+  const cycles = breathingCycles[type] || [4,4,4,4];
+  const labels = { box: '4-4-4-4: Inhale, Hold, Exhale, Hold', '478': '4-7-8: Inhale, Hold Longer, Exhale Slow', tactical: '4-4-4-4: Tactical breathing for calm' };
+  document.getElementById('breathingPhaseLabel').textContent = Object.keys(breathingCycles).includes(type) ? type === '478' ? '4-7-8 Breathing' : 'Box Breathing' : 'Tactical';
+  document.getElementById('breathingTypeDesc').textContent = labels[type];
+
+  if (breathingTimer) clearInterval(breathingTimer);
+  
+  const phases = ['Inhale', 'Hold', 'Exhale', 'Hold'];
+  let phaseIdx = 0;
+  let secondsLeft = cycles[0];
+  
+  function updateBreathing() {
+    const label = document.getElementById('breathingLabel');
+    const circle = document.getElementById('breathingCircle');
+    
+    label.textContent = `${phases[phaseIdx]} (${secondsLeft}s)`;
+    
+    if (phaseIdx === 0 || phaseIdx === 2) {
+      circle.style.animation = phaseIdx === 0 ? 'breathing 4s ease-in-out 1' : 'breathing 4s ease-in-out reverse 1';
+    }
+    
+    secondsLeft--;
+    if (secondsLeft < 0) {
+      phaseIdx = (phaseIdx + 1) % 4;
+      secondsLeft = cycles[phaseIdx];
+    }
+  }
+  
+  updateBreathing();
+  breathingTimer = setInterval(updateBreathing, 1000);
+}
+
+function stopBreathing() {
+  if (breathingTimer) clearInterval(breathingTimer);
+  document.getElementById('breathingModal').classList.remove('show');
+}
+
+// Binaural beats context
+let binauralOsc = null;
+let binauralGain = null;
+
+function toggleBinaural(type) {
+  const freqs = { focus: 40, calm: 8, alert: 20 };
+  const freq = freqs[type];
+  const btn = event.target;
+  
+  if (btn.classList.contains('active')) {
+    btn.classList.remove('active');
+    if (binauralOsc) {
+      binauralOsc.stop();
+      binauralOsc = null;
+    }
+  } else {
+    // Stop other binaural beats
+    document.querySelectorAll('.binaural-btn.active').forEach(b => {
+      b.classList.remove('active');
+      if (binauralOsc) binauralOsc.stop();
+    });
+    
+    btn.classList.add('active');
+    const ctx = getAudioCtx();
+    
+    // Create binaural beat: Use two slightly offset frequencies
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    binauralGain = ctx.createGain();
+    
+    osc1.frequency.value = 100;
+    osc2.frequency.value = 100 + freq; // Offset creates the binaural beat at freq Hz
+    
+    binauralGain.gain.value = 0.05; // Very quiet
+    
+    osc1.connect(binauralGain);
+    osc2.connect(binauralGain);
+    binauralGain.connect(ctx.destination);
+    
+    osc1.start();
+    osc2.start();
+    
+    binauralOsc = { osc1, osc2, stop() { osc1.stop(); osc2.stop(); } };
+  }
+}
+
+// ══════════════════════════════════════
+// 5-4-3-2-1 GROUNDING EXERCISE
+// ══════════════════════════════════════
+function openGroundingExercise() {
+  document.getElementById('groundingModal').classList.add('show');
+}
+
+function startGroundingStep(num) {
+  const input = document.getElementById(`ground${num}`);
+  const result = document.getElementById(`result${num}`);
+  input.focus();
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const text = input.value.trim();
+      if (text) {
+        result.textContent = `✓ Noted: "${escapeHtml(text)}"`;
+        result.style.display = 'block';
+        input.value = '';
+        input.blur();
+      }
+    }
+  });
+}
+
+function completeGrounding() {
+  localStorage.setItem('fb_grounding_complete', new Date().toISOString());
+  document.getElementById('groundingModal').classList.remove('show');
+  // Clear inputs
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById(`ground${i}`).value = '';
+    document.getElementById(`result${i}`).style.display = 'none';
+  }
+}
+
+// ══════════════════════════════════════
+// DOPAMINE MENU
+// ══════════════════════════════════════
+let dopamineItems = JSON.parse(localStorage.getItem('fb_dopamine') || '["Stretch 30s", "Drink water", "Pet cat", "Cold water on face", "Dance to 1 song", "Walk 5 min"]');
+
+function renderDopamineItems() {
+  const list = document.getElementById('dopamineList');
+  list.innerHTML = '';
+  dopamineItems.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'dopamine-item';
+    div.innerHTML = `<span>${escapeHtml(item)}</span><button class="dopamine-del" onclick="removeDopamineItem(${i})">×</button>`;
+    list.appendChild(div);
+  });
+}
+
+function addDopamineItem() {
+  const input = document.getElementById('dopamineInput');
+  const text = input.value.trim();
+  if (!text) return;
+  dopamineItems.unshift(text);
+  localStorage.setItem('fb_dopamine', JSON.stringify(dopamineItems));
+  renderDopamineItems();
+  input.value = '';
+  input.focus();
+}
+
+function removeDopamineItem(i) {
+  dopamineItems.splice(i, 1);
+  localStorage.setItem('fb_dopamine', JSON.stringify(dopamineItems));
+  renderDopamineItems();
+}
+
+function openDopamineMenu() {
+  renderDopamineItems();
+  document.getElementById('dopamineModal').classList.add('show');
+  document.getElementById('dopamineInput').focus();
+}
+
+function closeDopamineMenu() {
+  document.getElementById('dopamineModal').classList.remove('show');
+}
+
+// ══════════════════════════════════════
+// ENERGY + MOOD TRACKER
+// ══════════════════════════════════════
+let energyLog = JSON.parse(localStorage.getItem('fb_energy') || '[]');
+
+function logEnergy(level) {
+  const entry = { time: Date.now(), level };
+  energyLog.push(entry);
+  // Keep only last 24 hours
+  energyLog = energyLog.filter(e => Date.now() - e.time < 86400000);
+  localStorage.setItem('fb_energy', JSON.stringify(energyLog));
+  updateEnergyChart();
+  document.getElementById('energyNow').textContent = level;
+}
+
+function updateEnergyChart() {
+  const chart = document.getElementById('energyChart');
+  chart.innerHTML = '';
+  
+  if (energyLog.length === 0) {
+    chart.innerHTML = '<div style="width: 100%; text-align: center; color: var(--text-muted); font-size: 11px;">Log energy to see chart</div>';
+    document.getElementById('energyAvg').textContent = '-';
+    return;
+  }
+  
+  const recent = energyLog.slice(-20);
+  const max = 5;
+  recent.forEach(e => {
+    const bar = document.createElement('div');
+    bar.className = 'energy-bar';
+    bar.style.height = (e.level / max * 90) + '%';
+    bar.title = `Level ${e.level} at ${new Date(e.time).toLocaleTimeString()}`;
+    chart.appendChild(bar);
+  });
+  
+  const avg = (energyLog.reduce((sum, e) => sum + e.level, 0) / energyLog.length).toFixed(1);
+  document.getElementById('energyAvg').textContent = avg;
+}
+
+// ══════════════════════════════════════
+// FIDGET TOOLS
+// ══════════════════════════════════════
+let fidgetSpinning = false;
+
+function startFidgetSpinner() {
+  const spinner = event.target.closest('.spinner');
+  if (spinner) {
+    spinner.style.animationDuration = (Math.random() * 0.5 + 0.5) + 's';
+    setTimeout(() => spinner.style.animationDuration = '1s', 500);
+  }
+}
+
+// Particle fidget canvas
+function initFidgetCanvas() {
+  const canvas = document.getElementById('fidgetCanvas');
+  if (!canvas) return;
+  
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    for (let i = 0; i < 10; i++) {
+      particles.push({
+        x, y,
+        vx: (Math.random() - 0.5) * 6,
+        vy: (Math.random() - 0.5) * 6 - 2,
+        life: 1,
+        color: `hsl(${Math.random() * 360}, 70%, 50%)`
+      });
+    }
+  });
+  
+  function animateParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(34, 197, 94, 0.1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    particles = particles.filter(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.2; // gravity
+      p.life -= 0.02;
+      
+      if (p.life > 0) {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        return true;
+      }
+      return false;
+    });
+    
+    if (particles.length > 0 || fidgetSpinning) {
+      requestAnimationFrame(animateParticles);
+    }
+  }
+  
+  animateParticles();
+}
+
+// ══════════════════════════════════════
+// MEDICATION REMINDER + LSD TIMER
+// ══════════════════════════════════════
+let medLastDose = null;
+let medInterval = null;
+
+function logMedication() {
+  const timeInput = document.getElementById('medTime');
+  const time = timeInput.value;
+  
+  if (!time) {
+    const now = new Date();
+    medLastDose = now;
+  } else {
+    const [h, m] = time.split(':');
+    const today = new Date();
+    medLastDose = new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(h), parseInt(m));
+  }
+  
+  localStorage.setItem('fb_med_dose', medLastDose.toISOString());
+  timeInput.value = '';
+  updateMedTimer();
+  
+  if (!medInterval) {
+    medInterval = setInterval(updateMedTimer, 1000);
+  }
+}
+
+function updateMedTimer() {
+  const status = document.getElementById('medStatus');
+  const timer = document.getElementById('medTimer');
+  
+  const saved = localStorage.getItem('fb_med_dose');
+  if (!saved) {
+    timer.textContent = '--:--';
+    status.textContent = 'No dose logged';
+    return;
+  }
+  
+  medLastDose = new Date(saved);
+  const elapsed = Date.now() - medLastDose.getTime();
+  const hours = Math.floor(elapsed / 3600000);
+  const mins = Math.floor((elapsed % 3600000) / 60000);
+  
+  timer.textContent = `${hours}:${String(mins).padStart(2, '0')}h`;
+  
+  if (hours >= 8) {
+    status.textContent = '⚠️ Time for next dose';
+    status.style.color = 'var(--danger)';
+  } else if (hours >= 6) {
+    status.textContent = '🟡 Consider next dose soon';
+    status.style.color = 'var(--warn)';
+  } else {
+    status.textContent = '✓ Dose still active';
+    status.style.color = 'var(--accent)';
+  }
+}
+
+// ══════════════════════════════════════
 // INIT
 // ══════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
@@ -2118,6 +2698,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('statTasks').textContent = stats[today].tasks || 0;
   }
   updateStreak(stats);
+
+  // Initialize new features
+  updateEnergyChart();
+  initFidgetCanvas();
+  updateMedTimer();
+  if (medInterval) clearInterval(medInterval);
+  medInterval = setInterval(updateMedTimer, 1000);
 
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
