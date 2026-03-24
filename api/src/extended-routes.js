@@ -53,7 +53,7 @@ router.get('/users/profile', async (request, env) => {
       `SELECT id, email, first_name, last_name, avatar_url, 
               subscription_tier, created_at, last_login
        FROM users 
-       WHERE id = ? AND is_active = 1`
+       WHERE id = ?`
     ).bind(userId).first();
     
     if (!user) {
@@ -418,31 +418,6 @@ router.post('/users/delete-account', async (request, env) => {
     return errorResponse(error.message, 500);
   }
 });
-
-// ────────────────────────────────────────────────────────────
-// Helper function imports (you'll need to import from middleware)
-// ────────────────────────────────────────────────────────────
-
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function verifyPassword(password, hash) {
-  const passwordHash = await hashPassword(password);
-  return passwordHash === hash;
-}
-
-function generateUUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-}
 
 // ── 404 FALLBACK ──
 router.all('*', () => errorResponse('Not found', 404));

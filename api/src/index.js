@@ -4,6 +4,7 @@
 // ════════════════════════════════════════════════════════════
 
 import { Router } from 'itty-router';
+import extendedRouter from './extended-routes.js';
 
 const router = Router();
 
@@ -22,8 +23,11 @@ async function initializeDatabase(env) {
         password_hash TEXT NOT NULL,
         first_name TEXT,
         last_name TEXT,
+        avatar_url TEXT,
+        subscription_tier TEXT DEFAULT 'free',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_login DATETIME,
         is_active INTEGER DEFAULT 1
       )`,
       `CREATE TABLE IF NOT EXISTS user_data_snapshots (
@@ -76,12 +80,29 @@ async function initializeDatabase(env) {
       `CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id)`
     ];
 
+    // Add missing columns to users table
+    const alterTableStatements = [
+      `ALTER TABLE users ADD COLUMN avatar_url TEXT`,
+      `ALTER TABLE users ADD COLUMN subscription_tier TEXT DEFAULT 'free'`,
+      `ALTER TABLE users ADD COLUMN last_login DATETIME`
+    ];
+
     for (const sql of createTableStatements) {
       try {
         await env.DB.prepare(sql).run();
       } catch (e) {
         // Log but don't fail - table might already exist
         console.log('Init note:', e.message);
+      }
+    }
+
+    // Try to add columns - will fail silently if they already exist
+    for (const sql of alterTableStatements) {
+      try {
+        await env.DB.prepare(sql).run();
+      } catch (e) {
+        // Ignore - column might already exist
+        console.log('Column already exists or other error:', e.message);
       }
     }
     
@@ -477,7 +498,18 @@ export default {
     // Initialize database on first request
     await initializeDatabase(env);
     
-    // Handle the request with the router
-    return router.handle(request, env);
+    // Try main router first
+    const response = await router.handle(request, env);
+    
+    // If main router returns 404 and the path might be for extended routes, try extended router
+    if (response.status === 404) {
+      const extendedResponse = await extendedRouter.handle(request, env);
+      if (extendedResponse.status !== 404) {
+        return extendedResponse;
+      }
+    }
+    
+    // Return response from main router or extended router
+    return response;
   }
 };

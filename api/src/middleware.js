@@ -208,3 +208,12 @@ export async function checkFeatureFlag(env, userId, feature) {
   const value = await env.KV_CACHE.get(key);
   return value === 'enabled';
 }
+
+// ── UTILITY: Generate UUID ──
+export function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
