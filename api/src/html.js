@@ -1,11 +1,10 @@
-
 export default `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FocusBro - Professional Focus Management</title>
-<meta name="description" content="ADHD-friendly enterprise focus management platform.">
+<title>FocusBro - ADHD-Friendly Focus & Wellness</title>
+<meta name="description" content="Professional focus management with breathing, grounding, and mental wellness tools.">
 <link rel="icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -22,85 +21,43 @@ export default `<!DOCTYPE html>
     --gray-700: #374151;
     --gray-800: #1f2937;
     --gray-900: #111827;
-    
     --primary: #1e40af;
     --primary-light: #3b82f6;
-    --primary-lighter: #60a5fa;
     --primary-dark: #1e3a8a;
     --primary-bg: #eff6ff;
-    
     --success: #059669;
     --success-bg: #ecfdf5;
     --warning: #d97706;
     --warning-bg: #fffbeb;
     --danger: #dc2626;
     --danger-bg: #fef2f2;
-    --info: #0891b2;
-    
     --font: 'Inter', sans-serif;
     --mono: 'IBM Plex Mono', monospace;
-    
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   html, body { height: 100%; overflow: hidden; }
-  body {
-    font-family: var(--font);
-    background: var(--white);
-    color: var(--gray-900);
-    line-height: 1.5;
-  }
-
-  /* LAYOUT */
+  body { font-family: var(--font); background: var(--white); color: var(--gray-900); line-height: 1.5; }
   .app { display: flex; height: 100vh; }
   .sidebar { width: 260px; background: var(--gray-900); color: var(--white); overflow-y: auto; display: flex; flex-direction: column; border-right: 1px solid var(--gray-800); }
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .header { background: var(--white); border-bottom: 1px solid var(--gray-200); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm); min-height: 64px; }
   .content { flex: 1; overflow-y: auto; padding: 24px 32px; background: var(--gray-50); }
-
-  /* SIDEBAR */
   .logo { padding: 20px 24px; border-bottom: 1px solid var(--gray-800); font-size: 16px; font-weight: 700; }
   .nav { flex: 1; padding: 16px 0; }
-  .nav-item {
-    padding: 12px 20px;
-    color: var(--gray-400);
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.2s;
-    border-left: 3px solid transparent;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
+  .nav-item { padding: 12px 20px; color: var(--gray-400); cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.2s; border-left: 3px solid transparent; display: flex; align-items: center; gap: 8px; }
   .nav-item:hover { background: var(--gray-800); color: var(--gray-300); }
   .nav-item.active { color: var(--primary-light); border-left-color: var(--primary-light); background: rgba(59, 130, 246, 0.1); }
+  .nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--gray-600); padding: 12px 20px; font-weight: 700; }
   .sidebar-footer { padding: 16px 24px; border-top: 1px solid var(--gray-800); }
-
-  /* HEADER */
   .header-title { font-size: 20px; font-weight: 600; }
-  .header-actions { display: flex; gap: 12px; }
+  .header-actions { display: flex; gap: 12px; align-items: center; }
   .user-badge { font-size: 12px; background: var(--primary-bg); color: var(--primary); padding: 6px 12px; border-radius: 6px; }
-
-  /* BUTTONS */
-  .btn {
-    padding: 10px 18px;
-    border: none;
-    border-radius: 6px;
-    font-family: var(--font);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
+  .keyboard-hint { font-size: 10px; color: var(--gray-400); background: var(--gray-100); padding: 4px 8px; border-radius: 4px; }
+  .btn { padding: 10px 18px; border: none; border-radius: 6px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
   .btn-primary { background: var(--primary); color: var(--white); }
   .btn-primary:hover { background: var(--primary-dark); box-shadow: var(--shadow); }
   .btn-secondary { background: var(--gray-200); color: var(--gray-900); }
@@ -109,79 +66,49 @@ export default `<!DOCTYPE html>
   .btn-success:hover { background: #0d9488; }
   .btn-lg { padding: 14px 24px; font-size: 14px; }
   .btn-block { width: 100%; justify-content: center; }
-
-  /* GRID & CARDS */
+  .btn-sm { padding: 6px 12px; font-size: 11px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
-  .card {
-    background: var(--white);
-    border: 1px solid var(--gray-200);
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: var(--shadow);
-    transition: all 0.2s;
-    position: relative;
-  }
+  .card { background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; padding: 20px; box-shadow: var(--shadow); transition: all 0.2s; }
   .card:hover { border-color: var(--gray-300); box-shadow: var(--shadow-md); }
   .card-header { font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 12px; }
   .card-value { font-size: 32px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; font-family: var(--mono); }
   .card-subtext { font-size: 12px; color: var(--gray-500); }
-  .card-action { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gray-100); }
-
-  /* PANELS */
-  .panel {
-    background: var(--white);
-    border: 1px solid var(--gray-200);
-    border-radius: 8px;
-    box-shadow: var(--shadow);
-    margin-bottom: 20px;
-  }
-  .panel-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--gray-100);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
+  .panel { background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 20px; }
+  .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center; }
   .panel-title { font-size: 14px; font-weight: 700; }
   .panel-body { padding: 20px; }
-
-  /* TIMER - ADHD FRIENDLY */
-  .timer-section {
-    background: var(--primary-bg);
-    border: 2px solid var(--primary);
-    border-radius: 12px;
-    padding: 32px;
-    text-align: center;
-    margin-bottom: 24px;
-  }
-  .timer-label { font-size: 12px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-  .timer-display {
-    font-family: var(--mono);
-    font-size: 56px;
-    font-weight: 700;
-    color: var(--primary);
-    margin: 16px 0;
-    line-height: 1;
-  }
-  .timer-status { font-size: 13px; font-weight: 600; color: var(--gray-700); margin-bottom: 16px; }
-  .timer-buttons { display: flex; gap: 12px; justify-content: center; }
-
-  /* STATUS BADGES */
-  .badge {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-  }
-  .badge-success { background: var(--success-bg); color: var(--success); }
-  .badge-warning { background: var(--warning-bg); color: var(--warning); }
-  .badge-danger { background: var(--danger-bg); color: var(--danger); }
-  .badge-info { background: var(--primary-bg); color: var(--primary); }
-
-  /* MODALS */
+  .breathing-circle { width: 180px; height: 180px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-light), var(--primary)); margin: 30px auto; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: var(--white); animation: breathe-scale 8s ease-in-out infinite; box-shadow: var(--shadow-lg); }
+  .breathing-circle.box-breath { animation: box-breath-scale 16s ease-in-out infinite; }
+  .breathing-circle.tactical { animation: tactical-breath-scale 8s ease-in-out infinite; }
+  @keyframes breathe-scale { 0%, 100% { transform: scale(1); } 25% { transform: scale(1.2); } 50% { transform: scale(1.3); } 75% { transform: scale(1.1); } }
+  @keyframes box-breath-scale { 0%, 100% { transform: scale(1); } 25% { transform: scale(1.2); } 50% { transform: scale(1.2); } 75% { transform: scale(1); } }
+  @keyframes tactical-breath-scale { 0%, 100% { transform: scale(1); } 12.5% { transform: scale(1.15); } 25% { transform: scale(1.15); } 37.5% { transform: scale(1); } }
+  .breathing-text { font-size: 13px; color: var(--gray-600); text-align: center; margin-top: 16px; }
+  .grounding-section { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 20px 0; }
+  .grounding-item { padding: 16px; background: var(--gray-50); border: 2px solid var(--gray-200); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s; }
+  .grounding-item:hover { border-color: var(--primary); background: var(--primary-bg); }
+  .grounding-item.completed { border-color: var(--success); background: var(--success-bg); }
+  .grounding-number { font-size: 24px; font-weight: 700; color: var(--primary); display: block; margin-bottom: 4px; }
+  .grounding-label { font-size: 11px; color: var(--gray-600); font-weight: 600; }
+  .body-scan-display { font-family: var(--mono); font-size: 12px; line-height: 1.8; color: var(--gray-700); margin: 16px 0; background: var(--gray-50); padding: 16px; border-radius: 6px; }
+  .energy-slider { width: 100%; margin: 16px 0; }
+  .slider-track { display: flex; gap: 8px; margin: 16px 0; }
+  .slider-item { flex: 1; padding: 12px; text-align: center; border: 2px solid var(--gray-200); border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s; }
+  .slider-item:hover { border-color: var(--primary); }
+  .slider-item.active { border-color: var(--primary); background: var(--primary-bg); }
+  .dopamine-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
+  .dopamine-item { padding: 12px; background: linear-gradient(135deg, #f59e0b, #f97316); color: var(--white); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s; font-weight: 600; font-size: 12px; box-shadow: var(--shadow); }
+  .dopamine-item:hover { transform: scale(1.05); box-shadow: var(--shadow-lg); }
+  .fidget-spinner { width: 120px; height: 120px; margin: 30px auto; border-radius: 50%; background: conic-gradient(from 45deg, #3b82f6, #8b5cf6, #3b82f6); animation: spin 2s linear infinite; box-shadow: var(--shadow-lg); }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+  .particle-canvas { width: 100%; height: 300px; background: linear-gradient(135deg, #1e40af15, #8b5cf615); border-radius: 8px; border: 1px solid var(--gray-200); }
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-700); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .form-input, .form-textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-family: var(--font); font-size: 13px; color: var(--gray-900); background: var(--white); }
+  .form-input:focus, .form-textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1); }
+  .table { width: 100%; font-size: 12px; }
+  .table th { padding: 12px 0; text-align: left; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.3px; font-size: 10px; border-bottom: 1px solid var(--gray-200); }
+  .table td { padding: 12px 0; border-bottom: 1px solid var(--gray-100); color: var(--gray-700); }
   .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
   .modal.active { display: flex; }
   .modal-content { background: var(--white); border-radius: 8px; box-shadow: var(--shadow-lg); width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
@@ -190,227 +117,313 @@ export default `<!DOCTYPE html>
   .close-btn { background: none; border: none; font-size: 24px; color: var(--gray-500); cursor: pointer; }
   .modal-body { padding: 20px; }
   .modal-footer { padding: 16px 20px; border-top: 1px solid var(--gray-200); display: flex; gap: 8px; justify-content: flex-end; }
-
-  /* FORMS */
-  .form-group { margin-bottom: 16px; }
-  .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-700); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
-  .form-input, .form-textarea {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--gray-300);
-    border-radius: 6px;
-    font-family: var(--font);
-    font-size: 13px;
-    color: var(--gray-900);
-    background: var(--white);
-  }
-  .form-input:focus, .form-textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1); }
-
-  /* TABLES */
-  .table {
-    width: 100%;
-    font-size: 12px;
-  }
-  .table thead { border-bottom: 1px solid var(--gray-200); }
-  .table th {
-    padding: 12px 0;
-    text-align: left;
-    font-weight: 700;
-    color: var(--gray-600);
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    font-size: 10px;
-  }
-  .table td {
-    padding: 12px 0;
-    border-bottom: 1px solid var(--gray-100);
-    color: var(--gray-700);
-  }
-  .table tr:last-child td { border-bottom: none; }
-
-  /* FEATURE SHOWCASE (LANDING) */
-  .landing-hero {
-    background: gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-    color: var(--white);
-    padding: 60px 32px;
-    text-align: center;
-  }
-  .landing-title { font-size: 36px; font-weight: 700; margin-bottom: 16px; }
-  .landing-subtitle { font-size: 16px; opacity: 0.9; margin-bottom: 24px; }
-  .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px; padding: 0 32px; }
-  .feature-card {
-    background: var(--white);
-    border: 1px solid var(--gray-200);
-    border-radius: 8px;
-    padding: 24px;
-    text-align: center;
-    box-shadow: var(--shadow);
-  }
-  .feature-icon { font-size: 28px; margin-bottom: 12px; }
-  .feature-name { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
-  .feature-desc { font-size: 12px; color: var(--gray-600); }
-
-  /* WIDGET CUSTOMIZATION */
-  .widget-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
-  .widget { padding: 16px; border: 2px dashed var(--gray-300); border-radius: 8px; cursor: move; opacity: 0.7; }
-  .widget.active { border-color: var(--primary); opacity: 1; background: var(--primary-bg); }
-
+  .mini-chart { width: 100%; height: 80px; background: linear-gradient(to right, var(--primary-bg), var(--success-bg)); border-radius: 6px; }
   @media (max-width: 768px) {
     .app { flex-direction: column; }
     .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; }
     .nav { display: flex; padding: 0; margin: 0 auto; }
     .nav-item { padding: 8px 16px; border-left: none; border-bottom: 3px solid transparent; }
     .nav-item.active { border-left: none; border-bottom-color: var(--primary-light); }
-    .grid { grid-template-columns: 1fr; }
-    .content { padding: 16px; }
+    .grounding-section { grid-template-columns: repeat(2, 1fr); }
+    .dopamine-list { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 </head>
 <body>
 
 <div class="app">
-  <!-- SIDEBAR NAVIGATION -->
   <div class="sidebar">
-    <div class="logo" id="sidebarLogo">FocusBro</div>
+    <div class="logo">FocusBro</div>
     <nav class="nav" id="appNav" style="display:none;">
+      <div class="nav-label">Focus</div>
       <div class="nav-item active" onclick="switchView('dashboard')">Dashboard</div>
-      <div class="nav-item" onclick="switchView('pomodoro')">Pomodoro</div>
+      <div class="nav-item" onclick="switchView('pomodoro')">Pomodoro (P)</div>
+      <div class="nav-item" onclick="switchView('task-difficulty')">Task Difficulty</div>
+      <div class="nav-label">Wellness</div>
+      <div class="nav-item" onclick="switchView('breathing')">Breathing (B)</div>
+      <div class="nav-item" onclick="switchView('grounding')">Grounding (G)</div>
+      <div class="nav-item" onclick="switchView('body-scan')">Body Scan</div>
+      <div class="nav-item" onclick="switchView('meditation')">Meditation</div>
+      <div class="nav-label">Energy</div>
+      <div class="nav-item" onclick="switchView('energy')">Mood/Energy</div>
+      <div class="nav-item" onclick="switchView('dopamine-menu')">Dopamine Menu</div>
+      <div class="nav-item" onclick="switchView('fidget')">Fidget Tools</div>
+      <div class="nav-label">Health</div>
       <div class="nav-item" onclick="switchView('medication')">Medication</div>
-      <div class="nav-item" onclick="switchView('focus')">Focus Time</div>
-      <div class="nav-item" onclick="switchView('sessions')">Sessions</div>
-      <div class="nav-item" onclick="switchView('devices')">Devices</div>
-      <div class="nav-item" onclick="switchView('customize')">Customize</div>
+      <div class="nav-item" onclick="switchView('movement')">Movement Breaks</div>
+      <div class="nav-label">Account</div>
+      <div class="nav-item" onclick="switchView('settings')">Settings</div>
     </nav>
-    <div class="sidebar-footer" id="sidebarFooter">
-      <button class="btn btn-primary btn-block" id="authBtn" onclick="openModal('authModal')">Sign In</button>
+    <div class="sidebar-footer">
+      <button class="btn btn-primary btn-block" id="authBtn" onclick="openModal('authModal')" style="display:block;">Sign In</button>
+      <button class="btn btn-secondary btn-block" id="logoutBtn" onclick="logout()" style="display:none; margin-top: 8px;">Logout</button>
     </div>
   </div>
 
-  <!-- MAIN CONTENT -->
   <div class="main">
     <div class="header">
       <div class="header-title" id="viewTitle">FocusBro</div>
       <div class="header-actions">
         <span id="userDisplay" style="display:none;" class="user-badge">Logged in</span>
-        <button class="btn btn-secondary" id="logoutBtn" style="display:none;" onclick="logout()">Logout</button>
+        <span class="keyboard-hint" id="keyboardHint" style="display:none;">Press ? for help</span>
       </div>
     </div>
 
     <div class="content" id="mainContent">
-      <!-- LANDING PAGE -->
-      <div id="landing-view" class="view">
-        <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: var(--white); padding: 60px 32px; text-align: center; border-radius: 12px; margin-bottom: 32px;">
-          <h1 style="font-size: 36px; margin-bottom: 16px;">FocusBro</h1>
-          <p style="font-size: 16px; opacity: 0.95;">ADHD-friendly focus management for the workplace</p>
-          <button class="btn btn-lg" style="background: var(--white); color: var(--primary); margin-top: 24px;" onclick="openModal('authModal')">Get Started</button>
-        </div>
-
-        <div class="features-grid">
-          <div class="feature-card">
-            <div style="font-size: 28px; margin-bottom: 12px;">⏱</div>
-            <div class="feature-name">Pomodoro Timer</div>
-            <div class="feature-desc">Focus intervals with break reminders to maintain productivity</div>
-          </div>
-          <div class="feature-card">
-            <div style="font-size: 28px; margin-bottom: 12px;">💊</div>
-            <div class="feature-name">Medication Tracker</div>
-            <div class="feature-desc">Track medication timing for consistent focus management</div>
-          </div>
-          <div class="feature-card">
-            <div style="font-size: 28px; margin-bottom: 12px;">⏰</div>
-            <div class="feature-name">Focus Analytics</div>
-            <div class="feature-desc">Track productive hours and identify your peak focus times</div>
-          </div>
-          <div class="feature-card">
-            <div style="font-size: 28px; margin-bottom: 12px;">🖥</div>
-            <div class="feature-name">Device Sync</div>
-            <div class="feature-desc">Sync data across all your devices seamlessly</div>
-          </div>
-          <div class="feature-card">
-            <div style="font-size: 28px; margin-bottom: 12px;">⚙</div>
-            <div class="feature-name">Custom Dashboard</div>
-            <div class="feature-desc">Arrange widgets to suit your workflow and preferences</div>
-          </div>
-          <div class="feature-card">
-            <div style="font-size: 28px; margin-bottom: 12px;">📊</div>
-            <div class="feature-name">Session Tracking</div>
-            <div class="feature-desc">Monitor all your work sessions in real time</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- DASHBOARD VIEW -->
-      <div id="dashboard-view" class="view" style="display:none;">
+      <!-- DASHBOARD -->
+      <div id="dashboard-view" class="view">
         <div class="grid">
           <div class="card">
-            <div class="card-header">Active Focus</div>
-            <div class="card-value" id="focusHours">0h</div>
-            <div class="card-subtext">Today's focus time</div>
+            <div class="card-header">Energy Level</div>
+            <div class="card-value" id="currentEnergy">--</div>
+            <div class="card-subtext">1-10 scale</div>
           </div>
           <div class="card">
-            <div class="card-header">Current Session</div>
-            <div class="card-value" id="sessionTime">00:00</div>
-            <div class="card-subtext">Active right now</div>
-          </div>
-          <div class="card">
-            <div class="card-header">Medication Status</div>
-            <div id="medDisplay" class="card-value" style="font-size: 24px; color: var(--success);">--:--</div>
+            <div class="card-header">Last Med Dose</div>
+            <div class="card-value" id="medDisplay">--:--</div>
             <div class="card-subtext" id="medStatus">No dose logged</div>
           </div>
           <div class="card">
-            <div class="card-header">Devices Connected</div>
-            <div class="card-value" id="deviceCount">0</div>
-            <div class="card-subtext">Synced devices</div>
+            <div class="card-header">Today's Sessions</div>
+            <div class="card-value" id="sessionCount">0</div>
+            <div class="card-subtext">Pomodoro cycles</div>
           </div>
         </div>
-
         <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">Quick Actions</div>
-          </div>
+          <div class="panel-header"><div class="panel-title">Quick Access</div></div>
           <div class="panel-body">
-            <button class="btn btn-success btn-lg btn-block" onclick="switchView('pomodoro')">Start Pomodoro Session</button>
-            <button class="btn btn-primary btn-lg btn-block" style="margin-top: 8px;" onclick="switchView('focus')">View Focus Metrics</button>
-            <button class="btn btn-secondary btn-lg btn-block" style="margin-top: 8px;" onclick="switchView('medication')">Log Medication</button>
+            <button class="btn btn-success btn-lg btn-block" onclick="switchView('pomodoro')">Start Pomodoro</button>
+            <button class="btn btn-primary btn-lg btn-block" style="margin-top: 8px;" onclick="switchView('breathing')">Breathing Exercise</button>
+            <button class="btn btn-secondary btn-lg btn-block" style="margin-top: 8px;" onclick="switchView('grounding')">Grounding (5-4-3-2-1)</button>
           </div>
         </div>
       </div>
 
-      <!-- POMODORO VIEW -->
+      <!-- POMODORO -->
       <div id="pomodoro-view" class="view" style="display:none;">
-        <div class="timer-section">
-          <div class="timer-label">Pomodoro Timer</div>
-          <div class="timer-display" id="pomodoroDisplay">25:00</div>
-          <div class="timer-status" id="pomodoroStatus">Ready to start</div>
-          <div class="timer-buttons">
+        <div style="background: var(--primary-bg); border: 2px solid var(--primary); border-radius: 12px; padding: 32px; text-align: center; margin-bottom: 24px;">
+          <div style="font-size: 12px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Pomodoro Timer</div>
+          <div style="font-family: var(--mono); font-size: 56px; font-weight: 700; color: var(--primary); margin: 16px 0; line-height: 1;" id="pomodoroDisplay">25:00</div>
+          <div style="font-size: 13px; font-weight: 600; color: var(--gray-700); margin-bottom: 16px;" id="pomodoroStatus">Ready to start</div>
+          <div style="display: flex; gap: 12px; justify-content: center;">
             <button class="btn btn-success" id="pomodoroStart" onclick="startPomodoro()">Start</button>
             <button class="btn btn-secondary" id="pomodoroStop" onclick="stopPomodoro()" style="display:none;">Stop</button>
           </div>
         </div>
+        <div class="form-group">
+          <label class="form-label">Log energy level (1-10)</label>
+          <input type="range" min="1" max="10" id="pomodoroEnergy" style="width: 100%; cursor: pointer;">
+          <div style="text-align: center; font-size: 12px; color: var(--gray-600); margin-top: 4px;" id="energyDisplay">5</div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="recordPomodoroSession()">Log This Session</button>
+      </div>
 
+      <!-- BREATHING -->
+      <div id="breathing-view" class="view" style="display:none;">
         <div class="panel">
-          <div class="panel-header"><div class="panel-title">Session Settings</div></div>
+          <div class="panel-header"><div class="panel-title">Breathing Exercises</div></div>
           <div class="panel-body">
-            <div class="form-group">
-              <label class="form-label">Focus Duration (minutes)</label>
-              <input type="number" id="focusDuration" class="form-input" value="25" min="5" max="120">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px;">
+              <button class="btn btn-primary" onclick="startBreathing('4-7-8')">4-7-8</button>
+              <button class="btn btn-primary" onclick="startBreathing('box')">Box</button>
+              <button class="btn btn-primary" onclick="startBreathing('tactical')">Tactical</button>
             </div>
-            <div class="form-group">
-              <label class="form-label">Break Duration (minutes)</label>
-              <input type="number" id="breakDuration" class="form-input" value="5" min="1" max="30">
+            <div id="breathing-display" style="display:none;">
+              <div class="breathing-circle" id="breathingCircle">Inhale</div>
+              <div class="breathing-text" id="breathingText">4 seconds</div>
+              <button class="btn btn-secondary btn-block" onclick="stopBreathing()">Stop</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- MEDICATION VIEW -->
+      <!-- GROUNDING -->
+      <div id="grounding-view" class="view" style="display:none;">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">5-4-3-2-1 Grounding</div></div>
+          <div class="panel-body">
+            <p style="font-size: 12px; color: var(--gray-600); margin-bottom: 16px;">Notice and click each item:</p>
+            <div style="margin-bottom: 20px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; margin-bottom: 8px;">5 Things You See</div>
+              <div class="grounding-section" id="groundingSee"></div>
+            </div>
+            <div style="margin-bottom: 20px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; margin-bottom: 8px;">4 Things You Touch</div>
+              <div class="grounding-section" id="groundingTouch"></div>
+            </div>
+            <div style="margin-bottom: 20px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; margin-bottom: 8px;">3 Things You Hear</div>
+              <div class="grounding-section" id="groundingHear"></div>
+            </div>
+            <div style="margin-bottom: 20px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; margin-bottom: 8px;">2 Things You Smell</div>
+              <div class="grounding-section" id="groundingSmell"></div>
+            </div>
+            <div style="margin-bottom: 20px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; margin-bottom: 8px;">1 Thing You Taste</div>
+              <div class="grounding-section" id="groundingTaste"></div>
+            </div>
+            <div id="groundingComplete" style="display:none; text-align: center; padding: 20px; background: var(--success-bg); border-radius: 8px; color: var(--success);">
+              <div style="font-weight: 700;">Grounding complete! You're anchored.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BODY SCAN -->
+      <div id="body-scan-view" class="view" style="display:none;">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Quick Body Scan (60-90 sec)</div></div>
+          <div class="panel-body">
+            <div style="text-align: center; margin: 20px 0;">
+              <button class="btn btn-success btn-lg" onclick="startBodyScan()">Start Scan</button>
+              <button class="btn btn-secondary btn-lg" id="bodyScanStop" onclick="stopBodyScan()" style="display:none;">Stop</button>
+            </div>
+            <div id="bodyScanDisplay" class="body-scan-display" style="display:none;"></div>
+            <div style="background: var(--primary-bg); border: 1px solid var(--primary); border-radius: 8px; padding: 16px; margin-top: 16px;">
+              <div style="font-size: 12px; color: var(--gray-700);">Check:
+                <br>• Posture - Shoulders back?
+                <br>• Shoulders - Tense or relaxed?
+                <br>• Jaw - Clenched or loose?
+                <br>• Back - Pain or stiffness?
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEDITATION -->
+      <div id="meditation-view" class="view" style="display:none;">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Micro-Meditation Timer</div></div>
+          <div class="panel-body">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+              <button class="btn btn-primary btn-block" onclick="startMeditation(1)">1 min</button>
+              <button class="btn btn-primary btn-block" onclick="startMeditation(3)">3 min</button>
+              <button class="btn btn-primary btn-block" onclick="startMeditation(5)">5 min</button>
+              <button class="btn btn-primary btn-block" onclick="startMeditation(10)">10 min</button>
+            </div>
+            <div id="meditationDisplay" style="display:none; text-align: center;">
+              <div style="font-family: var(--mono); font-size: 48px; font-weight: 700; color: var(--primary); margin: 20px 0;" id="meditationTimer">5:00</div>
+              <button class="btn btn-secondary" onclick="stopMeditation()">Stop</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ENERGY -->
+      <div id="energy-view" class="view" style="display:none;">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Energy & Mood Tracker</div></div>
+          <div class="panel-body">
+            <div class="form-group">
+              <label class="form-label">Current Energy Level (1-10)</label>
+              <input type="range" min="1" max="10" class="energy-slider" id="energyLevel" oninput="updateEnergyDisplay()">
+              <div style="text-align: center; font-size: 32px; font-weight: 700; color: var(--primary);" id="energyValue">5</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mood</label>
+              <div class="slider-track">
+                <div class="slider-item" onclick="setMood('stressed')">Stressed</div>
+                <div class="slider-item" onclick="setMood('neutral')">Neutral</div>
+                <div class="slider-item" onclick="setMood('good')">Good</div>
+                <div class="slider-item" onclick="setMood('great')">Great</div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-lg btn-block" onclick="saveEnergyLog()">Save Log</button>
+            <div style="margin-top: 20px; padding: 16px; background: var(--gray-50); border-radius: 8px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; margin-bottom: 12px;">Energy History</div>
+              <div class="mini-chart" style="opacity: 0.5;"></div>
+              <div style="font-size: 12px; color: var(--gray-600); margin-top: 8px; text-align: center;">Log sessions to see trends</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOPAMINE MENU -->
+      <div id="dopamine-menu-view" class="view" style="display:none;">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Dopamine Menu - Quick Breaks</div></panel-header>
+          <div class="panel-body">
+            <p style="font-size: 12px; color: var(--gray-600); margin-bottom: 16px;">Click for a quick dopamine hit during breaks:</p>
+            <div class="dopamine-list" id="dopamineList"></div>
+            <div style="margin-top: 20px; padding: 16px; background: var(--warning-bg); border-radius: 8px;">
+              <div style="font-weight: 700; margin-bottom: 8px; color: var(--warning);">Avoid During Focus</div>
+              <ul style="font-size: 12px; color: var(--gray-700); margin-left: 20px;">
+                <li>Phone/social media</li>
+                <li>News/emails</li>
+                <li>YouTube/streaming</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TASK DIFFICULTY -->
+      <div id="task-difficulty-view" class="view" style="display:none;">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Task Difficulty vs Interest</div></div>
+          <div class="panel-body">
+            <p style="font-size: 12px; color: var(--gray-600); margin-bottom: 16px;">Rate your task to decide if it's a good fit:</p>
+            <div class="form-group">
+              <label class="form-label">Difficulty (1-10)</label>
+              <input type="range" min="1" max="10" id="taskDifficulty" oninput="updateTaskGrid()" style="width: 100%;">
+              <div style="text-align: center; font-size: 12px; color: var(--gray-600);" id="difficultyValue">5</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Interest Level (1-10)</label>
+              <input type="range" min="1" max="10" id="taskInterest" oninput="updateTaskGrid()" style="width: 100%;">
+              <div style="text-align: center; font-size: 12px; color: var(--gray-600);" id="interestValue">5</div>
+            </div>
+            <div style="background: var(--primary-bg); border: 1px solid var(--primary); border-radius: 8px; padding: 16px; margin-top: 16px; text-align: center;">
+              <div style="font-size: 12px; color: var(--gray-700);" id="taskAdvice">Choose a balanced task</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FIDGET TOOLS -->
+      <div id="fidget-view" class="view" style="display:none;">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Visual Fidget Tools</div></div>
+          <div class="panel-body">
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+              <button class="btn btn-primary btn-block" onclick="showFidget('spinner')">Spinner</button>
+              <button class="btn btn-primary btn-block" onclick="showFidget('colors')">Colors</button>
+              <button class="btn btn-primary btn-block" onclick="showFidget('particles')">Particles</button>
+            </div>
+            <div id="fidgetDisplay" style="display:none;">
+              <div class="fidget-spinner" id="fidgetSpinner" style="display:none;"></div>
+              <div id="colorCycle" style="display:none; width: 200px; height: 200px; margin: 30px auto; border-radius: 50%; background: #3b82f6; animation: color-cycle 6s linear infinite; box-shadow: var(--shadow-lg);"></div>
+              <canvas id="particleCanvas" class="particle-canvas" style="display:none;"></canvas>
+              <style>@keyframes color-cycle { 0% { background: #3b82f6; } 25% { background: #8b5cf6; } 50% { background: #ec4899; } 75% { background: #f59e0b; } 100% { background: #3b82f6; } }</style>
+              <button class="btn btn-secondary btn-block" onclick="hideFidget()">Done</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOVEMENT -->
+      <div id="movement-view" class="view" style="display:none;">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Movement Breaks</div></div>
+          <div class="panel-body">
+            <button class="btn btn-success btn-lg btn-block" onclick="showMovement()">Get Suggestions</button>
+            <div id="movementDisplay" style="display:none; margin-top: 20px;">
+              <div style="font-size: 12px; color: var(--gray-700); line-height: 1.8; font-family: var(--mono); white-space: pre-wrap;" id="movementSuggestion"></div>
+              <button class="btn btn-primary btn-block" style="margin-top: 12px;" onclick="showMovement()">Another Suggestion</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEDICATION -->
       <div id="medication-view" class="view" style="display:none;">
         <div class="card">
           <div class="card-header">Hours Since Last Dose</div>
           <div class="card-value" id="medHours">--:--</div>
           <div class="card-subtext" id="medText">No dose logged</div>
         </div>
-
         <div class="panel">
           <div class="panel-header"><div class="panel-title">Log Medication</div></div>
           <div class="panel-body">
@@ -423,88 +436,20 @@ export default `<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- FOCUS TIME VIEW -->
-      <div id="focus-view" class="view" style="display:none;">
-        <div class="grid">
-          <div class="card">
-            <div class="card-header">Weekly Focus</div>
-            <div class="card-value">24h 35m</div>
-            <div class="card-subtext">Total focus time</div>
-          </div>
-          <div class="card">
-            <div class="card-header">Peak Hours</div>
-            <div class="card-value">9-11 AM</div>
-            <div class="card-subtext">Most productive time</div>
-          </div>
-          <div class="card">
-            <div class="card-header">Sessions</div>
-            <div class="card-value">18</div>
-            <div class="card-subtext">This week</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SESSIONS VIEW -->
-      <div id="sessions-view" class="view" style="display:none;">
+      <!-- SETTINGS -->
+      <div id="settings-view" class="view" style="display:none;">
         <div class="panel">
-          <div class="panel-header"><div class="panel-title">Recent Sessions</div></div>
+          <div class="panel-header"><div class="panel-title">Settings</div></div>
           <div class="panel-body">
-            <table class="table">
-              <thead>
-                <tr><th>Device</th><th>Start Time</th><th>Duration</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="4" style="text-align:center; padding: 20px;">No sessions yet. Start by logging in!</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- DEVICES VIEW -->
-      <div id="devices-view" class="view" style="display:none;">
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">Connected Devices</div></div>
-          <div class="panel-body">
-            <table class="table">
-              <thead>
-                <tr><th>Device Name</th><th>Last Seen</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                <tr><td colspan="3" style="text-align:center; padding: 20px;">No devices connected</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- CUSTOMIZE VIEW -->
-      <div id="customize-view" class="view" style="display:none;">
-        <div class="panel">
-          <div class="panel-header"><div class="panel-title">Customize Your Dashboard</div></div>
-          <div class="panel-body">
-            <p style="margin-bottom: 16px; font-size: 13px;">Select which widgets you want on your dashboard:</p>
-            <div class="widget-grid" id="widgetSelector">
-              <div class="widget">
-                <input type="checkbox" id="w-focus" checked><label for="w-focus">Focus Time Card</label>
-              </div>
-              <div class="widget">
-                <input type="checkbox" id="w-session" checked><label for="w-session">Current Session</label>
-              </div>
-              <div class="widget">
-                <input type="checkbox" id="w-med" checked><label for="w-med">Medication Tracker</label>
-              </div>
-              <div class="widget">
-                <input type="checkbox" id="w-devices" checked><label for="w-devices">Devices</label>
-              </div>
-              <div class="widget">
-                <input type="checkbox" id="w-pomodoro"><label for="w-pomodoro">Pomodoro Widget</label>
-              </div>
-              <div class="widget">
-                <input type="checkbox" id="w-focus-metrics"><label for="w-focus-metrics">Focus Analytics</label>
-              </div>
+            <div class="form-group">
+              <label class="form-label">Default Pomodoro Duration (minutes)</label>
+              <input type="number" id="defaultPomodoro" class="form-input" value="25" min="5">
             </div>
-            <button class="btn btn-primary btn-lg btn-block" style="margin-top: 16px;" onclick="saveCustomization()">Save Customization</button>
+            <div class="form-group">
+              <label class="form-label">Break Duration (minutes)</label>
+              <input type="number" id="defaultBreak" class="form-input" value="5" min="1">
+            </div>
+            <button class="btn btn-primary btn-block" onclick="saveSettings()">Save Settings</button>
           </div>
         </div>
       </div>
@@ -516,47 +461,19 @@ export default `<!DOCTYPE html>
 <div id="authModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
-      <div class="modal-title" id="authTitle">Sign In</div>
+      <div class="modal-title">Sign In</div>
       <button class="close-btn" onclick="closeModal('authModal')">&times;</button>
     </div>
     <div class="modal-body">
-      <div id="signInForm">
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" id="email" class="form-input" placeholder="you@example.com">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <input type="password" id="password" class="form-input" placeholder="••••••••">
-        </div>
-        <button class="btn btn-primary btn-lg btn-block" onclick="handleSignIn()">Sign In</button>
-        <p style="text-align: center; margin-top: 12px; font-size: 12px;">
-          Don't have an account? <a href="#" onclick="toggleAuthForm(); return false;" style="color: var(--primary); text-decoration: none;">Sign Up</a>
-        </p>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="email" class="form-input" placeholder="you@example.com">
       </div>
-
-      <div id="signUpForm" style="display:none;">
-        <div class="form-group">
-          <label class="form-label">Name</label>
-          <input type="text" id="name" class="form-input" placeholder="Your name">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input type="email" id="signupEmail" class="form-input" placeholder="you@example.com">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
-          <input type="password" id="signupPassword" class="form-input" placeholder="••••••••">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Confirm Password</label>
-          <input type="password" id="confirmPassword" class="form-input" placeholder="••••••••">
-        </div>
-        <button class="btn btn-primary btn-lg btn-block" onclick="handleSignUp()">Create Account</button>
-        <p style="text-align: center; margin-top: 12px; font-size: 12px;">
-          Already have an account? <a href="#" onclick="toggleAuthForm(); return false;" style="color: var(--primary); text-decoration: none;">Sign In</a>
-        </p>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="password" class="form-input" placeholder="••••••••">
       </div>
+      <button class="btn btn-primary btn-lg btn-block" onclick="handleSignIn()">Sign In</button>
     </div>
   </div>
 </div>
@@ -565,37 +482,16 @@ export default `<!DOCTYPE html>
   let user = null;
   let pomodoroTimer = null;
   let pomodoroTime = 25 * 60;
-  let isPomodoro = true;
-  let medLastDose = null;
+  let sessionCount = 0;
+  let energyLogs = [];
   let medInterval = null;
-
-  function toggleAuthForm() {
-    document.getElementById('signInForm').style.display = document.getElementById('signInForm').style.display === 'none' ? 'block' : 'none';
-    document.getElementById('signUpForm').style.display = document.getElementById('signUpForm').style.display === 'none' ? 'block' : 'none';
-    document.getElementById('authTitle').textContent = document.getElementById('signInForm').style.display === 'none' ? 'Sign Up' : 'Sign In';
-  }
+  let dopamineMenu = ['Stretch 30s', 'Cold water face', 'Dance to 1 song', 'Pet cat', 'Glass of water', 'Stand & breathe', 'Quick walk', 'Shake it out'];
+  const movements = ['Cat Stretch\\nBack on floor, pull knees toward chest,\\narched, hold 15 seconds', 'Standing Desk Stretch\\nHands behind head, lean back gently,\\nroll shoulders, 20 seconds', 'Forward Fold\\nFeet shoulder-width, fold from hips,\\nlet arms hang, 20 seconds', 'Quad Stretch\\nPull one leg toward glutes, hold 15s each', 'Neck Rolls\\nSlow circles: forward, right, back, left\\nRepeat 3 times'];
 
   function handleSignIn() {
     const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    if (!email || !password) { alert('Please fill in all fields'); return; }
-    
+    if (!email) { alert('Enter email'); return; }
     user = { email, name: email.split('@')[0] };
-    localStorage.setItem('fbUser', JSON.stringify(user));
-    closeModal('authModal');
-    updateUI();
-  }
-
-  function handleSignUp() {
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('signupEmail').value;
-    const password = document.getElementById('signupPassword').value;
-    const confirm = document.getElementById('confirmPassword').value;
-    
-    if (!name || !email || !password || !confirm) { alert('Please fill in all fields'); return; }
-    if (password !== confirm) { alert('Passwords do not match'); return; }
-    
-    user = { email, name };
     localStorage.setItem('fbUser', JSON.stringify(user));
     closeModal('authModal');
     updateUI();
@@ -611,128 +507,216 @@ export default `<!DOCTYPE html>
   function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
   function switchView(view) {
-    if (!user && view !== 'landing') {
+    if (!user) {
       openModal('authModal');
       return;
     }
-    
     document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-    document.getElementById(view + '-view').style.display = 'block';
+    document.getElementById(view + '-view') && (document.getElementById(view + '-view').style.display = 'block');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     event?.target?.classList.add('active');
   }
 
-  function startPomodoro() {
-    const duration = parseInt(document.getElementById('focusDuration').value) * 60;
-    pomodoroTime = duration;
-    isPomodoro = true;
+  // Breathing
+  function startBreathing(type) {
+    document.getElementById('breathing-display').style.display = 'block';
+    const circle = document.getElementById('breathingCircle');
+    circle.classList.remove('box-breath', 'tactical');
+    if (type === 'box') circle.classList.add('box-breath');
+    if (type === 'tactical') circle.classList.add('tactical');
+  }
+  function stopBreathing() { document.getElementById('breathing-display').style.display = 'none'; }
+
+  // Grounding
+  function initGrounding() {
+    ['See', 'Touch', 'Hear', 'Smell', 'Taste'].forEach((sense, idx) => {
+      const count = [5, 4, 3, 2, 1][idx];
+      let html = '';
+      for (let i = 1; i <= count; i++) {
+        html += \`<div class="grounding-item" onclick="this.classList.add('completed')">\${i}</div>\`;
+      }
+      document.getElementById('grounding' + sense).innerHTML = html;
+    });
+  }
+
+  // Body Scan
+  let bodyScanInterval;
+  function startBodyScan() {
+    document.getElementById('bodyScanStop').style.display = 'inline-block';
+    document.getElementById('bodyScanDisplay').style.display = 'block';
+    const checks = ['Shoulders', 'Jaw tension', 'Back posture', 'Neck strain'];
+    let current = 0;
+    bodyScanInterval = setInterval(() => {
+      if (current >= checks.length) {
+        stopBodyScan();
+        return;
+      }
+      document.getElementById('bodyScanDisplay').innerHTML = \`<strong>\${checks[current]}</strong><br>Notice any tension? Take a breath and adjust.\`;
+      current++;
+    }, 20000);
+  }
+  function stopBodyScan() {
+    clearInterval(bodyScanInterval);
+    document.getElementById('bodyScanDisplay').style.display = 'none';
+    document.getElementById('bodyScanStop').style.display = 'none';
+  }
+
+  // Meditation
+  let meditationTimer;
+  function startMeditation(minutes) {
+    document.getElementById('meditationDisplay').style.display = 'block';
+    let seconds = minutes * 60;
+    meditationTimer = setInterval(() => {
+      seconds--;
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      document.getElementById('meditationTimer').textContent = \`\${m}:\${String(s).padStart(2, '0')}\`;
+      if (seconds <= 0) {
+        clearInterval(meditationTimer);
+        alert('Meditation complete!');
+        document.getElementById('meditationDisplay').style.display = 'none';
+      }
+    }, 1000);
+  }
+  function stopMeditation() {
+    clearInterval(meditationTimer);
+    document.getElementById('meditationDisplay').style.display = 'none';
+  }
+
+  // Energy
+  function updateEnergyDisplay() {
+    const val = document.getElementById('energyLevel').value;
+    document.getElementById('energyValue').textContent = val;
+  }
+  function setMood(mood) {
+    document.querySelectorAll('.slider-track .slider-item').forEach(el => el.classList.remove('active'));
+    event?.target?.classList.add('active');
+  }
+  function saveEnergyLog() {
+    const energy = document.getElementById('energyLevel').value;
+    energyLogs.push({ time: new Date(), energy });
+    localStorage.setItem('energyLogs', JSON.stringify(energyLogs));
+    alert(\`Energy level \${energy}/10 logged\`);
+  }
+
+  // Dopamine Menu
+  function initDopamineMenu() {
+    let html = '';
+    dopamineMenu.forEach(item => {
+      html += \`<div class="dopamine-item" onclick="alert('\${item} - Great choice!')">\${item}</div>\`;
+    });
+    document.getElementById('dopamineList').innerHTML = html;
+  }
+
+  // Task Difficulty
+  function updateTaskGrid() {
+    const diff = parseInt(document.getElementById('taskDifficulty').value);
+    const interest = parseInt(document.getElementById('taskInterest').value);
+    document.getElementById('difficultyValue').textContent = diff;
+    document.getElementById('interestValue').textContent = interest;
     
+    let advice = '';
+    if (interest >= 7 && diff <= 5) advice = '✅ Perfect flow task - do this first!';
+    else if (interest >= 7 && diff > 5) advice = '🚀 Exciting challenge - save for peak energy';
+    else if (interest < 4) advice = '⚠️ Low interest - break into micro-steps';
+    else advice = '⚙️ Balanced task - good for mid-session';
+    
+    document.getElementById('taskAdvice').textContent = advice;
+  }
+
+  // Fidget
+  function showFidget(type) {
+    document.getElementById('fidgetDisplay').style.display = 'block';
+    document.getElementById('fidgetSpinner').style.display = 'none';
+    document.getElementById('colorCycle').style.display = 'none';
+    document.getElementById('particleCanvas').style.display = 'none';
+    if (type === 'spinner') document.getElementById('fidgetSpinner').style.display = 'block';
+    else if (type === 'colors') document.getElementById('colorCycle').style.display = 'block';
+    else if (type === 'particles') document.getElementById('particleCanvas').style.display = 'block';
+  }
+  function hideFidget() { document.getElementById('fidgetDisplay').style.display = 'none'; }
+
+  // Movement
+  function showMovement() {
+    document.getElementById('movementDisplay').style.display = 'block';
+    const random = movements[Math.floor(Math.random() * movements.length)];
+    document.getElementById('movementSuggestion').textContent = random;
+  }
+
+  // Pomodoro
+  function startPomodoro() {
+    pomodoroTime = parseInt(document.getElementById('defaultPomodoro').value || 25) * 60;
     document.getElementById('pomodoroStart').style.display = 'none';
     document.getElementById('pomodoroStop').style.display = 'inline-block';
-    
     pomodoroTimer = setInterval(() => {
       pomodoroTime--;
       const mins = Math.floor(pomodoroTime / 60);
       const secs = pomodoroTime % 60;
-      document.getElementById('pomodoroDisplay').textContent = 
-        \`\${String(mins).padStart(2, '0')}:\${String(secs).padStart(2, '0')}\`;
-      
+      document.getElementById('pomodoroDisplay').textContent = \`\${String(mins).padStart(2, '0')}:\${String(secs).padStart(2, '0')}\`;
       if (pomodoroTime <= 0) {
-        alert('Focus session complete! Time for a break.');
+        alert('Pomodoro complete!');
         stopPomodoro();
       }
     }, 1000);
   }
-
   function stopPomodoro() {
     clearInterval(pomodoroTimer);
     document.getElementById('pomodoroStart').style.display = 'inline-block';
     document.getElementById('pomodoroStop').style.display = 'none';
-    pomodoroTime = parseInt(document.getElementById('focusDuration').value) * 60;
-    const mins = Math.floor(pomodoroTime / 60);
-    document.getElementById('pomodoroDisplay').textContent = \`\${mins}:00\`;
+  }
+  function recordPomodoroSession() {
+    sessionCount++;
+    const energy = document.getElementById('pomodoroEnergy').value;
+    document.getElementById('sessionCount').textContent = sessionCount;
+    localStorage.setItem('sessionCount', sessionCount);
+    alert(\`✅ Session logged! Energy: \${energy}/10\`);
   }
 
+  // Medication
   function logMedication() {
-    const time = document.getElementById('medTime').value;
-    if (!time) {
-      medLastDose = new Date();
-    } else {
-      const [h, m] = time.split(':');
-      const today = new Date();
-      medLastDose = new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(h), parseInt(m));
-    }
-    localStorage.setItem('fbMedDose', medLastDose.toISOString());
-    document.getElementById('medTime').value = '';
-    updateMedication();
-    if (!medInterval) {
-      medInterval = setInterval(updateMedication, 1000);
-    }
+    localStorage.setItem('lastMedDose', new Date().toISOString());
+    alert('Medication dose logged');
   }
 
-  function updateMedication() {
-    const saved = localStorage.getItem('fbMedDose');
-    if (!saved) {
-      document.getElementById('medDisplay').textContent = '--:--';
-      document.getElementById('medStatus').textContent = 'No dose logged';
-      document.getElementById('medHours').textContent = '--:--';
-      document.getElementById('medText').textContent = 'No dose logged';
-      return;
-    }
-    
-    medLastDose = new Date(saved);
-    const elapsed = Date.now() - medLastDose.getTime();
-    const hours = Math.floor(elapsed / 3600000);
-    const mins = Math.floor((elapsed % 3600000) / 60000);
-    const display = \`\${hours}:\${String(mins).padStart(2, '0')}h\`;
-    
-    document.getElementById('medDisplay').textContent = display;
-    document.getElementById('medHours').textContent = display;
-    
-    if (hours >= 8) {
-      document.getElementById('medStatus').textContent = 'Time for next dose';
-      document.getElementById('medText').textContent = 'Time for next dose';
-      document.getElementById('medDisplay').style.color = 'var(--danger)';
-    } else if (hours >= 6) {
-      document.getElementById('medStatus').textContent = 'Consider next dose soon';
-      document.getElementById('medText').textContent = 'Consider next dose soon';
-      document.getElementById('medDisplay').style.color = 'var(--warning)';
-    } else {
-      document.getElementById('medStatus').textContent = 'Dose still active';
-      document.getElementById('medText').textContent = 'Dose still active';
-      document.getElementById('medDisplay').style.color = 'var(--success)';
-    }
+  // Settings
+  function saveSettings() {
+    localStorage.setItem('settingsPomodoro', document.getElementById('defaultPomodoro').value);
+    localStorage.setItem('settingsBreak', document.getElementById('defaultBreak').value);
+    alert('Settings saved');
   }
 
-  function saveCustomization() {
-    alert('Dashboard customization saved!');
-  }
+  // Keyboard Shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (!user) return;
+    if (e.key === 'b' || e.key === 'B') switchView('breathing');
+    if (e.key === 'g' || e.key === 'G') switchView('grounding');
+    if (e.key === 'p' || e.key === 'P') startPomodoro();
+    if (e.key === '?') alert('Shortcuts: B=Breathing, G=Grounding, P=Pomodoro');
+  });
 
+  // UI
   function updateUI() {
-    const  hasNav = !!user;
+    const hasNav = !!user;
     document.getElementById('appNav').style.display = hasNav ? 'block' : 'none';
     document.getElementById('authBtn').style.display = user ? 'none' : 'block';
     document.getElementById('logoutBtn').style.display = user ? 'block' : 'none';
     document.getElementById('userDisplay').style.display = user ? 'block' : 'none';
-    
+    document.getElementById('keyboardHint').style.display = user ? 'block' : 'none';
     if (user) {
       document.getElementById('userDisplay').textContent = user.name;
       switchView('dashboard');
-    } else {
-      document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-      document.getElementById('landing-view').style.display = 'block';
-      document.getElementById('viewTitle').textContent = 'FocusBro';
     }
   }
 
-  // Initialize
+  // Init
   const saved = localStorage.getItem('fbUser');
-  if (saved) {
-    user = JSON.parse(saved);
-  }
+  if (saved) user = JSON.parse(saved);
+  sessionCount = parseInt(localStorage.getItem('sessionCount')) || 0;
+  energyLogs = JSON.parse(localStorage.getItem('energyLogs')) || [];
+  document.getElementById('sessionCount').textContent = sessionCount;
   updateUI();
-  updateMedication();
-  window.addEventListener('storage', updateMedication);
+  initGrounding();
+  initDopamineMenu();
 </script>
 
 </body>
