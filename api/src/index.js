@@ -1214,8 +1214,7 @@ export default {
       const newUrl = new URL(request.url);
       newUrl.pathname = pathWithoutApi;
       
-      // ✅ Create a new request with modified URL
-      // Note: Don't copy body for GET requests as it's not allowed
+      // ✅ CRITICAL FIX: itty-router exports an object with a .fetch() method, not a callable function
       const modifiedRequest = new Request(newUrl.toString(), {
         method: request.method,
         headers: request.headers,
@@ -1226,7 +1225,7 @@ export default {
       });
       
       try {
-        const extResponse = await extendedRouter(modifiedRequest, env);
+        const extResponse = await extendedRouter.fetch(modifiedRequest, env);
         if (extResponse && extResponse.status !== 404) {
           return extResponse;
         }
