@@ -974,6 +974,26 @@ router.get('/api/test', async (request, env) => {
   });
 });
 
+// ── TEST GALLERY ROUTE (hardcoded) ──
+router.get('/api/gallery/test', async (request, env) => {
+  return new Response(JSON.stringify({
+    success: true,
+    data: {
+      images: [{
+        url: 'data:image/svg+xml,<svg></svg>',
+        alt: 'Test image',
+        title: 'Test Gallery'
+      }],
+      category: 'test',
+      count: 1
+    },
+    message: 'Hardcoded gallery test endpoint'
+  }), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+});
+
 // ── API TEST ROUTE (for debugging) ──
 router.get('/debug-api', async (request, env) => {
   return new Response(JSON.stringify({
