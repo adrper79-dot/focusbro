@@ -1215,7 +1215,7 @@ export default {
       const newUrl = new URL(request.url);
       newUrl.pathname = pathWithoutApi;
       
-      // ✅ itty-router exports an object with a .fetch() method
+      // ✅ Create modified request with correct pathname
       const modifiedRequest = new Request(newUrl.toString(), {
         method: request.method,
         headers: request.headers,
@@ -1224,11 +1224,8 @@ export default {
       });
       
       try {
-        if (!extendedRouter || typeof extendedRouter.fetch !== 'function') {
-          throw new Error('Extended router not available');
-        }
-        
-        const extResponse = await extendedRouter.fetch(modifiedRequest, env);
+        // Use .handle() - more reliable than .fetch() in some environments
+        const extResponse = await extendedRouter.handle(modifiedRequest, env);
         if (extResponse && extResponse.status !== 404) {
           return extResponse;
         }
