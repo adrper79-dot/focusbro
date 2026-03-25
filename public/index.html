@@ -997,6 +997,91 @@
         </div>
       </div>
 
+      <!-- ANALYTICS DASHBOARD -->
+      <div id="analytics-view" class="view" style="display:none;">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">📊 Analytics Dashboard</div>
+          </div>
+          <div class="panel-body">
+            <!-- Time Range Selector -->
+             <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
+              <button class="btn btn-secondary" onclick="filterAnalyticsRange(7)">Last 7 Days</button>
+              <button class="btn btn-secondary" onclick="filterAnalyticsRange(30)">Last 30 Days</button>
+              <button class="btn btn-primary" id="btn-90d" onclick="filterAnalyticsRange(90)">Last 90 Days <span class="pro-badge">PRO</span></button>
+              <button class="btn btn-primary" id="btn-all" onclick="filterAnalyticsRange(Infinity)">All Time <span class="pro-badge">PRO</span></button>
+            </div>
+
+            <!-- Summary Stats Cards -->
+            <div class="grid" style="margin-bottom: 20px;">
+              <div class="card">
+                <div class="card-header">🔥 Current Streak</div>
+                <div class="card-value" id="analyticsStreak">0</div>
+                <div class="card-subtext">days</div>
+              </div>
+              <div class="card">
+                <div class="card-header">Longest Streak</div>
+                <div class="card-value" id="analyticsLongestStreak">0</div>
+                <div class="card-subtext">days</div>
+              </div>
+              <div class="card">
+                <div class="card-header">Total Sessions</div>
+                <div class="card-value" id="analyticsTotalSessions">0</div>
+                <div class="card-subtext">all time</div>
+              </div>
+              <div class="card">
+                <div class="card-header">Focus Time</div>
+                <div class="card-value" id="analyticsTotalHours">0h</div>
+                <div class="card-subtext">hours</div>
+              </div>
+            </div>
+
+            <!-- Charts Row 1 -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+              <!-- Sessions Per Day -->
+              <div style="background: var(--white); border: 1px solid var(--gray-200); border-radius: 12px; padding: 16px;">
+                <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px;">Sessions Per Day (Last 30 Days)</div>
+                <canvas id="sessionsChart" width="300" height="150" role="img" aria-label="Sessions per day chart"></canvas>
+              </div>
+
+              <!-- Tool Usage -->
+              <div style="background: var(--white); border: 1px solid var(--gray-200); border-radius: 12px; padding: 16px;">
+                <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px;">Tool Usage (Top Tools)</div>
+                <canvas id="toolChart" width="300" height="150" role="img" aria-label="Tool usage chart"></canvas>
+              </div>
+            </div>
+
+            <!-- Charts Row 2 -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+              <!-- Energy Trend -->
+              <div style="background: var(--white); border: 1px solid var(--gray-200); border-radius: 12px; padding: 16px;">
+                <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px;">Energy Level Trend (Last 30 Days)</div>
+                <canvas id="energyChart" width="300" height="150" role="img" aria-label="Energy trend chart"></canvas>
+              </div>
+
+              <!-- Activity Heatmap (Pro Only) -->
+              <div style="background: var(--white); border: 1px solid var(--gray-200); border-radius: 12px; padding: 16px; position: relative;" id="heatmapContainer">
+                <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px;">Activity Heatmap (Last 52 Weeks)</div>
+                <canvas id="heatmapCanvas" width="300" height="150" role="img" aria-label="Activity heatmap"></canvas>
+                <div id="proGateHeatmap" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); border-radius: 12px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
+                  <div style="text-align: center;">
+                    <div style="font-weight: 600; margin-bottom: 8px;">PRO Feature</div>
+                    <button class="btn btn-primary btn-sm" onclick="showProGate('Heatmap')">Upgrade to Pro</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Export Buttons -->
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+              <button class="btn btn-secondary" onclick="exportCSV()">⬇ Export CSV</button>
+              <button class="btn btn-primary" onclick="exportPDF()" id="exportPdfBtn">📄 Export PDF <span class="pro-badge">PRO</span></button>
+              <button class="btn btn-secondary" onclick="exportJSON()" id="exportJsonBtn">📦 Export JSON <span class="pro-badge">PRO</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- SETTINGS -->
       <div id="settings-view" class="view" style="display:none;">
         <div class="panel">
