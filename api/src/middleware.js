@@ -23,7 +23,14 @@ export async function verifyAuth(request, env) {
       return { valid: false, error: 'Invalid token format (must be 3 parts)' };
     }
     
-    const payload = JSON.parse(atob(parts[1]));
+    let payload;
+    try {
+      const decodedPayload = atob(parts[1]);
+      payload = JSON.parse(decodedPayload);
+    } catch (parseError) {
+      return { valid: false, error: 'Invalid token payload' };
+    }
+    
     const now = Math.floor(Date.now() / 1000);
     
     if (payload.exp < now) {

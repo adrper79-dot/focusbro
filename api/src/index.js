@@ -124,14 +124,28 @@ async function initializeDatabase(env) {
 }
 
 // ── CORS HEADERS ──
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+// Restrict to specific origins to prevent CSRF and unauthorized API access
+function getCorsHeaders(request) {
+  const origin = request.headers.get('Origin');
+  const allowedOrigins = [
+    'https://focusbro.net',
+    'https://www.focusbro.net',
+    'http://localhost:3000',
+    'http://localhost:8787',
+  ];
+  
+  return {
+    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : 'https://focusbro.net',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+const corsHeaders = getCorsHeaders({ headers: new Headers() });
 
 // ── UTILITY: Handle CORS ──
-router.options('*', () => new Response(null, { headers: corsHeaders }));
+router.options('*', (request) => new Response(null, { headers: getCorsHeaders(request) }));
 
 // ── UTILITY: Secure Password Hashing (Web Crypto API) ──
 async function hashPassword(password) {

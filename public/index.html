@@ -979,6 +979,8 @@
   let sessionCount = 0;
   let energyLogs = [];
   let medInterval = null;
+  let medDisplayInterval = null;
+  let syncInterval = null;
   let keepAliveRunning = false;
   let keepAliveInterval = null;
   const dopamineMenu = ['Stretch', 'Cold water', 'Dance', 'Pet cat', 'Water', 'Stand breath', 'Walk', 'Shake'];
@@ -1170,7 +1172,27 @@
     }
   }
 
+  // ════════════════════════════════════════════════════════════
+  // RESOURCE CLEANUP & LIFECYCLE
+  // ════════════════════════════════════════════════════════════
+
+  function cleanupAllTimers() {
+    // Clear all active timers and intervals to prevent memory leaks
+    if (pomodoroTimer) clearInterval(pomodoroTimer);
+    if (medInterval) clearInterval(medInterval);
+    if (medDisplayInterval) clearInterval(medDisplayInterval);
+    if (syncInterval) clearInterval(syncInterval);
+    if (keepAliveInterval) clearInterval(keepAliveInterval);
+    
+    pomodoroTimer = null;
+    medInterval = null;
+    medDisplayInterval = null;
+    syncInterval = null;
+    keepAliveInterval = null;
+  }
+
   function logout() {
+    cleanupAllTimers();
     user = null;
     localStorage.removeItem('fbUser');
     localStorage.removeItem('fbToken');
@@ -1301,6 +1323,9 @@
 
   let bodyScanInterval;
   function startBodyScan() {
+    // Clean up any existing interval first
+    if (bodyScanInterval) clearInterval(bodyScanInterval);
+    
     document.getElementById('bodyScanStart').style.display = 'none';
     document.getElementById('bodyScanStop').style.display = 'inline-block';
     document.getElementById('bodyScanDisplay').style.display = 'block';
@@ -1333,6 +1358,9 @@
 
   let meditationTimer;
   function startMeditation(minutes) {
+    // Clean up any existing timer first
+    if (meditationTimer) clearInterval(meditationTimer);
+    
     document.getElementById('meditationDisplay').style.display = 'block';
     let remaining = minutes * 60;
     const startTime = Date.now();
@@ -1785,12 +1813,14 @@
     
     updateMedDisplay();
 
-    // Update med display every minute
-    setInterval(updateMedDisplay, 60000);
+    // Update med display every minute (prevent multiple intervals)
+    if (medDisplayInterval) clearInterval(medDisplayInterval);
+    medDisplayInterval = setInterval(updateMedDisplay, 60000);
 
-    // Sync data to server every 5 minutes if authenticated
+    // Sync data to server every 5 minutes if authenticated (prevent multiple intervals)
     if (user) {
-      setInterval(syncDataToServer, 5 * 60 * 1000);
+      if (syncInterval) clearInterval(syncInterval);
+      syncInterval = setInterval(syncDataToServer, 5 * 60 * 1000);
     }
   });
 </script>
