@@ -627,6 +627,8 @@
       <div class="nav-item" onclick="switchView('energy')">Mood/Energy</div>
       <div class="nav-item" onclick="switchView('dopamine-menu')">Dopamine Menu</div>
       <div class="nav-item" onclick="switchView('fidget')">Fidget Tools</div>
+      <div class="nav-label">Insights</div>
+      <div class="nav-item" onclick="switchView('analytics')">📊 Analytics</div>
       <div class="nav-label">Account</div>
       <div class="nav-item" onclick="switchView('settings')">Settings</div>
     </nav>
@@ -1006,10 +1008,10 @@
           <div class="panel-body">
             <!-- Time Range Selector -->
              <div style="display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;">
-              <button class="btn btn-secondary" onclick="filterAnalyticsRange(7)">Last 7 Days</button>
+              <button class="btn btn-primary" onclick="filterAnalyticsRange(7)">Last 7 Days</button>
               <button class="btn btn-secondary" onclick="filterAnalyticsRange(30)">Last 30 Days</button>
-              <button class="btn btn-primary" id="btn-90d" onclick="filterAnalyticsRange(90)">Last 90 Days <span class="pro-badge">PRO</span></button>
-              <button class="btn btn-primary" id="btn-all" onclick="filterAnalyticsRange(Infinity)">All Time <span class="pro-badge">PRO</span></button>
+              <button class="btn btn-secondary" id="btn-90d" onclick="filterAnalyticsRange(90)">Last 90 Days <span class="pro-badge">PRO</span></button>
+              <button class="btn btn-secondary" id="btn-all" onclick="filterAnalyticsRange(Infinity)">All Time <span class="pro-badge">PRO</span></button>
             </div>
 
             <!-- Summary Stats Cards -->
@@ -1021,17 +1023,17 @@
               </div>
               <div class="card">
                 <div class="card-header">Longest Streak</div>
-                <div class="card-value" id="analyticsLongestStreak">0</div>
+                <div class="card-value" id="longestStreakCard">0</div>
                 <div class="card-subtext">days</div>
               </div>
               <div class="card">
                 <div class="card-header">Total Sessions</div>
-                <div class="card-value" id="analyticsTotalSessions">0</div>
+                <div class="card-value" id="totalSessionsCard">0</div>
                 <div class="card-subtext">all time</div>
               </div>
               <div class="card">
                 <div class="card-header">Focus Time</div>
-                <div class="card-value" id="analyticsTotalHours">0h</div>
+                <div class="card-value" id="totalHoursCard">0h</div>
                 <div class="card-subtext">hours</div>
               </div>
             </div>
@@ -1047,7 +1049,7 @@
               <!-- Tool Usage -->
               <div style="background: var(--white); border: 1px solid var(--gray-200); border-radius: 12px; padding: 16px;">
                 <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px;">Tool Usage (Top Tools)</div>
-                <canvas id="toolChart" width="300" height="150" role="img" aria-label="Tool usage chart"></canvas>
+                <canvas id="toolUsageChart" width="300" height="150" role="img" aria-label="Tool usage chart"></canvas>
               </div>
             </div>
 
@@ -1062,7 +1064,7 @@
               <!-- Activity Heatmap (Pro Only) -->
               <div style="background: var(--white); border: 1px solid var(--gray-200); border-radius: 12px; padding: 16px; position: relative;" id="heatmapContainer">
                 <div style="font-weight: 600; margin-bottom: 12px; font-size: 14px;">Activity Heatmap (Last 52 Weeks)</div>
-                <canvas id="heatmapCanvas" width="300" height="150" role="img" aria-label="Activity heatmap"></canvas>
+                <canvas id="heatmapChart" width="300" height="150" role="img" aria-label="Activity heatmap"></canvas>
                 <div id="proGateHeatmap" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); border-radius: 12px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px);">
                   <div style="text-align: center;">
                     <div style="font-weight: 600; margin-bottom: 8px;">PRO Feature</div>
@@ -1304,6 +1306,323 @@
       sessionsToday,
       mostUsedTool
     };
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // ANALYTICS VIEW
+  // ════════════════════════════════════════════════════════════
+
+  /**
+   * Check if current user has Pro subscription.
+   * Returns true if logged in with pro subscription.
+   */
+  function isProUser() {
+    try {
+      const user = JSON.parse(localStorage.getItem('fbUser') || '{}');
+      return user.subscription_tier === 'pro' || user.subscription_tier === 'enterprise';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Filter analytics data by time range (days).
+   * Free users: capped at 7 days
+   * Pro users: 7, 30, 90 days, or unlimited
+   */
+  let analyticsRange = 7; // Default to 7 days
+  
+  function filterAnalyticsRange(days) {
+    // Gate 90+ day access behind Pro
+    if (days >= 90 && !isProUser()) {
+      showToast('🔒 Upgrade to Pro to access longer time ranges', 'info');
+      return;
+    }
+
+    analyticsRange = days;
+
+    // Update button states
+    document.querySelectorAll('[onclick*="filterAnalyticsRange"]').forEach(btn => {
+      btn.classList.remove('btn-primary');
+      btn.classList.add('btn-secondary');
+    });
+    
+    event.target.closest('button').classList.remove('btn-secondary');
+    event.target.closest('button').classList.add('btn-primary');
+
+    // Redraw all charts with new range
+    drawAllCharts();
+  }
+
+  /**
+   * Get events filtered by time range.
+   */
+  function getAnalyticsData(days) {
+    fbEvents = JSON.parse(localStorage.getItem('fbEvents') || '[]');
+    const now = Date.now();
+    const cutoff = now - (days === Infinity ? 1000 * 365 * 24 * 60 * 60 * 100 : days * 24 * 60 * 60 * 1000);
+    
+    return fbEvents.filter(e => {
+      const eventTime = new Date(e.timestamp).getTime();
+      return eventTime >= cutoff;
+    });
+  }
+
+  /**
+   * Render Sessions Per Day bar chart.
+   */
+  function renderSessionsChart() {
+    const canvas = document.getElementById('sessionsChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const filteredEvents = getAnalyticsData(analyticsRange);
+    const dateCounts = {};
+
+    // Count sessions by date
+    filteredEvents.forEach(e => {
+      if (e.type === 'session_complete' && e.data?.type === 'focus') {
+        const date = e.timestamp.slice(0, 10);
+        dateCounts[date] = (dateCounts[date] || 0) + 1;
+      }
+    });
+
+    const dates = Object.keys(dateCounts).sort();
+    const counts = dates.map(d => dateCounts[d]);
+    const maxCount = Math.max(...counts, 1);
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#6366f1';
+    ctx.font = '12px Inter';
+
+    const barWidth = Math.max(4, canvas.width / Math.max(dates.length, 7));
+    const padding = 40;
+    const chartHeight = canvas.height - padding * 2;
+
+    dates.forEach((date, i) => {
+      const x = padding + i * barWidth + barWidth * 0.15;
+      const height = (counts[i] / maxCount) * chartHeight;
+      const y = canvas.height - padding - height;
+
+      ctx.fillRect(x, y, barWidth * 0.7, height);
+    });
+
+    // Y axis label
+    ctx.fillStyle = '#6b7280';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${analyticsRange === Infinity ? 'All' : analyticsRange}d`, canvas.width / 2, canvas.height - 15);
+  }
+
+  /**
+   * Render Tool Usage horizontal bar chart.
+   */
+  function renderToolUsageChart() {
+    const canvas = document.getElementById('toolUsageChart');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const filteredEvents = getAnalyticsData(analyticsRange);
+    const toolCounts = {};
+
+    // Count tool uses
+    filteredEvents.forEach(e => {
+      if (e.tool && (e.type === 'tool_use' || e.type === 'session_complete')) {
+        toolCounts[e.tool] = (toolCounts[e.tool] || 0) + 1;
+      }
+    });
+
+    const tools = Object.keys(toolCounts).sort((a, b) => toolCounts[b] - toolCounts[a]).slice(0, 6);
+    const maxCount = Math.max(...tools.map(t => toolCounts[t]), 1);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#8b5cf6';
+    ctx.font = '12px Inter';
+    ctx.textAlign = 'left';
+
+    const barHeight = canvas.height / 7;
+    tools.forEach((tool, i) => {
+      const count = toolCounts[tool];
+      const width = (count / maxCount) * (canvas.width - 100);
+      const y = i * barHeight + barHeight * 0.3;
+
+      ctx.fillRect(80, y, width, barHeight * 0.4);
+      ctx.fillStyle = '#6b7280';
+      ctx.fillText(tool, 5, y + barHeight * 0.3);
+      ctx.fillStyle = '#8b5cf6';
+    });
+  }
+
+  /**
+   * Render Energy Trend line chart.
+   */
+  function renderEnergyChart() {
+    const canvas = document.getElementById('energyChart');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const filteredEvents = getAnalyticsData(analyticsRange);
+    const energyEvents = filteredEvents.filter(e => e.type === 'energy_log' && e.data?.energy);
+
+    if (energyEvents.length === 0) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = '14px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText('No energy data', canvas.width / 2, canvas.height / 2);
+      return;
+    }
+
+    const values = energyEvents.map(e => e.data.energy || 5);
+    const avgEnergy = (values.reduce((a, b) => a + b) / values.length).toFixed(1);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = 'url(#energyGradient)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+
+    const padding = 30;
+    const chartWidth = canvas.width - padding * 2;
+    const chartHeight = canvas.height - padding * 2;
+
+    values.forEach((val, i) => {
+      const x = padding + (i / values.length) * chartWidth;
+      const y = canvas.height - padding - (val / 10) * chartHeight;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+
+    ctx.stroke();
+
+    // Draw avg line
+    ctx.strokeStyle = '#ec4899';
+    ctx.setLineDash([5, 5]);
+    const avgY = canvas.height - padding - (avgEnergy / 10) * chartHeight;
+    ctx.beginPath();
+    ctx.moveTo(padding, avgY);
+    ctx.lineTo(canvas.width - padding, avgY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  /**
+   * Render 52-week activity heatmap.
+   */
+  function renderHeatmap() {
+    const canvas = document.getElementById('heatmapChart');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const filteredEvents = getAnalyticsData(Infinity); // Always full year
+    const dateCounts = {};
+
+    filteredEvents.forEach(e => {
+      if (e.type === 'session_complete') {
+        const date = e.timestamp.slice(0, 10);
+        dateCounts[date] = (dateCounts[date] || 0) + 1;
+      }
+    });
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const cellSize = 12;
+    const gap = 2;
+    const now = new Date();
+    let dayOffset = 0;
+
+    // Draw 52 weeks × 7 days
+    for (let week = 0; week < 52; week++) {
+      for (let day = 0; day < 7; day++) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - dayOffset);
+        const dateStr = date.toISOString().slice(0, 10);
+        const count = dateCounts[dateStr] || 0;
+
+        // Color intensity based on activity
+        let color = '#e5e7eb';
+        if (count > 0) color = count <= 2 ? '#c7d2fe' : count <= 5 ? '#818cf8' : '#4f46e5';
+
+        ctx.fillStyle = color;
+        ctx.fillRect(
+          week * (cellSize + gap),
+          day * (cellSize + gap),
+          cellSize,
+          cellSize
+        );
+
+        dayOffset++;
+      }
+    }
+  }
+
+  /**
+   * Draw all charts with current range.
+   */
+  function drawAllCharts() {
+    renderSessionsChart();
+    renderToolUsageChart();
+    renderEnergyChart();
+    renderHeatmap();
+  }
+
+  /**
+   * Export analytics data as CSV.
+   */
+  function exportCSV() {
+    const filteredEvents = getAnalyticsData(analyticsRange);
+    let csv = 'Timestamp,Type,Tool,Duration (sec),Data\n';
+
+    filteredEvents.forEach(e => {
+      const data = e.data ? JSON.stringify(e.data).replace(/"/g, '""') : '';
+      csv += `"${e.timestamp}","${e.type}","${e.tool || ''}",${e.duration_seconds || 0},"${data}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `focusbro-analytics-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Export analytics data as JSON.
+   */
+  function exportJSON() {
+    if (!isProUser()) {
+      showToast('🔒 JSON export available with Pro upgrade', 'info');
+      return;
+    }
+
+    const filteredEvents = getAnalyticsData(analyticsRange);
+    const data = {
+      exported_at: new Date().toISOString(),
+      range_days: analyticsRange === Infinity ? 'all' : analyticsRange,
+      event_count: filteredEvents.length,
+      events: filteredEvents
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `focusbro-analytics-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Export analytics as PDF via print dialog.
+   */
+  function exportPDF() {
+    if (!isProUser()) {
+      showToast('🔒 PDF export available with Pro upgrade', 'info');
+      return;
+    }
+
+    // Open print dialog (user selects "Save as PDF")
+    window.print();
   }
 
   // Hamburger menu toggle
@@ -1677,6 +1996,21 @@
     const viewEl = document.getElementById(view + '-view');
     if (viewEl) viewEl.style.display = 'block';
     updateNavActive(view);
+
+    // Initialize analytics view if switching to it
+    if (view === 'analytics') {
+      updateDashboardStats(); // Update summary cards
+      setTimeout(() => {
+        const summary = getAnalyticsSummary();
+        document.getElementById('analyticsStreak').textContent = summary.currentStreak;
+        document.getElementById('longestStreakCard').textContent = summary.longestStreak;
+        document.getElementById('totalSessionsCard').textContent = summary.totalSessions;
+        document.getElementById('totalHoursCard').textContent = summary.totalFocusHours + 'h';
+        
+        // Draw charts after view is visible (canvas sizing)
+        drawAllCharts();
+      }, 50);
+    }
   }
 
   function updateNavActive(view) {
