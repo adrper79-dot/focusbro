@@ -1042,33 +1042,6 @@ router.get('/manifest.json', async (request, env) => {
   });
 });
 
-// ── REDIRECT /api/* ROUTES TO EXTENDED ROUTER ──
-// Create a new request with the path prefix stripped and pass to extended router
-router.all('/api/*', async (request, env, ctx) => {
-  const url = new URL(request.url);
-  
-  // Strip /api prefix and reconstruct for extended router
-  const pathWithoutApi = url.pathname.replace(/^\/api/, '') || '/';
-  const newUrl = new URL(request.url);
-  newUrl.pathname = pathWithoutApi;
-  
-  const modifiedRequest = new Request(newUrl, request);
-  // Call extendedRouter like the main export - it should have .fetch() method
-  try {
-    return await extendedRouter.fetch?.(modifiedRequest, env) || 
-           await extendedRouter.handle?.(modifiedRequest, env) ||
-           new Response(JSON.stringify({ error: 'API route not found' }), { 
-             status: 404,
-             headers: { 'Content-Type': 'application/json' }
-           });
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-});
-
 // ── SERVICE WORKER ──
 router.get('/sw.js', async (request, env) => {
   // Service Worker from embedded HTML content
@@ -1208,18 +1181,29 @@ export default {
     // Initialize database on first request
     await initializeDatabase(env);
     
-    // Try main router first
-    const response = await router.handle(request, env);
+    const url = new URL(request.url);
+    const pathname = url.pathname;
     
-    // If main router returns 404, try extended router
-    if (response.status === 404) {
-      const extendedResponse = await extendedRouter.handle(request, env);
-      if (extendedResponse.status !== 404) {
-        return extendedResponse;
+    // Route /api/* requests to extended router by stripping /api prefix
+    if (pathname.startsWith('/api/')) {
+      const pathWithoutApi = pathname.replace(/^\/api/, '') || '/';
+      const newUrl = new URL(request.url);
+      newUrl.pathname = pathWithoutApi;
+      const modifiedRequest = new Request(newUrl, request);
+      
+      // Try extended router with stripped path
+      try {
+        const extResponse = await extendedRouter.handle(modifiedRequest, env);
+        if (extResponse && extResponse.status !== 404) {
+          return extResponse;
+        }
+      } catch (err) {
+        console.warn('Extended router error:', err);
       }
     }
     
-    // Return response from routers
+    // Try main router for all other routes
+    const response = await router.handle(request, env);
     return response;
   }
 };
