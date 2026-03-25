@@ -1211,19 +1211,17 @@ export default {
     // Route /api/* requests to extended router
     if (pathname.startsWith('/api/')) {
       const pathWithoutApi = pathname.replace(/^\/api/, '') || '/';
-    // Route /api/* requests to extended router
-    if (pathname.startsWith('/api/')) {
-      const pathWithoutApi = pathname.replace(/^\/api/, '') || '/';
       const newUrl = new URL(request.url);
       newUrl.pathname = pathWithoutApi;
       
-      // ✅ CRITICAL FIX: Properly copy the request with a modified URL
-      // The second parameter to Request() should be init options, NOT another Request object
+      // ✅ Create a new request with modified URL
+      // Note: Don't copy body for GET requests as it's not allowed
       const modifiedRequest = new Request(newUrl.toString(), {
         method: request.method,
         headers: request.headers,
-        body: request.body,
-        // Copy over other properties
+        // Omit body for GET requests (standard HTTP)
+        ...(request.method !== 'GET' && { body: request.body }),
+        // Copy over Cloudflare-specific properties if available
         ...(request.cf && { cf: request.cf }),
       });
       
@@ -1235,7 +1233,6 @@ export default {
       } catch (err) {
         console.warn('Extended router error:', err?.message || err);
       }
-    }
     }
     
     // Fallback: try main router for all routes
