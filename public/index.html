@@ -530,13 +530,74 @@
   
   @media (max-width: 768px) {
     .app { flex-direction: column; }
-    .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; }
-    .nav { display: flex; padding: 0; margin: 0 auto; }
-    .nav-item { padding: 8px 16px; border-left: none; border-bottom: 3px solid transparent; }
-    .nav-item.active { border-left: none; border-bottom-color: var(--primary-light); }
+    .sidebar { 
+      position: fixed; 
+      left: -280px; 
+      width: 280px; 
+      height: 100vh; 
+      z-index: 999;
+      transition: left 0.3s ease;
+      overflow-y: auto;
+    }
+    .sidebar.open { left: 0; }
+    .content { padding: 16px 20px; }
     .grounding-section { grid-template-columns: repeat(2, 1fr); }
     .dopamine-list { grid-template-columns: repeat(2, 1fr); }
-    .content { padding: 16px 20px; }
+  }
+  
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    gap: 5px;
+  }
+  
+  .hamburger span {
+    width: 24px;
+    height: 2px;
+    background: var(--gray-900);
+    transition: all 0.3s ease;
+    border-radius: 2px;
+  }
+  
+  .hamburger.open span:nth-child(1) {
+    transform: rotate(45deg) translateY(10px);
+  }
+  
+  .hamburger.open span:nth-child(2) {
+    opacity: 0;
+  }
+  
+  .hamburger.open span:nth-child(3) {
+    transform: rotate(-45deg) translateY(-10px);
+  }
+  
+  @media (max-width: 768px) {
+    .hamburger { display: flex; }
+    .sidebar { box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1); }
+  }
+  
+  .menu-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    animation: fadeIn 0.2s ease;
+  }
+  
+  .menu-backdrop.open {
+    display: block;
+  }
+  
+  @media (max-width: 768px) {
+    .menu-backdrop.open { display: block; }
   }
 </style>
 <!-- Google AdSense -->
@@ -575,8 +636,15 @@
     </div>
   </div>
 
+  <div class="menu-backdrop" id="menuBackdrop"></div>
+
   <div class="main">
     <div class="header">
+      <button class="hamburger" id="menuToggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
       <div class="header-title" id="viewTitle">FocusBro</div>
       <div class="header-actions">
         <span id="userDisplay" style="display:none;" class="user-badge" aria-label="User email">Logged in</span>
@@ -986,8 +1054,53 @@
   const dopamineMenu = ['Stretch', 'Cold water', 'Dance', 'Pet cat', 'Water', 'Stand breath', 'Walk', 'Shake'];
   const movements = ['Cat Stretch\nBack on floor, pull knees toward chest,\narched, hold 15 seconds', 'Standing Desk Stretch\nHands behind head, lean back gently,\nroll shoulders, 20 seconds', 'Forward Fold\nFeet shoulder-width, fold from hips,\nlet arms hang, 20 seconds', 'Quad Stretch\nPull one leg toward glutes, hold 15s each', 'Neck Rolls\nSlow circles: forward, right, back, left\nRepeat 3 times'];
 
-  // Toast Notifications
-  function showToast(message, type = 'success') {
+  // Hamburger menu toggle
+  document.getElementById('menuToggle').addEventListener('click', () => {
+    const sidebar = document.querySelector('.sidebar');
+    const backdrop = document.getElementById('menuBackdrop');
+    const hamburger = document.getElementById('menuToggle');
+    sidebar.classList.toggle('open');
+    backdrop.classList.toggle('open');
+    hamburger.classList.toggle('open');
+    hamburger.setAttribute('aria-expanded', sidebar.classList.contains('open'));
+  });
+
+  // Close menu when clicking nav items
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const sidebar = document.querySelector('.sidebar');
+      const backdrop = document.getElementById('menuBackdrop');
+      const hamburger = document.getElementById('menuToggle');
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('open');
+      hamburger.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  // Close menu when clicking on backdrop
+  document.getElementById('menuBackdrop').addEventListener('click', () => {
+    const sidebar = document.querySelector('.sidebar');
+    const backdrop = document.getElementById('menuBackdrop');
+    const hamburger = document.getElementById('menuToggle');
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('open');
+    hamburger.classList.remove('open');
+    hamburger.setAttribute('aria-expanded', 'false');
+  });
+
+  // Keyboard: close menu on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const sidebar = document.querySelector('.sidebar');
+      const backdrop = document.getElementById('menuBackdrop');
+      const hamburger = document.getElementById('menuToggle');
+      sidebar.classList.remove('open');
+      backdrop.classList.remove('open');
+      hamburger.classList.remove('open');
+      hamburger.setAttribute('aria-expanded', 'false');
+    }
+  });
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `<div class="toast-message">${escapeHtml(message)}</div><button class="toast-close" onclick="this.parentElement.remove()">×</button>`;
