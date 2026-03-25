@@ -1215,25 +1215,17 @@ export default {
       const newUrl = new URL(request.url);
       newUrl.pathname = pathWithoutApi;
       
-      // ✅ CRITICAL FIX: itty-router exports an object with a .fetch() method, not a callable function
+      // ✅ itty-router exports an object with a .fetch() method
       const modifiedRequest = new Request(newUrl.toString(), {
         method: request.method,
         headers: request.headers,
-        // Omit body for GET requests (standard HTTP)
         ...(request.method !== 'GET' && { body: request.body }),
-        // Copy over Cloudflare-specific properties if available
         ...(request.cf && { cf: request.cf }),
       });
       
       try {
-        // Verify extended router is properly configured
         if (!extendedRouter || typeof extendedRouter.fetch !== 'function') {
-          console.error('ERROR: Extended router not configured properly', {
-            exists: !!extendedRouter,
-            hasFetch: typeof extendedRouter?.fetch === 'function',
-            type: typeof extendedRouter
-          });
-          throw new Error('Extended router initialization failed');
+          throw new Error('Extended router not available');
         }
         
         const extResponse = await extendedRouter.fetch(modifiedRequest, env);
@@ -1241,7 +1233,7 @@ export default {
           return extResponse;
         }
       } catch (err) {
-        console.error('Extended router error:', err?.message || err, { pathname: pathWithoutApi });
+        console.error('Extended router error:', err?.message || err);
       }
     }
     
