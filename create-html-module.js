@@ -1,9 +1,10 @@
 const fs = require('fs');
 const html = fs.readFileSync('public/index.html', 'utf-8');
-// Escape backticks in the HTML
-const escaped = html.replace(/`/g, '\\`');
+
+// Use JSON.stringify to properly escape the HTML string, avoiding backtick escaping issues
+const jsonString = JSON.stringify(html);
 const content = `// Auto-generated HTML content - do not edit
-const htmlContent = \`${escaped}\`;
+const htmlContent = ${jsonString};
 
 export default htmlContent;
 `;
