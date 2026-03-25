@@ -1216,11 +1216,18 @@ export default {
       const pathWithoutApi = pathname.replace(/^\/api/, '') || '/';
       const newUrl = new URL(request.url);
       newUrl.pathname = pathWithoutApi;
-      const modifiedRequest = new Request(newUrl, request);
+      
+      // ✅ CRITICAL FIX: Properly copy the request with a modified URL
+      // The second parameter to Request() should be init options, NOT another Request object
+      const modifiedRequest = new Request(newUrl.toString(), {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+        // Copy over other properties
+        ...(request.cf && { cf: request.cf }),
+      });
       
       try {
-        // ✅ CRITICAL FIX: itty-router v4 exports a function, not an object with methods
-        // Call it directly as: await router(request, env, ctx)
         const extResponse = await extendedRouter(modifiedRequest, env);
         if (extResponse && extResponse.status !== 404) {
           return extResponse;
