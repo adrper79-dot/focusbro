@@ -100,8 +100,8 @@ async function initializeDatabase(env) {
       try {
         await env.DB.prepare(sql).run();
       } catch (e) {
-        // Log but don't fail - table might already exist
-        console.log('Init note:', e.message);
+        // Table might already exist - this is expected
+        console.debug('DB init note:', e.message);
       }
       }
     }

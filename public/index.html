@@ -538,6 +538,9 @@
   // UTILITY FUNCTIONS
   // ════════════════════════════════════════════════════════════
 
+  // Get API_ORIGIN from page location
+  const env = { API_ORIGIN: window.location.origin };
+
   let user = null;
   let authMode = 'signin'; // 'signin' or 'signup'
   let pomodoroTimer = null;
@@ -546,6 +549,8 @@
   let sessionCount = 0;
   let energyLogs = [];
   let medInterval = null;
+  let keepAliveRunning = false;
+  let keepAliveInterval = null;
   const dopamineMenu = ['Stretch', 'Cold water', 'Dance', 'Pet cat', 'Water', 'Stand breath', 'Walk', 'Shake'];
   const movements = ['Cat Stretch\nBack on floor, pull knees toward chest,\narched, hold 15 seconds', 'Standing Desk Stretch\nHands behind head, lean back gently,\nroll shoulders, 20 seconds', 'Forward Fold\nFeet shoulder-width, fold from hips,\nlet arms hang, 20 seconds', 'Quad Stretch\nPull one leg toward glutes, hold 15s each', 'Neck Rolls\nSlow circles: forward, right, back, left\nRepeat 3 times'];
 
@@ -591,13 +596,75 @@
   }
 
   // Authentication
-  let authMode = 'signin';
   function toggleAuthMode() {
     authMode = authMode === 'signin' ? 'signup' : 'signin';
     clearFormErrors();
     document.getElementById('authTitle').textContent = authMode === 'signin' ? 'Sign In' : 'Create Account';
     document.getElementById('authToggle').textContent = authMode === 'signin' ? 'Create account instead' : 'Sign in instead';
     document.getElementById('authBtn2').textContent = authMode === 'signin' ? 'Sign In' : 'Create Account';
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // API HELPER FUNCTIONS
+  // ════════════════════════════════════════════════════════════
+
+  function getAuthToken() {
+    return localStorage.getItem('fbToken');
+  }
+
+  async function apiCall(endpoint, options = {}) {
+    const token = getAuthToken();
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${env.API_ORIGIN}${endpoint}`, {
+      ...options,
+      headers,
+    });
+
+    if (response.status === 401) {
+      // Token expired or invalid
+      logout();
+      showToast('Session expired. Please log in again.', 'error');
+      return null;
+    }
+
+    return response;
+  }
+
+  async function syncDataToServer() {
+    if (!user) return; // Not authenticated
+
+    try {
+      const response = await apiCall('/api/sync/data', {
+        method: 'POST',
+        body: JSON.stringify({
+          sessionCount,
+          energyLogs,
+          pomodoroSettings: {
+            duration: parseInt(localStorage.getItem('settingsPomodoro') || '25'),
+            breakDuration: parseInt(localStorage.getItem('settingsBreak') || '5'),
+          },
+          synced_at: new Date().toISOString(),
+        }),
+      });
+
+      if (response && response.ok) {
+        console.debug('Data synced to server');
+        return true;
+      } else if (response) {
+        console.warn('Data sync failed:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.warn('Data sync error (continuing offline):', error.message);
+    }
+    return false;
   }
 
   async function handleAuth() {
@@ -649,10 +716,15 @@
       localStorage.setItem('fbToken', data.token);
       localStorage.setItem('fbSessionId', data.session_id);
 
+      // Ensure modal is fully closed before showing success message
       closeModal('authModal');
-      updateUI();
-      showToast(`${authMode === 'signin' ? 'Welcome back' : 'Account created'}! ${user.name}`, 'success');
-      authMode = 'signin';
+      
+      // Small delay to ensure DOM state is consistent before updating UI
+      setTimeout(() => {
+        updateUI();
+        showToast(`${authMode === 'signin' ? 'Welcome back' : 'Account created'}! ${user.name}`, 'success');
+        authMode = 'signin';
+      }, 50);
     } catch (error) {
       console.error('Auth error:', error);
       showFormError('email', 'Network error - check console');
@@ -662,14 +734,11 @@
     }
   }
 
-  // Get API_ORIGIN from page location
-  const env = {
-    API_ORIGIN: window.location.origin // Will use focusbro.net or localhost
-  };
-
   function logout() {
     user = null;
     localStorage.removeItem('fbUser');
+    localStorage.removeItem('fbToken');
+    localStorage.removeItem('fbSessionId');
     updateUI();
     showToast('Logged out');
   }
@@ -881,6 +950,9 @@
     energyLogs.push({ time: new Date().toISOString(), energy, mood: currentMood });
     localStorage.setItem('energyLogs', JSON.stringify(energyLogs));
     showToast(`Energy ${energy}/10 logged`, 'success');
+    
+    // Sync data to server
+    syncDataToServer();
   }
 
   // ════════════════════════════════════════════════════════════
@@ -1035,6 +1107,9 @@
     document.getElementById('sessionCount').textContent = sessionCount;
     document.getElementById('pomodoroEnergyForm').style.display = 'none';
     showToast(`Session ${sessionCount} recorded!`, 'success');
+    
+    // Sync data to server
+    syncDataToServer();
   }
 
   // ════════════════════════════════════════════════════════════
@@ -1093,6 +1168,9 @@
     localStorage.setItem('settingsPomodoro', pomodoro);
     localStorage.setItem('settingsBreak', breakDuration);
     showToast('Settings saved!', 'success');
+    
+    // Sync data to server
+    syncDataToServer();
   }
 
   // ════════════════════════════════════════════════════════════
@@ -1115,15 +1193,23 @@
     try {
       const savedUser = localStorage.getItem('fbUser');
       const savedToken = localStorage.getItem('fbToken');
+      
+      // Only restore session if both user data and token exist
       if (savedUser && savedToken) {
-        user = JSON.parse(savedUser);
-        // Validate token is still valid by checking localStorage
-        // In future: call /profile endpoint to validate
+        const parsedUser = JSON.parse(savedUser);
+        // Validate that parsed user has required fields
+        if (parsedUser && parsedUser.email && parsedUser.id) {
+          user = parsedUser;
+        } else {
+          throw new Error('Invalid user data');
+        }
       }
     } catch (e) {
       console.error('Failed to restore session:', e);
+      user = null;
       localStorage.removeItem('fbUser');
       localStorage.removeItem('fbToken');
+      localStorage.removeItem('fbSessionId');
     }
 
     sessionCount = parseInt(localStorage.getItem('sessionCount') || '0');
@@ -1139,10 +1225,21 @@
 
     initDopamineMenu();
     updateUI();
+    
+    // Ensure auth modal is properly closed if user is authenticated
+    if (user) {
+      closeModal('authModal');
+    }
+    
     updateMedDisplay();
 
     // Update med display every minute
     setInterval(updateMedDisplay, 60000);
+
+    // Sync data to server every 5 minutes if authenticated
+    if (user) {
+      setInterval(syncDataToServer, 5 * 60 * 1000);
+    }
   });
 </script>
 </body>

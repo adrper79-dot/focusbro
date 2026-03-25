@@ -1607,15 +1607,23 @@ async function toggleWakeLock() {
 async function activateWake() {
   try {
     if ('wakeLock' in navigator) {
-      wakeLock = await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release', () => {
-        if (awakeActive && document.visibilityState === 'visible') {
-          navigator.wakeLock.request('screen').then(wl => wakeLock = wl).catch(() => {});
-        }
-      });
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => {
+          if (awakeActive && document.visibilityState === 'visible') {
+            navigator.wakeLock.request('screen')
+              .then(wl => wakeLock = wl)
+              .catch(err => console.warn('Failed to reclaim wake lock:', err.message));
+          }
+        });
+      } catch(err) {
+        console.warn('Wake Lock request failed, using silent audio fallback:', err.message);
+        startSilentAudio();
+      }
     }
   } catch (e) {
-    console.log('Wake Lock not supported, using fallback');
+    console.warn('Wake Lock API not supported, using silent audio fallback:', e.message);
+    startSilentAudio();
   }
 
   awakeActive = true;
@@ -1820,12 +1828,17 @@ function startSilentAudio() {
     gain.connect(ctx.destination);
     osc.start();
     silentAudioNode = { osc, gain };
-  } catch(e) {}
+  } catch(e) {
+    console.warn('Silent audio failed; wake lock via visual cues only:', e.message);
+    silentAudioNode = null;
+  }
 }
 
 function stopSilentAudio() {
   if (silentAudioNode) {
-    try { silentAudioNode.osc.stop(); } catch(e) {}
+    try { silentAudioNode.osc.stop(); } catch(e) {
+      console.warn('Failed to stop audio node:', e.message);
+    }
     silentAudioNode = null;
   }
 }
@@ -1853,7 +1866,12 @@ function updateAwakeTimer() {
 
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible' && awakeActive && 'wakeLock' in navigator) {
-    try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+    try { 
+      wakeLock = await navigator.wakeLock.request('screen'); 
+    } catch(e) {
+      console.warn('Wake Lock request failed (screen may sleep):', e.message);
+      startSilentAudio();
+    }
   }
 });
 
@@ -2266,7 +2284,10 @@ function saveStats() {
 function updateStreak(stats) {
   let streak = 0;
   const d = new Date();
-  while (true) {
+  const maxIterations = 730; // Limit to ~2 years max for safety
+  let iterations = 0;
+  
+  while (iterations < maxIterations) {
     const key = d.toDateString();
     if (stats[key] && (stats[key].pomos > 0 || stats[key].tasks > 0)) {
       streak++;
@@ -2274,6 +2295,7 @@ function updateStreak(stats) {
     } else {
       break;
     }
+    iterations++;
   }
   document.getElementById('statStreak').textContent = streak;
 }

@@ -178,7 +178,8 @@ router.post('/users/change-password', async (request, env) => {
         'UPDATE sessions SET is_active = 0 WHERE user_id = ? AND id != ?'
       ).bind(userId, auth.sessionId).run();
     } catch (e) {
-      console.log('Session invalidation skipped:', e.message);
+      console.warn('Session invalidation failed (graceful fallback):', e.message);
+      // Note: Schema may not support is_active column yet
     }
     
     await logEvent(env, userId, 'password_changed', {});
@@ -276,7 +277,8 @@ router.post('/auth/confirm-password-reset', async (request, env) => {
         'UPDATE sessions SET is_active = 0 WHERE user_id = ?'
       ).bind(userId).run();
     } catch (e) {
-      console.log('Session invalidation skipped:', e.message);
+      console.warn('Session invalidation failed (graceful fallback):', e.message);
+      // Note: Schema may not support is_active column yet
     }
     
     await logEvent(env, userId, 'password_reset_completed', {});
@@ -315,8 +317,11 @@ router.get('/devices', async (request, env) => {
        ORDER BY created_at DESC`
     ).bind(userId).all();
     
+    // Handle both D1 response formats: { results: [...] } or direct array
+    const deviceList = sessions?.results || sessions || [];
+    
     return successResponse({
-      devices: sessions.results || []
+      devices: deviceList
     });
   } catch (error) {
     return errorResponse(error.message, 500);
@@ -374,7 +379,7 @@ router.post('/auth/logout-all', async (request, env) => {
         'UPDATE sessions SET is_active = 0 WHERE user_id = ?'
       ).bind(userId).run();
     } catch (e) {
-      console.log('Session invalidation skipped:', e.message);
+      console.warn('Session invalidation failed (graceful fallback):', e.message);
       // Gracefully continue - is_active column may not exist
     }
     
@@ -427,7 +432,7 @@ router.post('/users/delete-account', async (request, env) => {
         'UPDATE sessions SET is_active = 0 WHERE user_id = ?'
       ).bind(userId).run();
     } catch (e) {
-      console.log('Session invalidation skipped:', e.message);
+      console.warn('Session invalidation failed (graceful fallback):', e.message);
       // Gracefully continue - is_active column may not exist
     }
     
@@ -438,6 +443,82 @@ router.post('/users/delete-account', async (request, env) => {
     });
   } catch (error) {
     return errorResponse(error.message, 500);
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+// DATA SYNC ENDPOINTS
+// ════════════════════════════════════════════════════════════
+
+// ── SYNC USER DATA ──
+router.post('/api/sync/data', async (request, env) => {
+  try {
+    const auth = verifyAuth(request);
+    if (!auth.valid) {
+      return errorResponse('Unauthorized', 401);
+    }
+
+    const body = await request.json();
+    const { sessionCount, energyLogs, pomodoroSettings, synced_at } = body;
+    const userId = auth.userId;
+
+    // Store data snapshot
+    const snapshot = {
+      sessionCount,
+      energyLogs,
+      pomodoroSettings,
+      synced_at,
+    };
+
+    await env.DB.prepare(
+      `INSERT INTO user_data_snapshots (user_id, snapshot_data, size_bytes)
+       VALUES (?, ?, ?)`
+    ).bind(userId, JSON.stringify(snapshot), JSON.stringify(snapshot).length).run();
+
+    // Log sync event
+    await logEvent(env, userId, 'data_synced', {
+      sessionCount,
+      logCount: energyLogs?.length || 0,
+    });
+
+    return successResponse({
+      message: 'Data synced successfully',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.warn('Data sync error:', error.message);
+    return errorResponse('Failed to sync data: ' + error.message, 500);
+  }
+});
+
+// ── GET LATEST SYNC DATA ──
+router.get('/api/sync/data', async (request, env) => {
+  try {
+    const auth = verifyAuth(request);
+    if (!auth.valid) {
+      return errorResponse('Unauthorized', 401);
+    }
+
+    const userId = auth.userId;
+    const result = await env.DB.prepare(
+      `SELECT snapshot_data, created_at FROM user_data_snapshots
+       WHERE user_id = ? ORDER BY created_at DESC LIMIT 1`
+    ).bind(userId).first();
+
+    if (!result) {
+      return successResponse({
+        data: null,
+        message: 'No sync data found',
+      });
+    }
+
+    return successResponse({
+      data: JSON.parse(result.snapshot_data),
+      synced_at: result.created_at,
+    });
+  } catch (error) {
+    console.warn('Get sync data error:', error.message);
+    return errorResponse('Failed to retrieve sync data: ' + error.message, 500);
   }
 });
 
