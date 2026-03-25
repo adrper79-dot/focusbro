@@ -8,7 +8,10 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "build": "tsc --noEmit",
-    "lint": "eslint src/**/*.js"
+    "lint": "eslint src/**/*.js",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "itty-router": "^4.0.0"
@@ -16,7 +19,10 @@
   "devDependencies": {
     "wrangler": "^3.37.0",
     "@cloudflare/workers-types": "^4.20240604.0",
-    "eslint": "^8.50.0"
+    "eslint": "^8.50.0",
+    "vitest": "^1.0.0",
+    "@vitest/ui": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0"
   },
   "engines": {
     "node": "18.x"
