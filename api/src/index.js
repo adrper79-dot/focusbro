@@ -101,7 +101,33 @@ async function initializeDatabase(env) {
       )`,
       `CREATE INDEX IF NOT EXISTS idx_events_user_time ON focus_events(user_id, client_timestamp)`,
       `CREATE INDEX IF NOT EXISTS idx_events_type ON focus_events(user_id, event_type)`,
-      // ── END PHASE 0 TABLES ──
+      // ── PHASE 3 TABLES ──
+      `CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        endpoint TEXT NOT NULL UNIQUE,
+        p256dh TEXT NOT NULL,
+        auth TEXT NOT NULL,
+        device_label TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        is_active INTEGER DEFAULT 1,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS notification_prefs (
+        user_id TEXT PRIMARY KEY,
+        morning_motivation INTEGER DEFAULT 0,
+        morning_time TEXT DEFAULT '08:00',
+        break_reminders INTEGER DEFAULT 1,
+        medication_reminders INTEGER DEFAULT 1,
+        milestones INTEGER DEFAULT 1,
+        custom_schedule TEXT DEFAULT '{}',
+        timezone TEXT DEFAULT 'UTC',
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_push_user ON push_subscriptions(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_notif_prefs_user ON notification_prefs(user_id)`,
+      // ── END PHASE 3 TABLES ──
       `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`,
       `CREATE INDEX IF NOT EXISTS idx_snapshots_user ON user_data_snapshots(user_id)`,
       `CREATE INDEX IF NOT EXISTS idx_sync_logs_user ON sync_logs(user_id)`,

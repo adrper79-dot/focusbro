@@ -6,6 +6,10 @@
 <title>FocusBro - ADHD-Friendly Focus & Wellness</title>
 <meta name="description" content="Professional focus management with breathing, grounding, and mental wellness tools.">
 <link rel="icon" href="/favicon.ico">
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FocusBro">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -1089,6 +1093,7 @@
         <div class="panel">
           <div class="panel-header"><div class="panel-title">Settings</div></panel-header>
           <div class="panel-body">
+            <h3 style="margin-top: 0;">⏱ Focus Settings</h3>
             <div class="form-group">
               <label class="form-label">Default Pomodoro Duration (minutes)</label>
               <input type="number" id="defaultPomodoro" class="form-input" value="25" min="5" max="60">
@@ -1097,7 +1102,50 @@
               <label class="form-label">Break Duration (minutes)</label>
               <input type="number" id="defaultBreak" class="form-input" value="5" min="1" max="30">
             </div>
-            <button class="btn btn-primary btn-block" onclick="saveSettings()">Save Settings</button>
+            <button class="btn btn-primary btn-block" onclick="saveSettings()" style="margin-bottom: 30px;">Save Settings</button>
+
+            <!-- Notifications Section -->
+            <h3>🔔 Notifications</h3>
+            <div class="form-group">
+              <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="notificationsEnabled" onchange="handleNotificationToggle()">
+                <span>Enable push notifications</span>
+              </label>
+              <div style="font-size: 12px; color: var(--gray-600); margin-top: 8px;">
+                Receive reminders and milestone celebrations
+              </div>
+            </div>
+
+            <div id="notificationPrefsContainer" style="display: none; background: var(--primary-bg); padding: 16px; border-radius: 8px; margin-top: 12px;">
+              <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="breakReminders" checked>
+                  <span>Break reminders</span>
+                </label>
+              </div>
+              <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="medicationReminders" checked>
+                  <span>Medication reminders</span>
+                </label>
+              </div>
+              <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="milestoneNotifications" checked>
+                  <span>Milestone celebrations</span>
+                </label>
+              </div>
+              <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="morningMotivation">
+                  <span>Morning motivation (daily at</span>
+                  <input type="time" id="morningTime" style="width: 100px; padding: 4px; border: 1px solid var(--gray-300); border-radius: 4px;" value="08:00">
+                  <span>)</span>
+                </label>
+              </div>
+              <button class="btn btn-secondary btn-block" style="margin-top: 12px;" onclick="saveNotificationPrefs()">Save Preferences</button>
+              <button class="btn btn-outline btn-block" style="margin-top: 8px;" onclick="sendTestNotification()">Send Test Notification</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1306,6 +1354,320 @@
       sessionsToday,
       mostUsedTool
     };
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // NOTIFICATIONS & SERVICE WORKER
+  // ════════════════════════════════════════════════════════════
+
+  /**
+   * Register the service worker for push notifications and offline support
+   */
+  async function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) {
+      console.log('Service Worker not supported');
+      return;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+      console.log('[Client] Service Worker registered:', reg.scope);
+      
+      // Check for updates periodically
+      setInterval(() => {
+        reg.update().catch(err => console.warn('[Client] SW update check failed:', err.message));
+      }, 60 * 60 * 1000); // Every hour
+    } catch (err) {
+      console.warn('[Client] Service Worker registration failed:', err.message);
+    }
+  }
+
+  /**
+   * Request notification permission from user
+   */
+  async function requestNotificationPermission() {
+    if (!('Notification' in window)) {
+      showToast('Your browser does not support notifications', 'warning');
+      return false;
+    }
+
+    if (Notification.permission === 'granted') {
+      console.log('[Client] Notification permission already granted');
+      return true;
+    }
+
+    if (Notification.permission === 'denied') {
+      showToast('Notifications are blocked. Enable in browser settings.', 'warning');
+      return false;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      console.log('[Client] Notification permission:', permission);
+      return permission === 'granted';
+    } catch (err) {
+      console.warn('[Client] Notification permission request failed:', err.message);
+      return false;
+    }
+  }
+
+  /**
+   * Subscribe to push notifications
+   */
+  async function subscribeToPushNotifications() {
+    if (!user) {
+      showToast('Must be logged in to enable notifications', 'info');
+      return false;
+    }
+
+    const granted = await requestNotificationPermission();
+    if (!granted) {
+      return false;
+    }
+
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      showToast('Your browser does not support push notifications', 'warning');
+      return false;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      
+      // Get VAPID public key from backend
+      const vapidResponse = await fetch('/api/vapid/public-key');
+      if (!vapidResponse.ok) {
+        throw new Error('Failed to fetch VAPID public key');
+      }
+      const { public_key } = await vapidResponse.json();
+
+      // Subscribe to push
+      const subscription = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(public_key)
+      });
+
+      // Send subscription to backend
+      const response = await fetch('/api/notifications/subscribe', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('fbToken')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          subscription: subscription.toJSON(),
+          device_label: `${navigator.userAgent.slice(0, 50)} (${new Date().toLocaleDateString()})`
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save subscription on backend');
+      }
+
+      console.log('[Client] Subscribed to push notifications');
+      showToast('✅ Notifications enabled', 'success');
+      return true;
+    } catch (err) {
+      console.error('[Client] Push subscription failed:', err.message);
+      showToast('Failed to enable notifications: ' + err.message, 'warning');
+      return false;
+    }
+  }
+
+  /**
+   * Convert VAPID public key from base64 to Uint8Array
+   */
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+
+    return outputArray;
+  }
+
+  /**
+   * Send a test notification via browser Notification API
+   */
+  function sendTestNotification() {
+    if (!('Notification' in window) || Notification.permission !== 'granted') {
+      showToast('Notifications not enabled', 'warning');
+      return;
+    }
+
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      // Service worker registered; send via SW
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SEND_TEST_NOTIFICATION',
+        data: {
+          title: 'FocusBro Test Notification',
+          body: 'This is a test notification. Your notifications are working!',
+          tag: 'test-notification'
+        }
+      });
+    } else {
+      // Fallback: use standard Notification API
+      new Notification('FocusBro Test Notification', {
+        icon: '/icon-192.png',
+        badge: '/badge-72.png',
+        body: 'This is a test notification. Your notifications are working!',
+        tag: 'test-notification'
+      });
+    }
+  }
+
+  /**
+   * In-app break reminder (fallback when service worker unavailable)
+   */
+  function showBreakReminder() {
+    if (Notification.permission === 'granted' && !('serviceWorker' in navigator)) {
+      new Notification('Time for a Break! 🧠', {
+        icon: '/icon-192.png',
+        badge: '/badge-72.png',
+        body: 'You\'ve been focused. Take a break and recharge!',
+        tag: 'break-reminder',
+        requireInteraction: false
+      });
+    }
+  }
+
+  /**
+   * Handle notification enable/disable toggle
+   */
+  async function handleNotificationToggle() {
+    const checkbox = document.getElementById('notificationsEnabled');
+    const container = document.getElementById('notificationPrefsContainer');
+
+    if (checkbox.checked) {
+      const success = await subscribeToPushNotifications();
+      if (success) {
+        container.style.display = 'block';
+        loadNotificationPrefs();
+      } else {
+        checkbox.checked = false;
+        container.style.display = 'none';
+      }
+    } else {
+      container.style.display = 'none';
+      // Unsubscribe from push
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const subscription = await reg.pushManager.getSubscription();
+        if (subscription) {
+          await subscription.unsubscribe();
+          // Notify backend
+          await fetch('/api/notifications/subscribe', {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('fbToken')}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ endpoint: subscription.endpoint })
+          }).catch(err => console.warn('Failed to notify backend of unsubscribe:', err));
+        }
+      } catch (err) {
+        console.warn('Error during unsubscribe:', err.message);
+      }
+    }
+  }
+
+  /**
+   * Load notification preferences from server
+   */
+  async function loadNotificationPrefs() {
+    if (!user) return;
+
+    try {
+      const response = await fetch('/api/notifications/prefs', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('fbToken')}` }
+      });
+
+      if (!response.ok) {
+        console.warn('Failed to load notification prefs');
+        return;
+      }
+
+      const prefs = await response.json();
+      document.getElementById('breakReminders').checked = Boolean(prefs.break_reminders);
+      document.getElementById('medicationReminders').checked = Boolean(prefs.medication_reminders);
+      document.getElementById('milestoneNotifications').checked = Boolean(prefs.milestones);
+      document.getElementById('morningMotivation').checked = Boolean(prefs.morning_motivation);
+      document.getElementById('morningTime').value = prefs.morning_time || '08:00';
+    } catch (err) {
+      console.warn('Error loading notification prefs:', err.message);
+    }
+  }
+
+  /**
+   * Save notification preferences to server
+   */
+  async function saveNotificationPrefs() {
+    if (!user) {
+      showToast('Must be logged in', 'warning');
+      return;
+    }
+
+    try {
+      const prefs = {
+        break_reminders: document.getElementById('breakReminders').checked ? 1 : 0,
+        medication_reminders: document.getElementById('medicationReminders').checked ? 1 : 0,
+        milestones: document.getElementById('milestoneNotifications').checked ? 1 : 0,
+        morning_motivation: document.getElementById('morningMotivation').checked ? 1 : 0,
+        morning_time: document.getElementById('morningTime').value
+      };
+
+      const response = await fetch('/api/notifications/prefs', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('fbToken')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(prefs)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save preferences');
+      }
+
+      showToast('✅ Notification preferences saved', 'success');
+    } catch (err) {
+      console.error('Error saving notification prefs:', err.message);
+      showToast('Failed to save preferences: ' + err.message, 'warning');
+    }
+  }
+
+  /**
+   * Check if notifications are enabled and update UI
+   */
+  async function updateNotificationUI() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      document.getElementById('notificationsEnabled').disabled = true;
+      return;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const subscription = await reg.pushManager.getSubscription();
+      const checkbox = document.getElementById('notificationsEnabled');
+      const container = document.getElementById('notificationPrefsContainer');
+
+      if (subscription) {
+        checkbox.checked = true;
+        container.style.display = 'block';
+        loadNotificationPrefs();
+      } else {
+        checkbox.checked = false;
+        container.style.display = 'none';
+      }
+    } catch (err) {
+      console.warn('Error checking notification subscription:', err.message);
+    }
   }
 
   // ════════════════════════════════════════════════════════════
@@ -2237,6 +2599,11 @@
         drawAllCharts();
       }, 50);
     }
+
+    // Initialize settings view if switching to it
+    if (view === 'settings') {
+      updateNotificationUI();
+    }
   }
 
   function updateNavActive(view) {
@@ -2835,6 +3202,9 @@
       // Initial event sync
       syncEventQueue();
     }
+
+    // Register Service Worker for notifications and offline support
+    registerServiceWorker();
   });
 </script>
 </body>

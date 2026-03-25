@@ -1,0 +1,85 @@
+{
+  "name": "FocusBro - Focus & Wellness",
+  "short_name": "FocusBro",
+  "description": "ADHD-friendly focus management and wellness tools",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#6366f1",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/badge-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "badge"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshot-540x720.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshot-1280x720.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "categories": ["productivity", "health"],
+  "shortcuts": [
+    {
+      "name": "Start Pomodoro",
+      "short_name": "Pomodoro",
+      "description": "Quick access to focus timer",
+      "url": "/?shortcut=pomodoro",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Breathing Exercise",
+      "short_name": "Breathing",
+      "description": "Quick breathing exercise",
+      "url": "/?shortcut=breathing",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Analytics Dashboard",
+      "short_name": "Analytics",
+      "description": "View your focus stats",
+      "url": "/?shortcut=analytics",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}

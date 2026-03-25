@@ -809,6 +809,180 @@ router.get('/export/json', async (request, env) => {
   }
 });
 
+// ── GET /vapid/public-key - Serve VAPID public key for push subscriptions ──
+router.get('/vapid/public-key', async (request, env) => {
+  try {
+    const publicKey = env.VAPID_PUBLIC_KEY;
+    if (!publicKey) {
+      console.warn('VAPID_PUBLIC_KEY not configured');
+      return errorResponse('Push notifications not configured', 503);
+    }
+    return jsonResponse({ public_key: publicKey });
+  } catch (error) {
+    console.warn('GET /vapid/public-key error:', error.message);
+    return errorResponse('Failed to retrieve VAPID key', 500);
+  }
+});
+
+// ── POST /notifications/subscribe - Register push subscription ──
+router.post('/notifications/subscribe', async (request, env) => {
+  try {
+    const auth = await verifyToken(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+
+    const userId = auth.user.id;
+    const body = await request.json();
+    const { subscription, device_label } = body;
+
+    if (!subscription || !subscription.endpoint) {
+      return errorResponse('Invalid subscription data', 400);
+    }
+
+    const subscriptionId = crypto.randomUUID();
+    const db = env.DB;
+
+    try {
+      await db.prepare(`
+        INSERT INTO push_subscriptions (id, user_id, endpoint, p256dh, auth, device_label, is_active)
+        VALUES (?, ?, ?, ?, ?, ?, 1)
+        ON CONFLICT(endpoint) DO UPDATE SET
+          user_id = excluded.user_id,
+          is_active = 1,
+          created_at = CURRENT_TIMESTAMP
+      `).bind(
+        subscriptionId,
+        userId,
+        subscription.endpoint,
+        subscription.keys.p256dh,
+        subscription.keys.auth,
+        device_label || 'Unknown Device'
+      ).run();
+
+      console.log('Push subscription saved for user:', userId);
+      return jsonResponse({ success: true, subscription_id: subscriptionId });
+    } catch (dbError) {
+      console.warn('Database error saving push subscription:', dbError.message);
+      return errorResponse('Failed to save subscription', 500);
+    }
+  } catch (error) {
+    console.warn('POST /notifications/subscribe error:', error.message);
+    return errorResponse('Failed to subscribe to notifications', 500);
+  }
+});
+
+// ── DELETE /notifications/subscribe - Remove push subscription ──
+router.delete('/notifications/subscribe', async (request, env) => {
+  try {
+    const auth = await verifyToken(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+
+    const userId = auth.user.id;
+    const body = await request.json();
+    const { endpoint } = body;
+
+    if (!endpoint) {
+      return errorResponse('Endpoint required', 400);
+    }
+
+    const db = env.DB;
+    await db.prepare(`
+      UPDATE push_subscriptions
+      SET is_active = 0
+      WHERE user_id = ? AND endpoint = ?
+    `).bind(userId, endpoint).run();
+
+    console.log('Push subscription removed for user:', userId);
+    return jsonResponse({ success: true });
+  } catch (error) {
+    console.warn('DELETE /notifications/subscribe error:', error.message);
+    return errorResponse('Failed to unsubscribe', 500);
+  }
+});
+
+// ── GET /notifications/prefs - Get notification preferences ──
+router.get('/notifications/prefs', async (request, env) => {
+  try {
+    const auth = await verifyToken(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+
+    const userId = auth.user.id;
+    const db = env.DB;
+
+    let prefs = await db.prepare(`
+      SELECT * FROM notification_prefs WHERE user_id = ?
+    `).bind(userId).first();
+
+    if (!prefs) {
+      // Create default preferences for new user
+      const defaultPrefs = {
+        morning_motivation: 0,
+        morning_time: '08:00',
+        break_reminders: 1,
+        medication_reminders: 1,
+        milestones: 1,
+        custom_schedule: '{}',
+        timezone: 'UTC'
+      };
+
+      await db.prepare(`
+        INSERT INTO notification_prefs 
+        (user_id, morning_motivation, morning_time, break_reminders, medication_reminders, milestones, timezone)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(userId, 0, '08:00', 1, 1, 1, 'UTC').run();
+
+      prefs = defaultPrefs;
+      prefs.user_id = userId;
+    }
+
+    return jsonResponse(prefs);
+  } catch (error) {
+    console.warn('GET /notifications/prefs error:', error.message);
+    return errorResponse('Failed to retrieve preferences', 500);
+  }
+});
+
+// ── PUT /notifications/prefs - Update notification preferences ──
+router.put('/notifications/prefs', async (request, env) => {
+  try {
+    const auth = await verifyToken(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+
+    const userId = auth.user.id;
+    const updates = await request.json();
+    const db = env.DB;
+
+    // Whitelist allowed fields
+    const allowedFields = ['morning_motivation', 'morning_time', 'break_reminders', 'medication_reminders', 'milestones', 'timezone'];
+    let updateStr = 'updated_at = CURRENT_TIMESTAMP';
+    let bindings = [];
+
+    for (const field of allowedFields) {
+      if (field in updates) {
+        updateStr += `, ${field} = ?`;
+        bindings.push(updates[field]);
+      }
+    }
+
+    bindings.push(userId);
+
+    await db.prepare(`
+      UPDATE notification_prefs
+      SET ${updateStr}
+      WHERE user_id = ?
+    `).bind(...bindings).run();
+
+    const updated = await db.prepare(`
+      SELECT * FROM notification_prefs WHERE user_id = ?
+    `).bind(userId).first();
+
+    console.log('Notification preferences updated for user:', userId);
+    return jsonResponse(updated);
+  } catch (error) {
+    console.warn('PUT /notifications/prefs error:', error.message);
+    return errorResponse('Failed to update preferences', 500);
+  }
+});
+
 // ── 404 FALLBACK ──
 router.all('*', () => errorResponse('Not found', 404));
 
