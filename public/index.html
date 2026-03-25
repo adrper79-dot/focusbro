@@ -1570,20 +1570,30 @@
    */
   function exportCSV() {
     const filteredEvents = getAnalyticsData(analyticsRange);
-    let csv = 'Timestamp,Type,Tool,Duration (sec),Data\n';
+    let csv = 'Date,Time,Event Type,Tool,Duration (Minutes),Energy Level,Mood,Notes\n';
 
     filteredEvents.forEach(e => {
-      const data = e.data ? JSON.stringify(e.data).replace(/"/g, '""') : '';
-      csv += `"${e.timestamp}","${e.type}","${e.tool || ''}",${e.duration_seconds || 0},"${data}"\n`;
+      const eventDate = new Date(e.timestamp);
+      const date = eventDate.toLocaleDateString('en-US');
+      const time = eventDate.toLocaleTimeString('en-US');
+      const energyLevel = e.data?.energy || '';
+      const mood = e.data?.mood || '';
+      const notes = e.data?.notes ? e.data.notes.replace(/"/g, '""') : '';
+      const duration = e.duration_seconds ? Math.round(e.duration_seconds / 60) : '';
+      
+      csv += `"${date}","${time}","${e.type}","${e.tool || ''}",${duration},"${energyLevel}","${mood}","${notes}"\n`;
     });
 
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `focusbro-analytics-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `focusbro-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    showToast('✅ CSV exported successfully', 'success');
   }
 
   /**
@@ -1614,6 +1624,7 @@
 
   /**
    * Export analytics as PDF via print dialog.
+   * Generates a styled PDF report document.
    */
   function exportPDF() {
     if (!isProUser()) {
@@ -1621,8 +1632,223 @@
       return;
     }
 
-    // Open print dialog (user selects "Save as PDF")
-    window.print();
+    const stats = getAnalyticsSummary();
+    const user = JSON.parse(localStorage.getItem('fbUser') || '{}');
+    const filteredEvents = getAnalyticsData(analyticsRange);
+    
+    const rangeText = analyticsRange === Infinity ? 'All Time' : `Last ${analyticsRange} Days`;
+    const reportDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    // Build HTML report
+    const reportHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FocusBro Report</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #333; line-height: 1.6; }
+    
+    @media print {
+      body { font-size: 10pt; }
+      .no-print { display: none; }
+      h2 { page-break-before: always; }
+      h2:first-of-type { page-break-before: avoid; }
+      table { page-break-inside: avoid; margin-bottom: 20px; }
+      .section { page-break-inside: avoid; }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      border-bottom: 2px solid #6366f1;
+      padding-bottom: 20px;
+    }
+    .header h1 { font-size: 28px; color: #6366f1; margin-bottom: 5px; }
+    .header p { color: #666; font-size: 12px; }
+    
+    .report-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      font-size: 11px;
+      color: #666;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: #f9f9f9;
+      padding: 15px;
+      border-left: 3px solid #6366f1;
+      border-radius: 4px;
+    }
+    .stat-label { font-size: 11px; color: #666; text-transform: uppercase; }
+    .stat-value { font-size: 24px; font-weight: bold; color: #6366f1; margin-top: 5px; }
+
+    h2 { font-size: 16px; color: #333; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+    h3 { font-size: 13px; color: #555; margin-top: 15px; margin-bottom: 10px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+    }
+    th { background: #f0f0f0; padding: 8px; text-align: left; font-weight: 600; border-bottom: 1px solid #ddd; }
+    td { padding: 8px; border-bottom: 1px solid #eee; }
+    tr:nth-child(even) { background: #f9f9f9; }
+
+    .section { margin-bottom: 25px; }
+    .footer { margin-top: 40px; text-align: center; color: #999; font-size: 9px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🧠 FocusBro Analytics Report</h1>
+    <p>${rangeText} • Generated ${reportDate}</p>
+  </div>
+
+  <div class="report-meta">
+    <div>User: ${user.email || 'Anonymous'}</div>
+    <div>Report Range: ${rangeText}</div>
+  </div>
+
+  <!-- Summary Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">🔥 Current Streak</div>
+      <div class="stat-value">${stats.currentStreak}</div>
+      <div style="font-size: 10px; color: #999;">days</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Longest Streak</div>
+      <div class="stat-value">${stats.longestStreak}</div>
+      <div style="font-size: 10px; color: #999;">days</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">📊 Total Sessions</div>
+      <div class="stat-value">${stats.totalSessions}</div>
+      <div style="font-size: 10px; color: #999;">all time</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">⏱ Focus Time</div>
+      <div class="stat-value">${stats.totalFocusHours}h</div>
+      <div style="font-size: 10px; color: #999;">total</div>
+    </div>
+  </div>
+
+  <!-- Recent Sessions Table -->
+  <div class="section">
+    <h2>Recent Focus Sessions</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Duration</th>
+          <th>Energy</th>
+          <th>Mood</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filteredEvents
+          .filter(e => e.type === 'session_complete' && e.data?.type === 'focus')
+          .slice(0, 20)
+          .map(e => {
+            const d = new Date(e.timestamp);
+            return \`<tr>
+              <td>\${d.toLocaleDateString()}</td>
+              <td>\${d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</td>
+              <td>\${Math.round(e.duration_seconds / 60)} min</td>
+              <td>-</td>
+              <td>-</td>
+            </tr>\`;
+          })
+          .join('')}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Tool Usage Breakdown -->
+  <div class="section">
+    <h2>Tool Usage Summary</h2>
+    ${(() => {
+      const toolCounts = {};
+      filteredEvents.forEach(e => {
+        if (e.tool && (e.type === 'tool_use' || e.type === 'session_complete')) {
+          toolCounts[e.tool] = (toolCounts[e.tool] || 0) + 1;
+        }
+      });
+      const sorted = Object.entries(toolCounts).sort((a, b) => b[1] - a[1]);
+      return sorted.length > 0 ? \`
+        <table style="width: auto;">
+          <thead>
+            <tr>
+              <th>Tool</th>
+              <th style="text-align: center;">Uses</th>
+            </tr>
+          </thead>
+          <tbody>
+            \${sorted.map(([tool, count]) => \`<tr><td>\${tool}</td><td style="text-align: center;">\${count}</td></tr>\`).join('')}
+          </tbody>
+        </table>
+      \` : '<p style="color: #999; font-size: 11px;">No tool usage data available.</p>';
+    })()}
+  </div>
+
+  <!-- Energy Log Table -->
+  <div class="section">
+    <h2>Energy & Mood Log</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Energy</th>
+          <th>Mood</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filteredEvents
+          .filter(e => e.type === 'energy_log')
+          .slice(0, 30)
+          .map(e => {
+            const d = new Date(e.timestamp);
+            return \`<tr>
+              <td>\${d.toLocaleDateString()}</td>
+              <td>\${d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</td>
+              <td>\${e.data?.energy || '-'}/5</td>
+              <td>\${e.data?.mood || '-'}</td>
+            </tr>\`;
+          })
+          .join('') || '<tr><td colspan="4" style="text-align: center; color: #999;">No energy log entries</td></tr>'}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    <p>FocusBro • https://focusbro.net</p>
+    <p>This report is confidential and contains your personal focus and wellness data.</p>
+  </div>
+</body>
+</html>
+    `;
+
+    // Open in new window and print
+    const win = window.open('', '', 'height=600,width=800');
+    win.document.write(reportHtml);
+    win.document.close();
+    
+    setTimeout(() => {
+      win.print();
+      // Close window after user closes print dialog
+      win.onafterprint = () => win.close();
+    }, 500);
   }
 
   // Hamburger menu toggle

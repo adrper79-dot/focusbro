@@ -721,6 +721,94 @@ router.get('/stats/summary', async (request, env) => {
   }
 });
 
+// ── GET /export/csv - Stream events as CSV (Pro users get full history, Free get last 30 days) ──
+router.get('/export/csv', async (request, env) => {
+  try {
+    const auth = await verifyToken(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+
+    const db = env.DB;
+    const userId = auth.user.id;
+    const isPro = ['pro', 'enterprise'].includes(auth.user.subscription_tier);
+
+    // Free tier: last 30 days only
+    const daysBack = isPro ? 365 * 2 : 30;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysBack);
+
+    const query = `
+      SELECT id, event_type, tool, duration_seconds, data, client_timestamp
+      FROM focus_events
+      WHERE user_id = ? AND client_timestamp >= ?
+      ORDER BY client_timestamp DESC
+    `;
+
+    const stmt = db.prepare(query).bind(userId, cutoffDate.toISOString());
+    const result = await stmt.all();
+
+    // Build CSV
+    let csv = 'Date,Time,Event Type,Tool,Duration (Minutes),Data\n';
+    (result.results || result || []).forEach(e => {
+      const d = new Date(e.client_timestamp);
+      const date = d.toLocaleDateString('en-US');
+      const time = d.toLocaleTimeString('en-US');
+      const data = e.data ? JSON.stringify(e.data).replace(/"/g, '""') : '';
+      const duration = e.duration_seconds ? Math.round(e.duration_seconds / 60) : '';
+      csv += `"${date}","${time}","${e.event_type}","${e.tool || ''}",${duration},"${data}"\n`;
+    });
+
+    return new Response(csv, {
+      headers: {
+        'Content-Type': 'text/csv;charset=utf-8',
+        'Content-Disposition': `attachment; filename="focusbro-export-${new Date().toISOString().slice(0,10)}.csv"`,
+        'Cache-Control': 'no-cache'
+      }
+    });
+  } catch (error) {
+    console.warn('GET /export/csv error:', error.message);
+    return errorResponse('Failed to export CSV: ' + error.message, 500);
+  }
+});
+
+// ── GET /export/json - Full data dump as JSON (Pro only) ──
+router.get('/export/json', async (request, env) => {
+  try {
+    const auth = await verifyToken(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+    if (!['pro', 'enterprise'].includes(auth.user.subscription_tier)) {
+      return errorResponse('JSON export requires Pro subscription', 402);
+    }
+
+    const db = env.DB;
+    const userId = auth.user.id;
+
+    const eventsStmt = db.prepare('SELECT * FROM focus_events WHERE user_id = ? ORDER BY client_timestamp DESC').bind(userId);
+    const events = await eventsStmt.all();
+
+    const data = {
+      export_date: new Date().toISOString(),
+      user: {
+        id: auth.user.id,
+        email: auth.user.email,
+        subscription_tier: auth.user.subscription_tier
+      },
+      events: events.results || events || [],
+      event_count: (events.results || events || []).length
+    };
+
+    return new Response(JSON.stringify(data, null, 2), {
+      headers: {
+        'Content-Type': 'application/json;charset=utf-8',
+        'Content-Disposition': `attachment; filename="focusbro-export-${new Date().toISOString().slice(0,10)}.json"`,
+        'Cache-Control': 'no-cache'
+      }
+    });
+  } catch (error) {
+    console.warn('GET /export/json error:', error.message);
+    return errorResponse('Failed to export JSON: ' + error.message, 500);
+  }
+});
+
 // ── 404 FALLBACK ──
 router.all('*', () => errorResponse('Not found', 404));
 
