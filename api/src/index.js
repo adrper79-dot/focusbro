@@ -963,6 +963,22 @@ router.get('/health', async (request, env) => {
   });
 });
 
+// ── API TEST ROUTE (for debugging) ──
+router.get('/api-test', async (request, env) => {
+  return new Response(JSON.stringify({
+    message: 'API routing test successful',
+    extendedRouter: {
+      type: typeof extendedRouter,
+      hasFetch: typeof extendedRouter.fetch === 'function',
+      hasHandle: typeof extendedRouter.handle === 'function',
+      isCallable: typeof extendedRouter === 'function'
+    }
+  }), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+});
+
 // ── ROOT PAGE (Serve HTML) ──
 router.get('/', async (request, env) => {
   return new Response(htmlContent, {
