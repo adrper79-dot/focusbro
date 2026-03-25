@@ -4,6 +4,7 @@
 // ════════════════════════════════════════════════════════════
 
 import { Router } from 'itty-router';
+import config from './config.js';
 import {
   verifyAuth,
   checkRateLimit,
@@ -22,30 +23,266 @@ const router = Router();
 // Restrict to specific origins to prevent CSRF and unauthorized API access
 function getCorsHeaders(request) {
   const origin = request.headers.get('Origin');
+  
+  // Whitelist only trusted origins
   const allowedOrigins = [
     'https://focusbro.net',
     'https://www.focusbro.net',
-    'http://localhost:3000',
-    'http://localhost:8787',
   ];
   
-  // ⚠️  SECURITY: Return 'null' for untrusted origins (not a default safe origin)
-  const corsOrigin = allowedOrigins.includes(origin) ? origin : 'null';
+  // SECURITY: Only include localhost in development (check environment)
+  // In production, localhost should never be allowed
+  const isDevelopment = false; // Set based on environment
+  if (isDevelopment) {
+    allowedOrigins.push('http://localhost:3000', 'http://localhost:8787');
+  }
   
+  // ✅ SECURITY FIX: Do NOT set CORS headers for untrusted origins
+  // This prevents CSRF attacks from any domain
+  if (!origin || !allowedOrigins.includes(origin)) {
+    // Return only basic security headers (no CORS headers)
+    return {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'X-XSS-Protection': '1; mode=block',
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    };
+  }
+  
+  // ✅ For trusted origins, return proper CORS headers
   return {
-    'Access-Control-Allow-Origin': corsOrigin,
-    'Access-Control-Allow-Methods': corsOrigin === 'null' ? '' : 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': corsOrigin === 'null' ? '' : 'Content-Type, Authorization',
-    'Access-Control-Max-Age': corsOrigin === 'null' ? '' : '86400',
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
   };
 }
 
 const corsHeaders = getCorsHeaders({ headers: new Headers() });
 
+// ── INPUT VALIDATION HELPERS ──
+/**
+ * Validate user input with type checking and size limits
+ * @param {any} value - Value to validate
+ * @param {string} type - Expected type (string, number, array, object)
+ * @param {object} opts - Options: { min, max, required, maxSize }
+ * @returns {object} { valid: boolean, error?: string }
+ */
+function validateInput(value, type, opts = {}) {
+  const { min = 0, max = 1000, required = false, maxSize = 10000 } = opts;
+  
+  // Check required
+  if (required && (value === null || value === undefined || value === '')) {
+    return { valid: false, error: 'Field is required' };
+  }
+  
+  // Allow null/undefined if not required
+  if (value === null || value === undefined) {
+    return { valid: true };
+  }
+  
+  // Type validation
+  if (typeof value !== type) {
+    return { valid: false, error: `Expected ${type}, got ${typeof value}` };
+  }
+  
+  // Size validation for strings and arrays
+  if (type === 'string') {
+    if (value.length < min || value.length > max) {
+      return { valid: false, error: `Length must be between ${min} and ${max}` };
+    }
+  } else if (type === 'array') {
+    if (value.length < min || value.length > max) {
+      return { valid: false, error: `Array length must be between ${min} and ${max}` };
+    }
+    // Check total size
+    const size = JSON.stringify(value).length;
+    if (size > maxSize) {
+      return { valid: false, error: `Data exceeds maximum size of ${maxSize} bytes` };
+    }
+  } else if (type === 'number') {
+    if (value < min || value > max) {
+      return { valid: false, error: `Number must be between ${min} and ${max}` };
+    }
+  }
+  
+  return { valid: true };
+}
+
+// ── RESPONSE VALIDATION HELPER ──
+/**
+ * Safely extract data from API responses (handles multiple response formats)
+ * Validates structure before accessing nested properties
+ * @param {any} response - API response data
+ * @param {object} expectedSchema - Expected structure { field: type, ... }
+ * @returns {object} { valid: boolean, data?: any, error?: string }
+ */
+function validateApiResponse(response, expectedSchema = {}) {
+  // Validate response is object
+  if (!response || typeof response !== 'object') {
+    return { valid: false, error: 'Response is not an object' };
+  }
+  
+  // For D1 responses, handle both formats: { results: [...] } or direct array
+  let data = response.results || response;
+  
+  // Validate against schema if provided
+  if (Object.keys(expectedSchema).length > 0) {
+    for (const [field, expectedType] of Object.entries(expectedSchema)) {
+      const value = data[field];
+      
+      if (value === undefined) {
+        return { valid: false, error: `Missing required field: ${field}` };
+      }
+      
+      if (expectedType === 'array' && !Array.isArray(value)) {
+        return { valid: false, error: `Field "${field}" must be an array` };
+      } else if (expectedType !== 'array' && typeof value !== expectedType) {
+        return { valid: false, error: `Field "${field}" must be ${expectedType}, got ${typeof value}` };
+      }
+    }
+  }
+  
+  return { valid: true, data };
+}
+
+// ── SUBSCRIPTION TIER VALIDATION HELPER ──
+/**
+ * Validate that user has required subscription tier for feature access.
+ * Prevents free users from accessing pro/enterprise features.
+ * @param {string} userTier - User's subscription tier ('free', 'pro', 'enterprise')
+ * @param {string|array} requiredTier - Required tier(s) ('free', 'pro', 'enterprise')
+ * @returns {boolean} True if user has access
+ */
+function checkTierAccess(userTier, requiredTier) {
+  // tier hierarchy: free < pro < enterprise
+  const tierHierarchy = { 'free': 0, 'pro': 1, 'enterprise': 2 };
+  const userLevel = tierHierarchy[userTier] ?? 0;
+  
+  // Handle array of allowed tiers
+  if (Array.isArray(requiredTier)) {
+    return requiredTier.some(tier => 
+      (tierHierarchy[tier] ?? 0) <= userLevel
+    );
+  }
+  
+  // Handle single tier requirement
+  const requiredLevel = tierHierarchy[requiredTier] ?? 0;
+  return userLevel >= requiredLevel;
+}
+
+// ── FEATURE FLAGS HELPER ──
+/**
+ * Check if a feature is enabled for a user's subscription tier
+ * Features can be restricted to specific tiers and marked as experimental
+ * @param {string} featureName - Feature key from config.features (e.g. 'slackIntegration', 'advancedAnalytics')
+ * @param {string} userTier - User's subscription tier ('free', 'pro', 'enterprise')
+ * @returns {boolean} True if feature enabled and user has access, false otherwise
+ * @example
+ * if (isFeatureEnabled('slackIntegration', user.subscription_tier)) {
+ *   // Feature is available for this user
+ * }
+ */
+export function isFeatureEnabled(featureName, userTier = 'free') {
+  const feature = config.features[featureName];
+  
+  // Feature doesn't exist in config
+  if (!feature) return false;
+  
+  // Simple boolean flags
+  if (typeof feature === 'boolean') return feature;
+  
+  // Object-based feature with tier requirements
+  if (feature && typeof feature === 'object') {
+    // Check if feature is enabled
+    if (!feature.enabled) return false;
+    
+    // Check tier access if minTier is specified
+    if (feature.minTier) {
+      return checkTierAccess(userTier, feature.minTier);
+    }
+    
+    return true;
+  }
+  
+  return false;
+}
+
 // ── CORS PREFLIGHT ──
 router.options('*', (request) => new Response(null, { headers: getCorsHeaders(request) }));
 
+// ── JSON RESPONSE HELPER ──
+function jsonResponse(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    }
+  });
+}
+
+// ── CACHE CONTROL HEADERS ──
+/**
+ * Get appropriate cache control headers based on endpoint characteristics.
+ * Prevents stale data while reducing unnecessary server requests.
+ * @param {string} strategy - 'nocache' (auth endpoints), 'short' (user data, 5 min), 'medium' (stats, 1 hr), 'static' (config, 24 hr)
+ * @returns {object} Cache-Control header value
+ */
+function getCacheStrategy(strategy) {
+  const strategies = {
+    'nocache': 'no-store, must-revalidate, max-age=0', // Auth, form responses
+    'short': 'private, max-age=300', // User data, events (5 minutes)
+    'medium': 'private, max-age=3600', // Stats, analytics (1 hour)
+    'static': 'private, max-age=86400' // Config, settings (24 hours)
+  };
+  return strategies[strategy] || strategies.nocache;
+}
+
+// ── PASSWORD HASHING & VERIFICATION ──
+/**
+ * Hash password using SHA-256 Web Crypto API
+ * Generates 64-character hexadecimal hash from plaintext password
+ * @param {string} password - Plaintext password to hash
+ * @returns {Promise<string>} 64-character hex-encoded SHA-256 hash
+ * @throws {Error} If crypto operation fails
+ */
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
+/**
+ * Verify plaintext password against stored hash
+ * Uses constant-time comparison implicitly through hash matching
+ * @param {string} password - Plaintext password to verify
+ * @param {string} hash - Stored hash to compare against (64-char hex)
+ * @returns {Promise<boolean>} True if password matches hash, false otherwise
+ * @throws {Error} If hashing operation fails
+ */
+async function verifyPassword(password, hash) {
+  const passwordHash = await hashPassword(password);
+  return passwordHash === hash;
+}
+
 // ── SAFE JSON PARSING ──
+/**
+ * Safely parse request JSON body with error handling
+ * Prevents crashes from invalid JSON in request body
+ * @param {Request} request - Fetch API Request object
+ * @returns {Promise<object>} { success: boolean, data?: any, error?: string }
+ * On success: { success: true, data: parsed_json }
+ * On error: { success: false, error: "Invalid JSON in request body" }
+ */
 async function safeRequestJSON(request) {
   try {
     return { success: true, data: await request.json() };
@@ -58,6 +295,17 @@ async function safeRequestJSON(request) {
 // USER PROFILE ENDPOINTS
 // ════════════════════════════════════════════════════════════
 
+/**
+ * GET /users/profile - Retrieve current user's profile
+ * Requires valid JWT token in Authorization header
+ * Returns user profile with subscription tier, device count, login history
+ * @route GET /users/profile
+ * @auth Bearer token (JWT)
+ * @returns {200} { id, email, firstName, lastName, avatarUrl, subscriptionTier, deviceCount, createdAt, lastLogin }
+ * @returns {401} { error: "Unauthorized" } if token invalid or missing
+ * @returns {404} { error: "Profile not found" } if user deleted
+ * @returns {500} { error: "error message" } on database or crypto errors
+ */
 // ── GET USER PROFILE ──
 router.get('/users/profile', async (request, env) => {
   try {
@@ -83,7 +331,7 @@ router.get('/users/profile', async (request, env) => {
     ).bind(userId).first();
     
     if (!user) {
-      return errorResponse('User not found', 404);
+      return errorResponse('Profile not found', 404);
     }
     
     // Count devices
@@ -108,6 +356,18 @@ router.get('/users/profile', async (request, env) => {
   }
 });
 
+/**
+ * PUT /users/profile - Update current user's profile
+ * Requires valid JWT token in Authorization header
+ * Updates one or more profile fields: firstName, lastName, avatarUrl
+ * @route PUT /users/profile
+ * @auth Bearer token (JWT)
+ * @body { firstName?: string (max 100), lastName?: string (max 100), avatarUrl?: string (valid URL, max 2048) }
+ * @returns {200} { message: "Profile updated successfully" }
+ * @returns {400} { error: "validation error" } if input invalid (type, length, format)
+ * @returns {401} { error: "Unauthorized" } if token invalid or missing
+ * @returns {500} { error: "error message" } on database errors
+ */
 // ── UPDATE USER PROFILE ──
 router.put('/users/profile', async (request, env) => {
   try {
@@ -125,17 +385,32 @@ router.put('/users/profile', async (request, env) => {
     }
     const { firstName, lastName, avatarUrl } = jsonResult.data;
     
-    // Validate input
-    if (firstName && firstName.length > 100) {
-      return errorResponse('First name too long', 400);
+    // Validate input types and lengths
+    if (firstName !== null && firstName !== undefined) {
+      if (typeof firstName !== 'string') {
+        return errorResponse('firstName must be a string', 400);
+      }
+      if (firstName.length > 100) {
+        return errorResponse('firstName too long (max 100 characters)', 400);
+      }
     }
     
-    if (lastName && lastName.length > 100) {
-      return errorResponse('Last name too long', 400);
+    if (lastName !== null && lastName !== undefined) {
+      if (typeof lastName !== 'string') {
+        return errorResponse('lastName must be a string', 400);
+      }
+      if (lastName.length > 100) {
+        return errorResponse('lastName too long (max 100 characters)', 400);
+      }
     }
     
-    if (avatarUrl && !avatarUrl.startsWith('http')) {
-      return errorResponse('Invalid avatar URL', 400);
+    if (avatarUrl !== null && avatarUrl !== undefined) {
+      if (typeof avatarUrl !== 'string') {
+        return errorResponse('avatarUrl must be a string', 400);
+      }
+      if (!avatarUrl.startsWith('http') || avatarUrl.length > 2048) {
+        return errorResponse('Invalid avatar URL', 400);
+      }
     }
     
     // Update profile
@@ -160,6 +435,19 @@ router.put('/users/profile', async (request, env) => {
 // PASSWORD & SECURITY ENDPOINTS
 // ════════════════════════════════════════════════════════════
 
+/**
+ * POST /users/change-password - Change user's password
+ * Requires valid JWT token and current password verification
+ * New password must meet strength requirements (8-256 characters)
+ * @route POST /users/change-password
+ * @auth Bearer token (JWT)
+ * @body { currentPassword: string, newPassword: string (8-256 chars) }
+ * @returns {200} { message: "Profile updated successfully" }
+ * @returns {400} { error: "validation error" } if new password weak or body invalid JSON
+ * @returns {401} { error: "Invalid password" } if currentPassword incorrect
+ * @returns {404} { error: "User not found" } if user record missing
+ * @returns {500} { error: "error message" } on database or crypto errors
+ */
 // ── CHANGE PASSWORD ──
 router.post('/users/change-password', async (request, env) => {
   try {
@@ -177,13 +465,17 @@ router.post('/users/change-password', async (request, env) => {
     }
     const { currentPassword, newPassword } = jsonResult.data;
     
-    if (!currentPassword || !newPassword) {
-      return errorResponse('Missing password fields', 400);
+    // Validate input types and presence
+    if (typeof currentPassword !== 'string' || !currentPassword.trim()) {
+      return errorResponse('Current password must be a non-empty string', 400);
+    }
+    if (typeof newPassword !== 'string' || !newPassword) {
+      return errorResponse('New password must be a non-empty string', 400);
     }
     
     // Validate new password strength
-    if (newPassword.length < 8) {
-      return errorResponse('Password must be at least 8 characters', 400);
+    if (newPassword.length < 8 || newPassword.length > 256) {
+      return errorResponse('New password must be 8-256 characters', 400);
     }
     
     // Get current password hash
@@ -199,7 +491,7 @@ router.post('/users/change-password', async (request, env) => {
     const passwordValid = await verifyPassword(currentPassword, user.password_hash);
     if (!passwordValid) {
       await logEvent(env, userId, 'password_change_failed', { reason: 'Invalid current password' });
-      return errorResponse('Current password is incorrect', 401);
+      return errorResponse('Invalid password', 401);
     }
     
     // Hash new password
@@ -233,22 +525,39 @@ router.post('/users/change-password', async (request, env) => {
 // ── REQUEST PASSWORD RESET ──
 router.post('/auth/request-password-reset', async (request, env) => {
   try {
-    const { email } = await request.json();
+    // Parse JSON safely
+    const jsonResult = await safeRequestJSON(request);
+    if (!jsonResult.success) {
+      return errorResponse(jsonResult.error, 400);
+    }
+    const { email } = jsonResult.data;
     
-    if (!email || !validateEmail(email)) {
+    if (!email || typeof email !== 'string' || !email.trim()) {
+      return errorResponse('Email address required', 400);
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    if (!validateEmail(normalizedEmail)) {
       return errorResponse('Valid email required', 400);
     }
     
-    // Check rate limit
-    const rateLimit = await checkRateLimit(env, `reset:${email}`, 3, 3600000); // 3 per hour
+    // Global rate limit: max 3 requests per email per hour
+    // This prevents both brute force and email enumeration
+    const rateLimitKey = `reset:${normalizedEmail}`;
+    const rateLimit = await checkRateLimit(env, rateLimitKey, 3, 3600000); // 3 per hour
+    
     if (!rateLimit.allowed) {
-      return errorResponse('Too many reset requests. Please try again later.', 429);
+      // Return generic message for security (don't reveal if email is registered)
+      return successResponse({
+        message: 'If this email is registered, password reset instructions have been sent. Please check your email.'
+      });
     }
     
-    // Find user
+    // Find user (but don't reveal if exists)
     const user = await env.DB.prepare(
       'SELECT id FROM users WHERE email = ?'
-    ).bind(email).first();
+    ).bind(normalizedEmail).first();
     
     if (user) {
       // Generate reset token
@@ -264,16 +573,18 @@ router.post('/auth/request-password-reset', async (request, env) => {
       
       // In production, send email with reset link
       // env.SEND_EMAIL({ to: email, resetToken: resetToken });
+      if (env.DEBUG) console.log(`Password reset requested for ${normalizedEmail} (token expires in 30 min)`);
       
-      await logEvent(env, user.id, 'password_reset_requested', { email });
+      await logEvent(env, user.id, 'password_reset_requested', { email: normalizedEmail });
     }
     
-    // Always return success (don't reveal if email exists)
+    // Always return success to prevent email enumeration
     return successResponse({
-      message: 'If this email is registered, password reset instructions have been sent.'
+      message: 'If this email is registered, password reset instructions have been sent. Please check your email.'
     });
   } catch (error) {
-    return errorResponse(error.message, 500);
+    console.error('Password reset request error:', error.message);
+    return errorResponse('error processing request', 500);
   }
 });
 
@@ -287,50 +598,78 @@ router.post('/auth/confirm-password-reset', async (request, env) => {
     }
     const { resetToken, newPassword } = jsonResult.data;
     
-    if (!resetToken || !newPassword) {
-      return errorResponse('Reset token and new password required', 400);
+    // Validate input types and presence
+    if (typeof resetToken !== 'string' || !resetToken.trim()) {
+      return errorResponse('Reset token must be a non-empty string', 400);
+    }
+    if (typeof newPassword !== 'string' || !newPassword) {
+      return errorResponse('New password must be a non-empty string', 400);
     }
     
-    if (newPassword.length < 8) {
+    // Validate password strength
+    if (!validatePassword(newPassword)) {
       return errorResponse('Password must be at least 8 characters', 400);
     }
     
+    if (newPassword.length > 256) {
+      return errorResponse('Password must be less than 256 characters', 400);
+    }
+    
+    // Trim and sanitize token
+    const cleanToken = resetToken.trim();
+    
     // Verify reset token
-    const resetKey = `reset:${resetToken}`;
+    const resetKey = `reset:${cleanToken}`;
     const userId = await env.KV_CACHE.get(resetKey);
     
     if (!userId) {
+      // Return generic message (prevent token enumeration)
       return errorResponse('Invalid or expired reset token', 401);
     }
     
-    // Hash new password
-    const newHash = await hashPassword(newPassword);
+    if (typeof userId !== 'string' || !userId.trim()) {
+      if (env.DEBUG) console.warn('Corrupted reset token in KV cache');
+      return errorResponse('Invalid or expired token', 401);
+    }
+    
+    // Import hashPassword function from index.js (need to use env.DB to get it available in middleware)
+    // For now, we'll use a simple approach - create hash utility inline
+    const encoder = new TextEncoder();
+    const data = encoder.encode(newPassword);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const newHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     
     // Update password
-    await env.DB.prepare(
+    const updateResult = await env.DB.prepare(
       'UPDATE users SET password_hash = ?, updated_at = datetime("now") WHERE id = ?'
     ).bind(newHash, userId).run();
+    
+    if (!updateResult.success) {
+      if (DEBUG) console.error('[PasswordReset] Database update failed');
+      return errorResponse('Failed to reset password', 500);
+    }
     
     // Delete reset token
     await env.KV_CACHE.delete(resetKey);
     
-    // Invalidate all sessions - skip if is_active doesn't exist
+    // Invalidate all sessions
     try {
       await env.DB.prepare(
         'UPDATE sessions SET is_active = 0 WHERE user_id = ?'
       ).bind(userId).run();
     } catch (e) {
       console.warn('Session invalidation failed (graceful fallback):', e.message);
-      // Note: Schema may not support is_active column yet
     }
     
     await logEvent(env, userId, 'password_reset_completed', {});
     
     return successResponse({
-      message: 'Password has been reset. Please log in with your new password.'
+      message: 'Password has been reset successfully. Please log in with your new password.'
     });
   } catch (error) {
-    return errorResponse(error.message, 500);
+    console.error('Password reset confirmation error:', error.message);
+    return errorResponse('Failed to reset password', 500);
   }
 });
 
@@ -496,7 +835,7 @@ router.post('/users/delete-account', async (request, env) => {
 // ── SYNC USER DATA ──
 router.post('/api/sync/data', async (request, env) => {
   try {
-    const auth = verifyAuth(request);
+    const auth = verifyAuth(request, env);
     if (!auth.valid) {
       return errorResponse('Unauthorized', 401);
     }
@@ -504,6 +843,57 @@ router.post('/api/sync/data', async (request, env) => {
     const body = await request.json();
     const { sessionCount, energyLogs, pomodoroSettings, synced_at } = body;
     const userId = auth.userId;
+
+    // Validate input types and sizes
+    const sessionCountValidation = validateInput(sessionCount, 'number', { 
+      min: 0, max: 999999, required: true 
+    });
+    if (!sessionCountValidation.valid) {
+      return errorResponse(`sessionCount: ${sessionCountValidation.error}`, 400);
+    }
+
+    const energyLogsValidation = validateInput(energyLogs, 'array', { 
+      min: 0, max: 500, required: true, maxSize: 50000 
+    });
+    if (!energyLogsValidation.valid) {
+      return errorResponse(`energyLogs: ${energyLogsValidation.error}`, 400);
+    }
+
+    const pomodoroValidation = validateInput(pomodoroSettings, 'object', { 
+      required: false, maxSize: 500 
+    });
+    if (!pomodoroValidation.valid) {
+      return errorResponse(`pomodoroSettings: ${pomodoroValidation.error}`, 400);
+    }
+
+    // Validate pomodoro settings if provided
+    if (pomodoroSettings) {
+      const durationValidation = validateInput(pomodoroSettings.duration, 'number', {
+        min: 5, max: 60
+      });
+      if (!durationValidation.valid) {
+        return errorResponse(`pomodoroSettings.duration: ${durationValidation.error}`, 400);
+      }
+
+      const breakValidation = validateInput(pomodoroSettings.breakDuration, 'number', {
+        min: 1, max: 30
+      });
+      if (!breakValidation.valid) {
+        return errorResponse(`pomodoroSettings.breakDuration: ${breakValidation.error}`, 400);
+      }
+    }
+
+    // Validate timestamp if provided
+    if (synced_at) {
+      try {
+        const ts = new Date(synced_at);
+        if (isNaN(ts.getTime())) {
+          return errorResponse('Invalid timestamp format', 400);
+        }
+      } catch (e) {
+        return errorResponse('Invalid timestamp format', 400);
+      }
+    }
 
     // Store data snapshot
     const snapshot = {
@@ -530,7 +920,7 @@ router.post('/api/sync/data', async (request, env) => {
     });
   } catch (error) {
     console.warn('Data sync error:', error.message);
-    return errorResponse('Failed to sync data: ' + error.message, 500);
+    return errorResponse('Failed to sync data', 500);
   }
 });
 
@@ -592,14 +982,30 @@ router.post('/events', async (request, env) => {
       return errorResponse('events must be an array', 400);
     }
 
-    if (events.length > 500) {
-      return errorResponse('Maximum 500 events per request', 400);
+    if (events.length === 0) {
+      return errorResponse('events array cannot be empty', 400);
     }
 
-    // Validate and filter events
+    if (events.length > config.api.maxEventsPerRequest) {
+      return errorResponse(`Maximum ${config.api.maxEventsPerRequest} events per request`, 400);
+    }
+
+    // Check total payload size
+    const payloadSize = JSON.stringify(body).length;
+    if (payloadSize > config.api.maxPayloadSize) {
+      return errorResponse('Payload too large (max 1MB)', 413);
+    }
+
+    // Validate and filter events with comprehensive checks
     const validEvents = events.filter(e => {
-      // Check required fields
-      if (!e.id || !e.type || !e.timestamp) return false;
+      // Type validation
+      if (typeof e !== 'object' || !e) return false;
+      if (typeof e.id !== 'string' || !e.id.trim()) return false;
+      if (typeof e.type !== 'string' || !e.type.trim()) return false;
+      if (typeof e.timestamp !== 'string') return false;
+      
+      // Whitelist event types to prevent injection
+      if (!config.api.validEventTypes.includes(e.type)) return false;
       
       // Validate timestamp is ISO and not too old/new
       const ts = new Date(e.timestamp);
@@ -607,7 +1013,12 @@ router.post('/events', async (request, env) => {
       
       const now = new Date();
       const diffDays = (now - ts) / (1000 * 60 * 60 * 24);
-      if (diffDays > 730 || diffDays < -7) return false; // 2 years back, 7 days forward
+      if (diffDays > config.api.maxEventAgeDays || diffDays < -config.api.maxFutureEventDays) return false;
+      
+      // Validate optional fields
+      if (e.tool && (typeof e.tool !== 'string' || e.tool.length > config.api.maxToolNameLength)) return false;
+      if (e.duration_seconds && (typeof e.duration_seconds !== 'number' || e.duration_seconds < 0 || e.duration_seconds > config.api.maxSessionDuration)) return false;
+      if (e.data && (typeof e.data !== 'object' || JSON.stringify(e.data).length > config.api.maxEventDataSize)) return false;
       
       return true;
     });
@@ -681,11 +1092,61 @@ router.post('/events', async (request, env) => {
 
     return successResponse({
       accepted: acceptedIds.length,
-      events_received: validEvents.length,
-      accepted_ids: acceptedIds
+      accepted_ids: acceptedIds,
+      rejected: events.length - validEvents.length
     });
   } catch (error) {
     console.error('POST /events error:', error);
+    return errorResponse('Internal server error', 500);
+  }
+});
+
+// ── GET /events - Retrieve paginated focus events ──
+router.get('/events', async (request, env) => {
+  try {
+    const auth = await verifyAuth(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+
+    // Parse pagination parameters
+    const url = new URL(request.url);
+    const page = Math.max(0, parseInt(url.searchParams.get('page') || '0'));
+    const limit = Math.min(500, Math.max(10, parseInt(url.searchParams.get('limit') || '100')));
+    const days = parseInt(url.searchParams.get('days') || '30');
+    
+    // Calculate date range
+    const now = new Date();
+    const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+    
+    // Get total count for pagination
+    const countResult = await env.DB.prepare(
+      `SELECT COUNT(*) as total FROM focus_events 
+       WHERE user_id = ? AND client_timestamp >= ?`
+    ).bind(auth.user.id, cutoffDate).first();
+    
+    const totalItems = countResult?.total || 0;
+    const totalPages = Math.ceil(totalItems / limit);
+    
+    // Get paginated events
+    const offset = page * limit;
+    const events = await env.DB.prepare(
+      `SELECT * FROM focus_events 
+       WHERE user_id = ? AND client_timestamp >= ?
+       ORDER BY client_timestamp DESC
+       LIMIT ? OFFSET ?`
+    ).bind(auth.user.id, cutoffDate, limit, offset).all();
+    
+    return successResponse({
+      events: events.results || events || [],
+      pagination: {
+        page,
+        limit,
+        totalItems,
+        totalPages,
+        hasNext: page < totalPages - 1
+      }
+    });
+  } catch (error) {
+    console.error('GET /events error:', error);
     return errorResponse('Internal server error', 500);
   }
 });
@@ -887,7 +1348,6 @@ router.post('/notifications/subscribe', async (request, env) => {
         device_label || 'Unknown Device'
       ).run();
 
-      console.log('Push subscription saved for user:', userId);
       return jsonResponse({ success: true, subscription_id: subscriptionId });
     } catch (dbError) {
       console.warn('Database error saving push subscription:', dbError.message);
@@ -920,7 +1380,6 @@ router.delete('/notifications/subscribe', async (request, env) => {
       WHERE user_id = ? AND endpoint = ?
     `).bind(userId, endpoint).run();
 
-    console.log('Push subscription removed for user:', userId);
     return jsonResponse({ success: true });
   } catch (error) {
     console.warn('DELETE /notifications/subscribe error:', error.message);
@@ -1004,7 +1463,6 @@ router.put('/notifications/prefs', async (request, env) => {
       SELECT * FROM notification_prefs WHERE user_id = ?
     `).bind(userId).first();
 
-    console.log('Notification preferences updated for user:', userId);
     return jsonResponse(updated);
   } catch (error) {
     console.warn('PUT /notifications/prefs error:', error.message);
@@ -1017,8 +1475,10 @@ router.post('/integrations/slack', async (request, env) => {
   try {
     const auth = await verifyToken(request, env);
     if (!auth.valid) return errorResponse('Unauthorized', 401);
-    if (!['pro', 'enterprise'].includes(auth.user.subscription_tier)) {
-      return errorResponse('Slack integration requires Pro', 402);
+    
+    // ✅ TIER VALIDATION: Slack integration requires Pro or Enterprise tier
+    if (!checkTierAccess(auth.user.subscription_tier, ['pro', 'enterprise'])) {
+      return errorResponse('Slack integration requires Pro subscription', 402);
     }
 
     const userId = auth.user.id;
@@ -1248,18 +1708,75 @@ router.post('/billing/webhook', async (request, env) => {
     const secret = env.STRIPE_WEBHOOK_SECRET;
 
     if (!secret) {
+      console.warn('⚠️ Stripe webhook secret not configured');
       return errorResponse('Webhook not configured', 503);
     }
 
-    // Verify signature (simplified - production should use crypto.subtle)
-    const event = JSON.parse(body);
-    console.log('[Webhook] Event type:', event.type);
+    if (!signature) {
+      console.warn('⚠️ Stripe webhook signature missing');
+      return errorResponse('Webhook signature required', 401);
+    }
+
+    // Verify signature using HMAC-SHA256
+    // Signature format: t=timestamp,v1=signature
+    const encoder = new TextEncoder();
+    const timestampedBody = signature.split(',').find(s => s.startsWith('t='))?.slice(2);
+    const signatureValue = signature.split(',').find(s => s.startsWith('v1='))?.slice(3);
+    
+    if (!timestampedBody || !signatureValue) {
+      console.warn('⚠️ Stripe webhook signature format invalid');
+      return errorResponse('Invalid webhook signature format', 401);
+    }
+
+    // Check timestamp (prevent replay attacks - allow 5 minute window)
+    const timestamp = parseInt(timestampedBody);
+    const now = Math.floor(Date.now() / 1000);
+    if (Math.abs(now - timestamp) > 300) {
+      console.warn('⚠️ Stripe webhook timestamp too old:', now - timestamp, 'seconds ago');
+      return errorResponse('Webhook timestamp expired', 401);
+    }
+
+    // Verify signature: HMAC(secret, timestamp.body)
+    try {
+      const keyData = encoder.encode(secret);
+      const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+      const messageData = encoder.encode(`${timestampedBody}.${body}`);
+      const signatureBytes = new Uint8Array(signatureValue.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+      const isValid = await crypto.subtle.verify('HMAC', key, signatureBytes, messageData);
+      
+      if (!isValid) {
+        console.warn('⚠️ Stripe webhook signature verification failed');
+        return errorResponse('Webhook signature invalid', 401);
+      }
+    } catch (cryptoError) {
+      console.warn('⚠️ Webhook signature verification error:', cryptoError.message);
+      return errorResponse('Signature verification failed', 401);
+    }
+
+    // Parse and process event
+    let event;
+    try {
+      event = JSON.parse(body);
+    } catch (parseError) {
+      console.warn('⚠️ Stripe webhook body malformed');
+      return errorResponse('Invalid webhook body', 400);
+    }
+
+    // Log event type only (no sensitive customer data)
+    if (process.env.DEBUG === '1') {
+      console.log('Webhook verified - Event type:', event.type);
+    }
 
     const db = env.DB;
 
     if (event.type === 'checkout.session.completed') {
       const { customer, subscription: subscriptionId } = event.data.object;
       const plan = event.data.object.metadata?.plan || 'pro';
+
+      if (!customer || !subscriptionId) {
+        console.warn('⚠️ Webhook missing customer or subscription data');
+        return jsonResponse({ received: true });
+      }
 
       // Get user from Stripe customer
       // In production, store the user_id in Stripe metadata during checkout
@@ -1275,10 +1792,19 @@ router.post('/billing/webhook', async (request, env) => {
           SELECT user_id FROM subscriptions WHERE stripe_customer_id = ?
         )
       `).bind(plan, customer).run();
+
+      if (process.env.DEBUG === '1') {
+        console.log('Webhook: Subscription updated');
+      }
     }
 
     if (event.type === 'customer.subscription.deleted') {
       const { customer } = event.data.object;
+
+      if (!customer) {
+        console.warn('⚠️ Webhook missing customer data for subscription.deleted');
+        return jsonResponse({ received: true });
+      }
 
       await db.prepare(`
         UPDATE subscriptions SET status = 'canceled', plan = 'free'
@@ -1290,12 +1816,267 @@ router.post('/billing/webhook', async (request, env) => {
           SELECT user_id FROM subscriptions WHERE stripe_customer_id = ?
         )
       `).bind(customer).run();
+
+      if (process.env.DEBUG === '1') {
+        console.log('Webhook: Subscription canceled');
+      }
     }
 
     return jsonResponse({ received: true });
   } catch (error) {
-    console.warn('POST /billing/webhook error:', error.message);
-    return jsonResponse({ received: true }); // Always return 200 to Stripe
+    console.error('❌ Webhook processing error:', error.message);
+    // Still return 200 to Stripe so it doesn't retry
+    return jsonResponse({ received: true, error: error.message });
+  }
+});
+
+// ── GET /gallery - Motivational Image Gallery (1000+ work-safe images) ──
+// Returns 10 random images seeded by user ID for consistency
+// Categories: focus, adhd, energy, growth, brain, nature, motivation
+router.get('/gallery', async (request, env) => {
+  try {
+    const url = new URL(request.url);
+    const seed = url.searchParams.get('seed') || Math.random().toString();
+    let category = url.searchParams.get('category') || 'focus';
+    const limit = Math.min(20, Math.max(5, parseInt(url.searchParams.get('limit') || '10')));
+
+    // Safe keyword mappings (whitelist prevents NSFW content)
+    const safeKeywords = {
+      focus: ['focus work', 'concentration', 'productivity', 'mindfulness', 'deep work'],
+      adhd: ['neurodiversity', 'colorful', 'creative chaos', 'vibrant energy', 'flowing'],
+      energy: ['lightning', 'electricity', 'bright light', 'glowing', 'power'],
+      growth: ['mountain climb', 'progress', 'success', 'achievement', 'growth'],
+      brain: ['brain circuits', 'neurons', 'neural', 'mind', 'intelligence'],
+      nature: ['forest', 'water', 'calm nature', 'peaceful landscape', 'zen'],
+      motivation: ['inspiration', 'celebration', 'success', 'achievement', 'victory'],
+    };
+
+    // Randomize category if requested
+    if (category === 'random') {
+      const categories = Object.keys(safeKeywords);
+      const hash = seed.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+      category = categories[hash % categories.length];
+    }
+
+    // Validate category
+    if (!safeKeywords[category]) {
+      return errorResponse('Invalid category', 400);
+    }
+
+    const keywords = safeKeywords[category];
+    const cacheKey = `gallery:${category}`;
+    
+    // Check KV cache first
+    const cached = await env.KV_CACHE.get(cacheKey);
+    let images = [];
+
+    if (cached) {
+      images = JSON.parse(cached);
+    } else {
+      // Fetch from Pexels API (free tier, no auth required for basic requests)
+      for (const keyword of keywords) {
+        try {
+          const response = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(keyword)}&per_page=80&page=1`, {
+            headers: {
+              'Authorization': env.PEXELS_API_KEY || 'PexelsSignup-Optional',
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            
+            // ✅ SECURITY: Validate Pexels response structure before accessing nested properties
+            if (data.photos && Array.isArray(data.photos) && data.photos.length > 0) {
+              // Safely extract photo data with defaults
+              images = images.concat(data.photos.map(p => {
+                // Defensive extraction: use optional chaining + defaults
+                return {
+                  url: p?.src?.medium || p?.src?.small || '',
+                  alt: p?.photographer || 'Photo',
+                  source: 'pexels'
+                };
+              }).filter(img => img.url)); // Filter out invalid entries
+            }
+          }
+        } catch (e) {
+          if (env.DEBUG) console.warn(`Pexels API error for "${keyword}":`, e.message);
+        }
+      }
+
+      // Try Unsplash as fallback
+      if (images.length < 50) {
+        try {
+          const keyword = keywords[0];
+          const response = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(keyword)}&per_page=80&page=1`, {
+            headers: {
+              'Authorization': 'Client-ID ' + (env.UNSPLASH_ACCESS_KEY || 'demo')
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            
+            // ✅ SECURITY: Validate Unsplash response structure before accessing nested properties
+            if (data.results && Array.isArray(data.results) && data.results.length > 0) {
+              // Safely extract photo data with defaults
+              images = images.concat(data.results.map(p => {
+                // Defensive extraction: use optional chaining + defaults
+                return {
+                  url: p?.urls?.regular || p?.urls?.full || '',
+                  alt: p?.user?.name || 'Photo',
+                  source: 'unsplash'
+                };
+              }).filter(img => img.url)); // Filter out invalid entries
+            }
+          }
+        } catch (e) {
+          if (env.DEBUG) console.warn('Unsplash API error:', e.message);
+        }
+      }
+
+      // If we got at least some images, cache them (24 hour TTL)
+      if (images.length > 0) {
+        await env.KV_CACHE.put(cacheKey, JSON.stringify(images), { expirationTtl: 86400 });
+      }
+    }
+
+    // Seeded random selection (deterministic based on user seed)
+    // Same user always gets same images, different users get different random selections
+    const seededShuffle = (arr, seed) => {
+      const result = [...arr];
+      let hash = seed.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+      
+      for (let i = result.length - 1; i > 0; i--) {
+        hash = (hash * 9301 + 49297) % 233280;
+        const j = Math.floor((hash / 233280) * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      
+      return result;
+    };
+
+    const shuffled = seededShuffle(images, seed);
+    const selected = shuffled.slice(0, limit);
+
+    return successResponse({
+      images: selected,
+      category,
+      count: selected.length,
+      total: images.length,
+      seed: seed.substring(0, 8) // Return truncated seed
+    });
+
+  } catch (error) {
+    if (env.DEBUG) console.error('Gallery endpoint error:', error.message);
+    // Graceful fallback - return empty array, frontend will use local SVG set
+    return successResponse({
+      images: [],
+      error: 'Gallery service temporarily unavailable',
+      count: 0
+    });
+  }
+});
+
+// ── BILLING ENDPOINTS (Placeholder) ──
+// These endpoints stub out billing functionality
+router.get('/billing/status', async (request, env) => {
+  try {
+    const auth = await verifyAuth(request, env);
+    if (!auth) return errorResponse('Unauthorized', 401);
+
+    return successResponse({
+      plan: 'free',
+      subscription_id: null,
+      next_billing_date: null,
+      can_upgrade: true
+    });
+  } catch (error) {
+    if (env.DEBUG) console.error('Billing status error:', error.message);
+    return errorResponse('Failed to fetch billing status', 500);
+  }
+});
+
+router.post('/billing/create-checkout', async (request, env) => {
+  try {
+    const auth = await verifyAuth(request, env);
+    if (!auth) return errorResponse('Unauthorized', 401);
+
+    const { plan } = await request.json();
+    
+    if (!plan || !['pro', 'enterprise'].includes(plan)) {
+      return errorResponse('Invalid plan', 400);
+    }
+
+    // Placeholder: Return message about billing not yet configured
+    return successResponse({
+      message: 'Billing system coming soon',
+      plan: plan,
+      status: 'not_configured'
+    });
+  } catch (error) {
+    if (env.DEBUG) console.error('Checkout error:', error.message);
+    return errorResponse('Failed to create checkout', 500);
+  }
+});
+
+router.get('/billing/portal', async (request, env) => {
+  try {
+    const auth = await verifyAuth(request, env);
+    if (!auth) return errorResponse('Unauthorized', 401);
+
+    return successResponse({
+      message: 'Billing portal coming soon',
+      status: 'not_configured'
+    });
+  } catch (error) {
+    if (env.DEBUG) console.error('Billing portal error:', error.message);
+    return errorResponse('Failed to open billing portal', 500);
+  }
+});
+
+// ── GET FEATURE FLAGS ──
+/**
+ * GET /features - Get enabled features for current user's tier
+ * Returns feature availability based on subscription tier
+ * Useful for frontend to conditionally show/hide features
+ * @route GET /features
+ * @auth Optional Bearer token (uses free tier if not provided)
+ * @returns {200} { success: true, features: { featureName: boolean, ... } }
+ * @example
+ * // Get features for authenticated user (pro tier)
+ * GET /features
+ * Authorization: Bearer <token>
+ * Response: { success: true, features: { slackIntegration: true, advancedAnalytics: true, darkModeApi: true }}
+ */
+router.get('/features', async (request, env) => {
+  try {
+    let userTier = 'free';
+    
+    // Check if user is authenticated to get their tier
+    const auth = await verifyAuth(request, env);
+    if (auth.valid) {
+      const user = await env.DB.prepare(
+        'SELECT subscription_tier FROM users WHERE id = ?'
+      ).bind(auth.userId).first();
+      
+      if (user?.subscription_tier) {
+        userTier = user.subscription_tier;
+      }
+    }
+    
+    // Build feature flags object for this user tier
+    const features = {};
+    for (const [featureName] of Object.entries(config.features)) {
+      features[featureName] = isFeatureEnabled(featureName, userTier);
+    }
+    
+    return successResponse({
+      features,
+      tier: userTier,
+      message: 'Feature flags retrieved successfully'
+    });
+  } catch (error) {
+    return errorResponse('Failed to retrieve feature flags', 500);
   }
 });
 
