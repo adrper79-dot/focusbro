@@ -1254,7 +1254,7 @@
     };
 
     // Load existing events
-    fbEvents = JSON.parse(localStorage.getItem('fbEvents') || '[]');
+    fbEvents = safeJSONParse('fbEvents', []);
     
     // Add the new event
     fbEvents.push(event);
@@ -1276,7 +1276,7 @@
    * Safe iteration limit: max 730 days (2 years).
    */
   function getStreak() {
-    fbEvents = JSON.parse(localStorage.getItem('fbEvents') || '[]');
+    fbEvents = safeJSONParse('fbEvents', []);
 
     // Filter only session_complete events with type 'focus'
     const focusSessions = fbEvents.filter(e => 
@@ -1340,7 +1340,7 @@
    * Computed from cached streaks + event counts.
    */
   function getAnalyticsSummary() {
-    fbEvents = JSON.parse(localStorage.getItem('fbEvents') || '[]');
+    fbEvents = safeJSONParse('fbEvents', []);
     const streak = getStreak();
 
     // Count sessions today
@@ -1908,7 +1908,7 @@
    */
   function isProUser() {
     try {
-      const user = JSON.parse(localStorage.getItem('fbUser') || '{}');
+      const user = safeJSONParse('fbUser', {});
       return user.subscription_tier === 'pro' || user.subscription_tier === 'enterprise';
     } catch (e) {
       return false;
@@ -1948,7 +1948,7 @@
    * Get events filtered by time range.
    */
   function getAnalyticsData(days) {
-    fbEvents = JSON.parse(localStorage.getItem('fbEvents') || '[]');
+    fbEvents = safeJSONParse('fbEvents', []);
     const now = Date.now();
     const cutoff = now - (days === Infinity ? 1000 * 365 * 24 * 60 * 60 * 100 : days * 24 * 60 * 60 * 1000);
     
@@ -2304,7 +2304,7 @@
   </div>
 
   <div class="report-meta">
-    <div>User: ${user.email || 'Anonymous'}</div>
+    <div>User: ${sanitizeForHTML(user.email || 'Anonymous')}</div>
     <div>Report Range: ${rangeText}</div>
   </div>
 
@@ -2503,6 +2503,56 @@
     return div.innerHTML;
   }
 
+  /**
+   * Safely parse JSON from localStorage and other sources
+   * @param {string} key - localStorage key
+   * @param {*} defaultValue - Return value if parsing fails (default: [])
+   * @returns {*} Parsed value or defaultValue
+   */
+  function safeJSONParse(key, defaultValue = []) {
+    try {
+      const item = localStorage.getItem(key);
+      if (!item) return defaultValue;
+      const parsed = JSON.parse(item);
+      return parsed !== null && parsed !== undefined ? parsed : defaultValue;
+    } catch (e) {
+      console.warn(`⚠️  Failed to parse localStorage[${key}], using default:`, e.message);
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Safely parse JSON from a string
+   * @param {string} json - JSON string
+   * @param {*} defaultValue - Return value if parsing fails
+   * @returns {*} Parsed value or defaultValue
+   */
+  function safeParse(json, defaultValue = null) {
+    try {
+      return json ? JSON.parse(json) : defaultValue;
+    } catch (e) {
+      console.warn('Failed to parse JSON:', e.message);
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Sanitize HTML for safe insertion into templates
+   * @param {*} value - Value to sanitize
+   * @returns {string} Sanitized text
+   */
+  function sanitizeForHTML(value) {
+    if (value === null || value === undefined) return '';
+    const escapeMap = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    };
+    return String(value).replace(/[&<>"']/g, char => escapeMap[char]);
+  }
+
   // Form validation
   function validateEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -2611,7 +2661,7 @@
     if (!user) return; // Not authenticated
     
     // Load current events
-    fbEvents = JSON.parse(localStorage.getItem('fbEvents') || '[]');
+    fbEvents = safeJSONParse('fbEvents', []);
     
     // Find unsynced events
     const unsyncedEvents = fbEvents.filter(e => !e.synced);

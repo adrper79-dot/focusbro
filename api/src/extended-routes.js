@@ -29,11 +29,14 @@ function getCorsHeaders(request) {
     'http://localhost:8787',
   ];
   
+  // ⚠️  SECURITY: Return 'null' for untrusted origins (not a default safe origin)
+  const corsOrigin = allowedOrigins.includes(origin) ? origin : 'null';
+  
   return {
-    'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : 'https://focusbro.net',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Max-Age': '86400',
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Methods': corsOrigin === 'null' ? '' : 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': corsOrigin === 'null' ? '' : 'Content-Type, Authorization',
+    'Access-Control-Max-Age': corsOrigin === 'null' ? '' : '86400',
   };
 }
 
