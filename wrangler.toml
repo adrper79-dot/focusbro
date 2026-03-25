@@ -22,8 +22,8 @@ preview_id = "placeholder-kv-preview-id"
 # Environment-specific config
 [env.production]
 routes = [
-  { pattern = "focusbro.net", zone_name = "focusbro.net" },
-  { pattern = "*.focusbro.net", zone_name = "focusbro.net" }
+  { pattern = "focusbro.net/*", zone_name = "focusbro.net" },
+  { pattern = "*.focusbro.net/*", zone_name = "focusbro.net" }
 ]
 d1_databases = [{ binding = "DB", database_id = "2ac20b08-66e3-4abd-92de-f0e6380bdad0", database_name = "focusbro" }]
 kv_namespaces = [{ binding = "KV_CACHE", id = "60c1852cd70f4999a380b9ea290fccb3", preview_id = "60c1852cd70f4999a380b9ea290fccb3" }]
