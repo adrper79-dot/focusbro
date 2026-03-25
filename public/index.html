@@ -2731,12 +2731,18 @@
     if (medDisplayInterval) clearInterval(medDisplayInterval);
     if (syncInterval) clearInterval(syncInterval);
     if (keepAliveInterval) clearInterval(keepAliveInterval);
+    if (bodyScanInterval) clearInterval(bodyScanInterval);
+    if (meditationTimer) clearInterval(meditationTimer);
+    if (activityInterval) clearInterval(activityInterval);
     
     pomodoroTimer = null;
     medInterval = null;
     medDisplayInterval = null;
     syncInterval = null;
     keepAliveInterval = null;
+    bodyScanInterval = null;
+    meditationTimer = null;
+    activityInterval = null;
   }
 
   function logout() {
