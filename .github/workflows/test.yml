@@ -3,39 +3,42 @@ name: FocusBro API Tests
 on:
   push:
     branches: [ main, develop ]
-    paths:
-      - 'api/**'
-      - '.github/workflows/test.yml'
-      - 'create-html-module.js'
   pull_request:
     branches: [ main, develop ]
-    paths:
-      - 'api/**'
 
 jobs:
   test:
     runs-on: ubuntu-latest
     
-    strategy:
-      matrix:
-        node-version: [18.x]
-    
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node.js 18.x
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        cache-dependency-path: api/package-lock.json
+        node-version: "18.x"
+        cache: "npm"
+        cache-dependency-path: |
+          package-lock.json
+          api/package-lock.json
     
-    - name: Install dependencies
+    - name: Install root dependencies
+      run: npm ci
+      continue-on-error: true
+    
+    - name: Install API dependencies
       run: cd api && npm ci
     
     - name: Build HTML module
       run: node create-html-module.js
     
-    - name: Run tests
+    - name: Run API tests
       run: cd api && npm test
+      
+    - name: Show logs on failure
+      if: failure()
+      run: ls -la && pwd && echo "=== Node version ===" && node --version && npm --version
+
 
