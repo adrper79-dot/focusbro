@@ -1101,6 +1101,8 @@
       hamburger.setAttribute('aria-expanded', 'false');
     }
   });
+
+  function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `<div class="toast-message">${escapeHtml(message)}</div><button class="toast-close" onclick="this.parentElement.remove()">×</button>`;
