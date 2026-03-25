@@ -504,6 +504,19 @@ router.get('/', async (request, env) => {
   });
 });
 
+// ── FAVICON ──
+router.get('/favicon.ico', async (request, env) => {
+  // Serve SVG favicon
+  const svgFavicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="#0a0e27" width="100" height="100"/><circle cx="50" cy="50" r="45" fill="#0ea5e9" opacity="0.2"/><text x="50" y="68" font-size="60" font-family="Arial" fill="#0ea5e9" text-anchor="middle">🧠</text></svg>`;
+  return new Response(svgFavicon, {
+    status: 200,
+    headers: {
+      'Content-Type': 'image/svg+xml',
+      'Cache-Control': 'public, max-age=86400'
+    }
+  });
+});
+
 // ── 404 Fallback ──
 router.all('*', () => new Response(JSON.stringify({ error: 'Not found' }), {
   status: 404,
