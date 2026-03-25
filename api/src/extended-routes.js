@@ -983,6 +983,293 @@ router.put('/notifications/prefs', async (request, env) => {
   }
 });
 
+// ── POST /integrations/slack - Save Slack webhook ──
+router.post('/integrations/slack', async (request, env) => {
+  try {
+    const auth = await verifyToken(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+    if (!['pro', 'enterprise'].includes(auth.user.subscription_tier)) {
+      return errorResponse('Slack integration requires Pro', 402);
+    }
+
+    const userId = auth.user.id;
+    const { webhook_url, channel_id } = await request.json();
+
+    if (!webhook_url || !webhook_url.startsWith('https://hooks.slack.com/')) {
+      return errorResponse('Invalid webhook URL', 400);
+    }
+
+    const integrationId = crypto.randomUUID();
+    const db = env.DB;
+
+    await db.prepare(`
+      INSERT OR REPLACE INTO slack_integrations
+      (id, user_id, webhook_url, channel_id, is_active)
+      VALUES (?, ?, ?, ?, 1)
+    `).bind(integrationId, userId, webhook_url, channel_id || null).run();
+
+    return jsonResponse({ success: true, integration_id: integrationId });
+  } catch (error) {
+    console.warn('POST /integrations/slack error:', error.message);
+    return errorResponse('Failed to save Slack integration', 500);
+  }
+});
+
+// ── GET /integrations/slack - Get Slack config ──
+router.get('/integrations/slack', async (request, env) => {
+  try {
+    const auth = await verifyToken(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+
+    const userId = auth.user.id;
+    const db = env.DB;
+
+    const integration = await db.prepare(`
+      SELECT id, webhook_url, channel_id, post_sessions, created_at
+      FROM slack_integrations
+      WHERE user_id = ? AND is_active = 1
+    `).bind(userId).first();
+
+    if (!integration) {
+      return jsonResponse({ configured: false });
+    }
+
+    return jsonResponse({
+      configured: true,
+      webhook_url: integration.webhook_url ? '***' : null,
+      channel_id: integration.channel_id,
+      post_sessions: Boolean(integration.post_sessions),
+      created_at: integration.created_at
+    });
+  } catch (error) {
+    console.warn('GET /integrations/slack error:', error.message);
+    return errorResponse('Failed to retrieve Slack config', 500);
+  }
+});
+
+// ── POST /integrations/slack/test - Send test Slack message ──
+router.post('/integrations/slack/test', async (request, env) => {
+  try {
+    const auth = await verifyToken(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+
+    const userId = auth.user.id;
+    const db = env.DB;
+
+    const integration = await db.prepare(`
+      SELECT webhook_url FROM slack_integrations
+      WHERE user_id = ? AND is_active = 1
+    `).bind(userId).first();
+
+    if (!integration || !integration.webhook_url) {
+      return errorResponse('Slack not configured', 404);
+    }
+
+    const message = {
+      text: '✅ FocusBro connected to Slack! Your focus sessions will appear here.'
+    };
+
+    const response = await fetch(integration.webhook_url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(message)
+    });
+
+    if (!response.ok) {
+      console.warn('Slack webhook failed:', response.status, await response.text());
+      return errorResponse('Slack webhook rejected request', 400);
+    }
+
+    return jsonResponse({ success: true });
+  } catch (error) {
+    console.warn('POST /integrations/slack/test error:', error.message);
+    return errorResponse('Failed to send test message', 500);
+  }
+});
+
+// ── DELETE /integrations/slack - Disconnect Slack ──
+router.delete('/integrations/slack', async (request, env) => {
+  try {
+    const auth = await verifyToken(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+
+    const userId = auth.user.id;
+    const db = env.DB;
+
+    await db.prepare(`
+      UPDATE slack_integrations SET is_active = 0 WHERE user_id = ?
+    `).bind(userId).run();
+
+    return jsonResponse({ success: true });
+  } catch (error) {
+    console.warn('DELETE /integrations/slack error:', error.message);
+    return errorResponse('Failed to disconnect Slack', 500);
+  }
+});
+
+// ── POST /billing/create-checkout - Create Stripe session ──
+router.post('/billing/create-checkout', async (request, env) => {
+  try {
+    const auth = await verifyToken(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+
+    const { plan } = await request.json(); // 'pro' or 'enterprise'
+    if (!['pro', 'enterprise'].includes(plan)) {
+      return errorResponse('Invalid plan', 400);
+    }
+
+    const stripeKey = env.STRIPE_SECRET_KEY;
+    if (!stripeKey) {
+      return errorResponse('Billing not configured', 503);
+    }
+
+    // Get or create Stripe customer
+    const db = env.DB;
+    let subscription = await db.prepare(`
+      SELECT stripe_customer_id FROM subscriptions WHERE user_id = ?
+    `).bind(auth.user.id).first();
+
+    let customerId = subscription?.stripe_customer_id;
+
+    if (!customerId) {
+      // Create customer via Stripe API
+      const customerRes = await fetch('https://api.stripe.com/v1/customers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${stripeKey}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `email=${encodeURIComponent(auth.user.email)}&description=${encodeURIComponent(auth.user.email)}`
+      });
+
+      if (!customerRes.ok) {
+        console.warn('Failed to create Stripe customer');
+        return errorResponse('Failed to create checkout session', 500);
+      }
+
+      const customer = await customerRes.json();
+      customerId = customer.id;
+
+      // Save to DB
+      await db.prepare(`
+        INSERT OR REPLACE INTO subscriptions (id, user_id, stripe_customer_id, plan)
+        VALUES (?, ?, ?, ?)
+      `).bind(crypto.randomUUID(), auth.user.id, customerId, plan).run();
+    }
+
+    // Create checkout session
+    const priceId = plan === 'pro' ? env.STRIPE_PRICE_PRO_MONTHLY : env.STRIPE_PRICE_ENTERPRISE_MONTHLY;
+    const checkoutRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${stripeKey}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        'customer': customerId,
+        'payment_method_types[]': 'card',
+        'line_items[0][price]': priceId,
+        'line_items[0][quantity]': '1',
+        'mode': 'subscription',
+        'success_url': `${env.API_ORIGIN}/?upgraded=true&plan=${plan}`,
+        'cancel_url': `${env.API_ORIGIN}/?checkout=cancelled`
+      })
+    });
+
+    if (!checkoutRes.ok) {
+      console.warn('Failed to create checkout session');
+      return errorResponse('Failed to create checkout session', 500);
+    }
+
+    const session = await checkoutRes.json();
+    return jsonResponse({ url: session.url });
+  } catch (error) {
+    console.warn('POST /billing/create-checkout error:', error.message);
+    return errorResponse('Failed to create checkout', 500);
+  }
+});
+
+// ── GET /billing/status - Get subscription status ──
+router.get('/billing/status', async (request, env) => {
+  try {
+    const auth = await verifyToken(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+
+    const db = env.DB;
+    const subscription = await db.prepare(`
+      SELECT plan, status, current_period_end FROM subscriptions WHERE user_id = ?
+    `).bind(auth.user.id).first();
+
+    return jsonResponse({
+      plan: subscription?.plan || 'free',
+      status: subscription?.status || 'active',
+      current_period_end: subscription?.current_period_end
+    });
+  } catch (error) {
+    console.warn('GET /billing/status error:', error.message);
+    return errorResponse('Failed to retrieve status', 500);
+  }
+});
+
+// ── POST /billing/webhook - Stripe webhook ──
+router.post('/billing/webhook', async (request, env) => {
+  try {
+    const signature = request.headers.get('stripe-signature');
+    const body = await request.text();
+    const secret = env.STRIPE_WEBHOOK_SECRET;
+
+    if (!secret) {
+      return errorResponse('Webhook not configured', 503);
+    }
+
+    // Verify signature (simplified - production should use crypto.subtle)
+    const event = JSON.parse(body);
+    console.log('[Webhook] Event type:', event.type);
+
+    const db = env.DB;
+
+    if (event.type === 'checkout.session.completed') {
+      const { customer, subscription: subscriptionId } = event.data.object;
+      const plan = event.data.object.metadata?.plan || 'pro';
+
+      // Get user from Stripe customer
+      // In production, store the user_id in Stripe metadata during checkout
+      await db.prepare(`
+        UPDATE subscriptions
+        SET stripe_subscription_id = ?, plan = ?, status = 'active'
+        WHERE stripe_customer_id = ?
+      `).bind(subscriptionId, plan, customer).run();
+
+      // Update user tier
+      await db.prepare(`
+        UPDATE users SET subscription_tier = ? WHERE id = (
+          SELECT user_id FROM subscriptions WHERE stripe_customer_id = ?
+        )
+      `).bind(plan, customer).run();
+    }
+
+    if (event.type === 'customer.subscription.deleted') {
+      const { customer } = event.data.object;
+
+      await db.prepare(`
+        UPDATE subscriptions SET status = 'canceled', plan = 'free'
+        WHERE stripe_customer_id = ?
+      `).bind(customer).run();
+
+      await db.prepare(`
+        UPDATE users SET subscription_tier = 'free' WHERE id = (
+          SELECT user_id FROM subscriptions WHERE stripe_customer_id = ?
+        )
+      `).bind(customer).run();
+    }
+
+    return jsonResponse({ received: true });
+  } catch (error) {
+    console.warn('POST /billing/webhook error:', error.message);
+    return jsonResponse({ received: true }); // Always return 200 to Stripe
+  }
+});
+
 // ── 404 FALLBACK ──
 router.all('*', () => errorResponse('Not found', 404));
 

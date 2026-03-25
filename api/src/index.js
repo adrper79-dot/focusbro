@@ -128,7 +128,39 @@ async function initializeDatabase(env) {
       `CREATE INDEX IF NOT EXISTS idx_push_user ON push_subscriptions(user_id)`,
       `CREATE INDEX IF NOT EXISTS idx_notif_prefs_user ON notification_prefs(user_id)`,
       // ── END PHASE 3 TABLES ──
-      `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`,
+      // ── PHASE 4 TABLES ──
+      `CREATE TABLE IF NOT EXISTS slack_integrations (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL UNIQUE,
+        webhook_url TEXT,
+        access_token TEXT,
+        team_id TEXT,
+        channel_id TEXT,
+        post_sessions INTEGER DEFAULT 1,
+        update_presence INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        is_active INTEGER DEFAULT 1,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_slack_user ON slack_integrations(user_id)`,
+      // ── END PHASE 4 TABLES ──
+      // ── PHASE 5 TABLES ──
+      `CREATE TABLE IF NOT EXISTS subscriptions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL UNIQUE,
+        stripe_customer_id TEXT UNIQUE,
+        stripe_subscription_id TEXT,
+        plan TEXT DEFAULT 'free',
+        status TEXT DEFAULT 'active',
+        current_period_end DATETIME,
+        trial_end DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_sub_user ON subscriptions(user_id)`,
+      `CREATE INDEX IF NOT EXISTS idx_sub_stripe ON subscriptions(stripe_customer_id)`,
+      // ── END PHASE 5 TABLES ──
       `CREATE INDEX IF NOT EXISTS idx_snapshots_user ON user_data_snapshots(user_id)`,
       `CREATE INDEX IF NOT EXISTS idx_sync_logs_user ON sync_logs(user_id)`,
       `CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id)`,

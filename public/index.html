@@ -1146,6 +1146,30 @@
               <button class="btn btn-secondary btn-block" style="margin-top: 12px;" onclick="saveNotificationPrefs()">Save Preferences</button>
               <button class="btn btn-outline btn-block" style="margin-top: 8px;" onclick="sendTestNotification()">Send Test Notification</button>
             </div>
+
+            <!-- Slack Integration Section -->
+            <h3 style="margin-top: 30px;">🔗 Slack Integration <span class="pro-badge">PRO</span></h3>
+            <div id="slackContainer" style="display: none;">
+              <div class="form-group">
+                <label class="form-label">Slack Webhook URL</label>
+                <input type="password" id="slackWebhookUrl" class="form-input" placeholder="https://hooks.slack.com/services/...">
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="saveSlackIntegration()" style="margin-right: 8px;">Save Webhook</button>
+              <button class="btn btn-secondary btn-sm" onclick="testSlackWebhook()">Send Test</button>
+              <button class="btn btn-outline btn-sm" onclick="disconnectSlack()">Disconnect</button>
+              <div style="font-size: 11px; color: #666; margin-top: 8px;">
+                <a href="https://slack.com/help/articles/115005265063-Incoming-webhooks-for-Slack" target="_blank">How to get a webhook URL</a>
+              </div>
+            </div>
+            <div id="slackUpsell" style="background: var(--primary-bg); padding: 12px; border-radius: 8px;">
+              <p style="margin: 0 0 8px 0; font-size: 13px;">Post your focus sessions to Slack automatically</p>
+              <button class="btn btn-primary btn-sm" onclick="showUpgradeModal('Slack Integration')">Upgrade to Pro</button>
+            </div>
+
+            <!-- Billing Section -->
+            <h3 style="margin-top: 30px;">💳 Billing & Subscription</h3>
+            <div id="billingInfo"></div>
+            <button class="btn btn-primary btn-block" id="billingBtn" onclick="initiateCheckout('pro')">Upgrade to Pro — $5/month</button>
           </div>
         </div>
       </div>
@@ -1668,6 +1692,210 @@
     } catch (err) {
       console.warn('Error checking notification subscription:', err.message);
     }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // SLACK INTEGRATION
+  // ════════════════════════════════════════════════════════════
+
+  /**
+   * Load and display Slack integration status
+   */
+  async function loadSlackStatus() {
+    if (!user) {
+      document.getElementById('slackUpsell').style.display = 'block';
+      document.getElementById('slackContainer').style.display = 'none';
+      return;
+    }
+
+    if (!isProUser()) {
+      document.getElementById('slackUpsell').style.display = 'block';
+      document.getElementById('slackContainer').style.display = 'none';
+      return;
+    }
+
+    // User is Pro, show Slack UI
+    document.getElementById('slackUpsell').style.display = 'none';
+    document.getElementById('slackContainer').style.display = 'block';
+
+    try {
+      const response = await fetch('/api/integrations/slack', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('fbToken')}` }
+      });
+
+      if (response.ok) {
+        const config = await response.json();
+        if (config.configured) {
+          document.getElementById('slackWebhookUrl').value = '***';
+        }
+      }
+    } catch (err) {
+      console.warn('Error loading Slack config:', err.message);
+    }
+  }
+
+  /**
+   * Save Slack webhook
+   */
+  async function saveSlackIntegration() {
+    if (!user) {
+      showToast('Must be logged in', 'warning');
+      return;
+    }
+
+    const webhookUrl = document.getElementById('slackWebhookUrl').value.trim();
+    if (!webhookUrl || !webhookUrl.startsWith('https://hooks.slack.com/')) {
+      showToast('Invalid webhook URL', 'warning');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/integrations/slack', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('fbToken')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ webhook_url: webhookUrl })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save');
+      }
+
+      showToast('✅ Slack webhook saved', 'success');
+      document.getElementById('slackWebhookUrl').value = '';
+    } catch (err) {
+      showToast('Error: ' + err.message, 'warning');
+    }
+  }
+
+  /**
+   * Send test Slack message
+   */
+  async function testSlackWebhook() {
+    if (!user) return;
+
+    try {
+      const response = await fetch('/api/integrations/slack/test', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('fbToken')}` }
+      });
+
+      if (!response.ok) throw new Error('Failed to send');
+      showToast('✅ Test message sent to Slack', 'success');
+    } catch (err) {
+      showToast('Error: ' + err.message, 'warning');
+    }
+  }
+
+  /**
+   * Disconnect Slack
+   */
+  async function disconnectSlack() {
+    if (!user) return;
+
+    try {
+      const response = await fetch('/api/integrations/slack', {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('fbToken')}` }
+      });
+
+      if (!response.ok) throw new Error('Failed to disconnect');
+      showToast('Slack disconnected', 'success');
+      loadSlackStatus();
+    } catch (err) {
+      showToast('Error: ' + err.message, 'warning');
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // BILLING & STRIPE
+  // ════════════════════════════════════════════════════════════
+
+  /**
+   * Load billing status
+   */
+  async function loadBillingStatus() {
+    if (!user) {
+      document.getElementById('billingInfo').innerHTML = '<p style="font-size: 12px; color: #666;">Sign in to manage billing</p>';
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/billing/status', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('fbToken')}` }
+      });
+
+      if (response.ok) {
+        const billing = await response.json();
+        const planText = billing.plan === 'free' ? 'Free' : billing.plan === 'pro' ? 'Pro ($5/month)' : 'Enterprise';
+        document.getElementById('billingInfo').innerHTML = `<p style="font-size: 12px; color: #666;">Current plan: <strong>${planText}</strong></p>`;
+        
+        if (billing.plan === 'free') {
+          document.getElementById('billingBtn').textContent = 'Upgrade to Pro — $5/month';
+          document.getElementById('billingBtn').onclick = () => initiateCheckout('pro');
+        } else {
+          document.getElementById('billingBtn').textContent = 'Manage Subscription';
+          document.getElementById('billingBtn').onclick = () => openBillingPortal();
+        }
+      }
+    } catch (err) {
+      console.warn('Error loading billing status:', err.message);
+    }
+  }
+
+  /**
+   * Initiate Stripe checkout
+   */
+  async function initiateCheckout(plan) {
+    if (!user) {
+      showToast('Must be logged in', 'warning');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/billing/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('fbToken')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ plan })
+      });
+
+      if (!response.ok) throw new Error('Failed to create checkout');
+      const { url } = await response.json();
+      window.location.href = url;
+    } catch (err) {
+      showToast('Error: ' + err.message, 'warning');
+    }
+  }
+
+  /**
+   * Open Stripe billing portal
+   */
+  async function openBillingPortal() {
+    if (!user) return;
+
+    try {
+      const response = await fetch('/api/billing/portal', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('fbToken')}` }
+      });
+
+      if (!response.ok) throw new Error('Failed to open portal');
+      const { url } = await response.json();
+      window.open(url, '_blank');
+    } catch (err) {
+      showToast('Error: ' + err.message, 'warning');
+    }
+  }
+
+  /**
+   * Show upgrade modal
+   */
+  function showUpgradeModal(feature) {
+    showToast(`🔒 ${feature} requires Pro subscription`, 'info');
   }
 
   // ════════════════════════════════════════════════════════════
@@ -2603,6 +2831,8 @@
     // Initialize settings view if switching to it
     if (view === 'settings') {
       updateNotificationUI();
+      loadSlackStatus();
+      loadBillingStatus();
     }
   }
 
