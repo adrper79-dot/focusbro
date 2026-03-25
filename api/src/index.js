@@ -964,14 +964,15 @@ router.get('/health', async (request, env) => {
 });
 
 // ── API TEST ROUTE (for debugging) ──
-router.get('/api-test', async (request, env) => {
+router.get('/debug-api', async (request, env) => {
   return new Response(JSON.stringify({
-    message: 'API routing test successful',
+    message: 'Debug endpoint',
     extendedRouter: {
       type: typeof extendedRouter,
-      hasFetch: typeof extendedRouter.fetch === 'function',
-      hasHandle: typeof extendedRouter.handle === 'function',
-      isCallable: typeof extendedRouter === 'function'
+      isObject: extendedRouter !== null && typeof extendedRouter === 'object',
+      hasFetch: typeof extendedRouter?.fetch === 'function',
+      hasRoutes: Array.isArray(extendedRouter?.routes),
+      routeCount: extendedRouter?.routes?.length || 0
     }
   }), {
     status: 200,
