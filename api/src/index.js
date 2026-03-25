@@ -7,6 +7,16 @@ import { Router } from 'itty-router';
 import extendedRouter from './extended-routes.js';
 import htmlContent from './html.js';
 import config from './config.js';
+import {
+  verifyAuth,
+  validateEmail,
+  validatePassword,
+  errorResponse,
+  successResponse,
+  logEvent,
+  extractRequestContext,
+  generateUUID
+} from './middleware.js';
 
 const router = Router();
 
@@ -1232,22 +1242,20 @@ export default {
     const url = new URL(request.url);
     const pathname = url.pathname;
     
-    // Try main router first for non-API routes
-    if (!pathname.startsWith('/api/')) {
-      const response = await router.handle(request, env);
-      if (response && response.status !== 404) {
-        return response;
-      }
+    // ✅ BEST PRACTICE: Try main router first (handles HTML, health, static assets)
+    const mainResponse = await router.handle(request, env);
+    if (mainResponse && mainResponse.status !== 404) {
+      return mainResponse;
     }
     
-    // Route /api/* requests to extended router (after stripping /api prefix)
+    // ✅ For /api/* routes, try extended router with proper request handling
     if (pathname.startsWith('/api/')) {
-      const pathWithoutApi = pathname.replace(/^\/api/, '') || '/';
-      const newUrl = new URL(request.url);
-      newUrl.pathname = pathWithoutApi;
+      // Create request with /api prefix stripped for extended router
+      const path = pathname.replace(/^\/api/, '') || '/';
+      const newUrl = new URL(url);
+      newUrl.pathname = path;
       
-      // Create modified request with stripped /api prefix
-      const modifiedRequest = new Request(newUrl.toString(), {
+      const apiRequest = new Request(newUrl.toString(), {
         method: request.method,
         headers: request.headers,
         ...(request.method !== 'GET' && { body: request.body }),
@@ -1255,25 +1263,17 @@ export default {
       });
       
       try {
-        // Use extended router to handle the modified request
-        const extResponse = await extendedRouter.handle(modifiedRequest, env, ctx);
-        
-        console.log('[/API] Extended router returned status:', extResponse?.status);
-        
-        if (extResponse && extResponse.status !== 404) {
-          return extResponse;
+        // Try extended router - use fetch() method which is more reliable
+        const apiResponse = await extendedRouter.fetch(apiRequest, env);
+        if (apiResponse && apiResponse.status !== 404) {
+          return apiResponse;
         }
-        
-        console.log('[/API] Extended router returned 404, falling through to main router');
       } catch (err) {
-        console.error('[ROUTER-ERROR]', err?.message || err);
+        console.error('[API-ERROR]', err?.message || err);
       }
     }
     
-    // Fallback: try main router for all routes
-    console.log('[MAIN] Routing to main router for:', pathname);
-    const response = await router.handle(request, env);
-    console.log('[MAIN] Main router returned status:', response?.status);
-    return response;
+    // Fallback: return 404 from main router
+    return mainResponse;
   }
 };
