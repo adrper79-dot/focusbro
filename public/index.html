@@ -1030,11 +1030,11 @@
     document.getElementById('activityStartBtn').style.display = 'none';
     document.getElementById('activityStopBtn').style.display = 'inline-block';
     
-    // Simulate activity every 5 seconds with variations
+    // Simulate activity with highly variable intervals to avoid pattern detection
     activityInterval = setInterval(() => {
       simulateActivity();
       updatePresenceTimer();
-    }, 5000 + Math.random() * 3000); // 5-8 seconds
+    }, 2000 + Math.random() * 56000); // 2-58 seconds (unpredictable, harder to detect)
     
     updatePresenceTimer();
     showToast('Activity simulation started', 'success');
