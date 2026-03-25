@@ -1211,43 +1211,24 @@ export default {
     // Route /api/* requests to extended router
     if (pathname.startsWith('/api/')) {
       const pathWithoutApi = pathname.replace(/^\/api/, '') || '/';
+    // Route /api/* requests to extended router
+    if (pathname.startsWith('/api/')) {
+      const pathWithoutApi = pathname.replace(/^\/api/, '') || '/';
       const newUrl = new URL(request.url);
       newUrl.pathname = pathWithoutApi;
       const modifiedRequest = new Request(newUrl, request);
       
       try {
-        // ✅ TRY APPROACH 1: Use .fetch() if available
-        if (typeof extendedRouter.fetch === 'function') {
-          console.log('DEBUG: Calling extendedRouter.fetch for path:', pathWithoutApi);
-          const extResponse = await extendedRouter.fetch(modifiedRequest, env);
-          console.log('DEBUG: extendedRouter.fetch returned status:', extResponse?.status);
-          if (extResponse && extResponse.status !== 404) {
-            return extResponse;
-          }
-        }
-        
-        // ✅ TRY APPROACH 2: Use .handle()  
-        if (typeof extendedRouter.handle === 'function') {
-          console.log('DEBUG: Calling extendedRouter.handle for path:', pathWithoutApi);
-          const extResponse = await extendedRouter.handle(modifiedRequest, env);
-          console.log('DEBUG: extendedRouter.handle returned status:', extResponse?.status);
-          if (extResponse && extResponse.status !== 404) {
-            return extResponse;
-          }
-        }
-        
-        // ✅ TRY APPROACH 3: Call as function
-        if (typeof extendedRouter === 'function') {
-          console.log('DEBUG: Calling extendedRouter as function for path:', pathWithoutApi);
-          const extResponse = await extendedRouter(modifiedRequest, env);
-          console.log('DEBUG: extendedRouter() returned status:', extResponse?.status);
-          if (extResponse && extResponse.status !== 404) {
-            return extResponse;
-          }
+        // ✅ CRITICAL FIX: itty-router v4 exports a function, not an object with methods
+        // Call it directly as: await router(request, env, ctx)
+        const extResponse = await extendedRouter(modifiedRequest, env);
+        if (extResponse && extResponse.status !== 404) {
+          return extResponse;
         }
       } catch (err) {
         console.warn('Extended router error:', err?.message || err);
       }
+    }
     }
     
     // Fallback: try main router for all routes
