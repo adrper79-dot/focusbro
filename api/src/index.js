@@ -339,38 +339,6 @@ function jsonResponse(data, status = 200, cacheStrategy = 'nocache') {
   });
 }
 
-/**
- * Create standardized error response with consistent structure
- * Helps with error handling and debugging across API
- * @param {string} message - Human-readable error message
- * @param {number} status - HTTP status code
- * @param {string|null} code - Machine-readable error code (e.g. 'INVALID_INPUT', 'UNAUTHORIZED')
- * @returns {Response}
- */
-function errorResponse(message, status = 400, code = null) {
-  // Map status codes to standard error codes if not provided
-  const errorCodes = {
-    400: 'INVALID_INPUT',
-    401: 'UNAUTHORIZED',
-    402: 'PAYMENT_REQUIRED',
-    403: 'FORBIDDEN',
-    404: 'NOT_FOUND',
-    409: 'CONFLICT',
-    413: 'PAYLOAD_TOO_LARGE',
-    429: 'RATE_LIMITED',
-    500: 'INTERNAL_ERROR',
-    503: 'SERVICE_UNAVAILABLE'
-  };
-  
-  const errorCode = code || errorCodes[status] || 'ERROR';
-  
-  return jsonResponse({
-    success: false,
-    error: message,
-    code: errorCode
-  }, status, 'nocache');
-}
-
 // ── UTILITY: Handle CORS ──
 router.options('*', (request) => new Response(null, { headers: getCorsHeaders(request) }));
 
@@ -467,15 +435,6 @@ async function verifyToken(token, jwtSecret) {
     console.error('Token verification error:', e.message);
     return null;
   }
-}
-
-// ── UTILITY: Generate UUID ──
-function generateUUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
 }
 
 // ════════════════════════════════════════════════════════════
