@@ -112,7 +112,7 @@ async function initializeDatabase(env) {
         await env.DB.prepare(sql).run();
       } catch (e) {
         // Ignore - column might already exist
-        console.log('Column already exists or other error:', e.message);
+        console.debug('Column already exists or other error:', e.message);
       }
     }
     
@@ -210,7 +210,7 @@ async function verifyToken(token, jwtSecret) {
     
     return payload;
   } catch (e) {
-    console.error('Token verification error:', e);
+    console.error('Token verification error:', e.message);
     return null;
   }
 }
@@ -248,7 +248,7 @@ router.post('/auth/register', async (request, env) => {
       });
     }
     
-    if (password.length < 8) {
+    if (!password || password.length < 8) {
       return new Response(JSON.stringify({ error: 'Password must be at least 8 characters' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -299,7 +299,7 @@ router.post('/auth/register', async (request, env) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('[AUTH] Registration error:', error.message);
     return new Response(JSON.stringify({ error: 'Registration failed' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -369,7 +369,7 @@ router.post('/auth/login', async (request, env) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('[AUTH] Login error:', error.message);
     return new Response(JSON.stringify({ error: 'Login failed' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -422,32 +422,49 @@ router.post('/sync/data', async (request, env) => {
     const dataString = JSON.stringify(data);
     const dataSize = dataString.length;
     
-    // ──Store in KV for fast access ──
-    const kvKey = `user:${userId}:latest`;
-    await env.KV_CACHE.put(kvKey, dataString, {
-      expirationTtl: 365 * 24 * 60 * 60 // 1 year
-    });
+    // Limit data size (avoid abuse - max 10MB per sync)
+    const MAX_SYNC_SIZE = 10 * 1024 * 1024;
+    if (dataSize > MAX_SYNC_SIZE) {
+      return new Response(JSON.stringify({ error: 'Data too large (max 10MB)' }), {
+        status: 413,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
     
-    // Store in D1 for archival
-    await env.DB.prepare(
-      `INSERT INTO user_data_snapshots (user_id, snapshot_data, size_bytes, created_at)
-       VALUES (?, ?, ?, datetime('now'))`
-    ).bind(userId, dataString, dataSize).run();
-    
-    // Log sync
-    await env.DB.prepare(
-      `INSERT INTO sync_logs (user_id, device_id, action, status, synced_at)
-       VALUES (?, ?, 'data_upload', 'success', datetime('now'))`
-    ).bind(userId, device_id).run();
-    
-    return new Response(JSON.stringify({
-      success: true,
-      synced_at: new Date().toISOString(),
-      size_bytes: dataSize
-    }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    try {
+      // Store in KV for fast access
+      const kvKey = `user:${userId}:latest`;
+      await env.KV_CACHE.put(kvKey, dataString, {
+        expirationTtl: 365 * 24 * 60 * 60 // 1 year
+      });
+      
+      // Store in D1 for archival
+      await env.DB.prepare(
+        `INSERT INTO user_data_snapshots (user_id, snapshot_data, size_bytes, created_at)
+         VALUES (?, ?, ?, datetime('now'))`
+      ).bind(userId, dataString, dataSize).run();
+      
+      // Log sync
+      await env.DB.prepare(
+        `INSERT INTO sync_logs (user_id, device_id, action, status, synced_at)
+         VALUES (?, ?, 'data_upload', 'success', datetime('now'))`
+      ).bind(userId, device_id).run();
+      
+      return new Response(JSON.stringify({
+        success: true,
+        synced_at: new Date().toISOString(),
+        size_bytes: dataSize
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      console.error('[SYNC] Data upload error:', error.message);
+      return new Response(JSON.stringify({ error: 'Failed to sync data' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
@@ -477,54 +494,74 @@ router.get('/sync/data', async (request, env) => {
     
     const userId = tokenPayload.sub;
     
-    // Try KV first (faster)
-    const kvKey = `user:${userId}:latest`;
-    let data = await env.KV_CACHE.get(kvKey);
-    
-    if (data) {
-      return new Response(JSON.stringify({
-        success: true,
-        data: JSON.parse(data),
-        source: 'cache'
-      }), {
-        status: 200,
+    try {
+      // Try KV first (faster)
+      const kvKey = `user:${userId}:latest`;
+      let data = await env.KV_CACHE.get(kvKey);
+      
+      if (data) {
+        try {
+          return new Response(JSON.stringify({
+            success: true,
+            data: JSON.parse(data),
+            source: 'cache'
+          }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        } catch (parseError) {
+          console.error('[SYNC] Failed to parse cached data:', parseError.message);
+          // Fall through to DB if cache is corrupt
+        }
+      }
+      
+      // Fallback to D1 (slower but persistent)
+      const snapshot = await env.DB.prepare(
+        `SELECT snapshot_data FROM user_data_snapshots 
+         WHERE user_id = ? 
+         ORDER BY created_at DESC 
+         LIMIT 1`
+      ).bind(userId).first();
+      
+      if (!snapshot) {
+        return new Response(JSON.stringify({
+          success: true,
+          data: null,
+          message: 'No data found'
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      try {
+        const parsedData = JSON.parse(snapshot.snapshot_data);
+        return new Response(JSON.stringify({
+          success: true,
+          data: parsedData,
+          source: 'database'
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      } catch (parseError) {
+        console.error('[SYNC] Failed to parse database snapshot:', parseError.message);
+        return new Response(JSON.stringify({
+          success: true,
+          data: null,
+          message: 'Data corrupted, please resync'
+        }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    } catch (error) {
+      console.error('[SYNC] Data retrieval error:', error.message);
+      return new Response(JSON.stringify({ error: 'Failed to retrieve data' }), {
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
-    
-    // Fallback to D1 (slower but persistent)
-    const snapshot = await env.DB.prepare(
-      `SELECT snapshot_data FROM user_data_snapshots 
-       WHERE user_id = ? 
-       ORDER BY created_at DESC 
-       LIMIT 1`
-    ).bind(userId).first();
-    
-    if (!snapshot) {
-      return new Response(JSON.stringify({
-        success: true,
-        data: null,
-        message: 'No data found'
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-    
-    return new Response(JSON.stringify({
-      success: true,
-      data: JSON.parse(snapshot.snapshot_data),
-      source: 'database'
-    }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
-  }
 });
 
 // ════════════════════════════════════════════════════════════

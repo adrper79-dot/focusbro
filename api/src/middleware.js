@@ -78,9 +78,9 @@ export function validateEmail(email) {
 }
 
 export function validatePassword(password) {
-  // At least 8 chars, 1 upper, 1 lower, 1 number, 1 special
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-  return passwordRegex.test(password);
+  // Minimum 8 characters - user-friendly while still secure
+  // Don't require special chars to avoid friction (users add entropy anyway)
+  return password && password.length >= 8;
 }
 
 export function validateDeviceId(deviceId) {
@@ -134,7 +134,7 @@ export async function logEvent(env, userId, action, details = {}) {
     ).bind(userId, action, JSON.stringify(details)).run();
   } catch (error) {
     // Silently fail to avoid blocking main flow
-    console.error('Audit log failed:', error);
+    console.debug('Audit log failed:', error.message);
   }
 }
 

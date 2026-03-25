@@ -1,9 +1,11 @@
 name = "focusbro"
 compatibility_date = "2024-03-24"
 main = "api/src/index.js"
-site = { bucket = "public" }
 workers_dev = true
 preview_urls = true
+
+# Note: Removed 'site' config - Worker handles all routes including static HTML serving
+# This prevents conflicts between Worker routes and static file serving
 
 # Cloudflare D1 Database (SQLite)
 [[d1_databases]]
@@ -11,9 +13,9 @@ binding = "DB"
 database_name = "focusbro"
 database_id = "placeholder-db-id"
 
-# Cloudflare KV Store (for user data blobs)
+# Cloudflare KV Store (for user data caching)
 [[kv_namespaces]]
-binding = "KV"
+binding = "KV_CACHE"
 id = "placeholder-kv-id"
 preview_id = "placeholder-kv-preview-id"
 
@@ -24,7 +26,7 @@ routes = [
   { pattern = "*.focusbro.net", zone_name = "focusbro.net" }
 ]
 d1_databases = [{ binding = "DB", database_id = "2ac20b08-66e3-4abd-92de-f0e6380bdad0", database_name = "focusbro" }]
-kv_namespaces = [{ binding = "KV", id = "60c1852cd70f4999a380b9ea290fccb3", preview_id = "60c1852cd70f4999a380b9ea290fccb3" }]
+kv_namespaces = [{ binding = "KV_CACHE", id = "60c1852cd70f4999a380b9ea290fccb3", preview_id = "60c1852cd70f4999a380b9ea290fccb3" }]
 vars = { ENV = "production", API_ORIGIN = "https://focusbro.net", JWT_SECRET = "focusbro-secret-key-prod-2024" }
 
 [env.development]
