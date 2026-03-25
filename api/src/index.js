@@ -1184,16 +1184,24 @@ export default {
     const url = new URL(request.url);
     const pathname = url.pathname;
     
-    // Route /api/* requests to extended router by stripping /api prefix
+    // Try main router first for non-API routes
+    if (!pathname.startsWith('/api/')) {
+      const response = await router.handle(request, env);
+      if (response && response.status !== 404) {
+        return response;
+      }
+    }
+    
+    // Route /api/* requests to extended router
     if (pathname.startsWith('/api/')) {
       const pathWithoutApi = pathname.replace(/^\/api/, '') || '/';
       const newUrl = new URL(request.url);
       newUrl.pathname = pathWithoutApi;
       const modifiedRequest = new Request(newUrl, request);
       
-      // Try extended router with stripped path
       try {
-        const extResponse = await extendedRouter.handle(modifiedRequest, env);
+        // Try extended router as a callable function
+        const extResponse = await extendedRouter(modifiedRequest, env, ctx);
         if (extResponse && extResponse.status !== 404) {
           return extResponse;
         }
@@ -1202,7 +1210,7 @@ export default {
       }
     }
     
-    // Try main router for all other routes
+    // Fallback: try main router for all routes
     const response = await router.handle(request, env);
     return response;
   }
