@@ -1344,8 +1344,8 @@ export default {
     await initializeDatabase(env);
     
     // ✅ BEST PRACTICE: Single unified router with all endpoints
-    // Try main router which now includes both static routes and API endpoints
-    const response = await router.handle(request, env);
+    // Call the router's fetch method which handles request routing
+    const response = await router.fetch(request, env);
     return response;
   }
 };
