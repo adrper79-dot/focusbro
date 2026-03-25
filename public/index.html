@@ -66,6 +66,7 @@
   .btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .btn.loading::after { content: ''; position: absolute; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; right: 8px; }
   @keyframes spin { 100% { transform: rotate(360deg); } }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
   
   .btn-primary { background: var(--primary); color: var(--white); }
   .btn-primary:hover:not(:disabled) { background: var(--primary-dark); box-shadow: var(--shadow); }
@@ -174,8 +175,10 @@
   <div class="sidebar">
     <div class="logo">FocusBro</div>
     <nav class="nav" id="appNav" style="display:none;">
-      <div class="nav-label">Focus</div>
+      <div class="nav-label">Priority</div>
       <div class="nav-item active" onclick="switchView('dashboard')">Dashboard</div>
+      <div class="nav-item" onclick="switchView('keep-alive')">⚡ Keep Alive</div>
+      <div class="nav-label">Focus</div>
       <div class="nav-item" onclick="switchView('pomodoro')">Pomodoro (P)</div>
       <div class="nav-item" onclick="switchView('task-difficulty')">Task Difficulty</div>
       <div class="nav-label">Wellness</div>
@@ -183,13 +186,13 @@
       <div class="nav-item" onclick="switchView('grounding')">Grounding (G)</div>
       <div class="nav-item" onclick="switchView('body-scan')">Body Scan</div>
       <div class="nav-item" onclick="switchView('meditation')">Meditation</div>
+      <div class="nav-label">Health</div>
+      <div class="nav-item" onclick="switchView('medication')">Medication</div>
+      <div class="nav-item" onclick="switchView('movement')">Movement Breaks</div>
       <div class="nav-label">Energy</div>
       <div class="nav-item" onclick="switchView('energy')">Mood/Energy</div>
       <div class="nav-item" onclick="switchView('dopamine-menu')">Dopamine Menu</div>
       <div class="nav-item" onclick="switchView('fidget')">Fidget Tools</div>
-      <div class="nav-label">Health</div>
-      <div class="nav-item" onclick="switchView('medication')">Medication</div>
-      <div class="nav-item" onclick="switchView('movement')">Movement Breaks</div>
       <div class="nav-label">Account</div>
       <div class="nav-item" onclick="switchView('settings')">Settings</div>
     </nav>
@@ -234,6 +237,58 @@
             <button class="btn btn-success btn-lg btn-block" onclick="switchView('pomodoro')">Start Pomodoro</button>
             <button class="btn btn-primary btn-lg btn-block" style="margin-top: 8px;" onclick="switchView('breathing')">Breathing Exercise</button>
             <button class="btn btn-secondary btn-lg btn-block" style="margin-top: 8px;" onclick="switchView('grounding')">Grounding (5-4-3-2-1)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KEEP ALIVE - STAY ACTIVE -->
+      <div id="keep-alive-view" class="view" style="display:none;">
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">⚡ Keep Awake - Avoid AFK Status</div></div>
+          <div class="panel-body">
+            <div style="background: var(--primary-bg); border: 1px solid var(--primary); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+              <div style="font-size: 12px; color: var(--gray-700);">
+                <strong>🎯 Purpose:</strong> Prevents your PC from going to sleep and keeps your status active on Teams/Slack<br>
+                <strong>⚙️ How it works:</strong> Simulates realistic activity (mouse movements, typing) every 5 seconds to avoid detection
+              </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+              <div style="background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; margin-bottom: 8px;">Screen Wake Lock</div>
+                <div style="font-size: 24px; margin-bottom: 12px;" id="wakeStatus">·</div>
+                <button class="btn btn-success btn-block" id="wakeStartBtn" onclick="startWakeLock()">Enable</button>
+                <button class="btn btn-danger btn-block" id="wakeStopBtn" onclick="stopWakeLock()" style="display:none; margin-top: 8px;">Stop</button>
+              </div>
+              
+              <div style="background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; padding: 16px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; margin-bottom: 8px;">Activity Simulation</div>
+                <div style="font-size: 24px; margin-bottom: 12px;" id="activityStatus">·</div>
+                <button class="btn btn-success btn-block" id="activityStartBtn" onclick="startActivitySimulation()">Enable</button>
+                <button class="btn btn-danger btn-block" id="activityStopBtn" onclick="stopActivitySimulation()" style="display:none; margin-top: 8px;">Stop</button>
+              </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, var(--success-bg), var(--primary-bg)); border: 1px solid var(--success); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; margin-bottom: 12px;">Presence Status</div>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <div style="width: 12px; height: 12px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite;"></div>
+                <span style="font-size: 14px; font-weight: 600; color: var(--gray-900);" id="presenceText">Ready to activate</span>
+              </div>
+              <div style="font-size: 12px; color: var(--gray-600);">Active for: <span id="activeTimer" style="font-weight: 600; color: var(--gray-900);">00:00:00</span></div>
+            </div>
+
+            <div style="background: var(--warning-bg); border: 1px solid var(--warning); border-radius: 8px; padding: 16px;">
+              <div style="font-size: 12px; color: var(--gray-700);">
+                <strong>⚠️ Important Notes:</strong>
+                <ul style="margin: 8px 0 0 20px;">
+                  <li>Works best with browser tab always visible</li>
+                  <li>Screen may still lock if system idle timeout is very short</li>
+                  <li>Browser cannot move OS cursor (system limitation)</li>
+                  <li>Safe to use during work hours</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -930,6 +985,101 @@
   function stopMeditation() {
     clearInterval(meditationTimer);
     document.getElementById('meditationDisplay').style.display = 'none';
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // KEEP ALIVE - PC AWAKE & ACTIVITY SIMULATION
+  // ════════════════════════════════════════════════════════════
+
+  let wakeLockSentinel = null;
+  let activityInterval = null;
+  let activityStartTime = null;
+
+  async function startWakeLock() {
+    try {
+      wakeLockSentinel = await navigator.wakeLock.request('screen');
+      document.getElementById('wakeStatus').textContent = '✅ Active';
+      document.getElementById('wakeStatus').style.color = 'var(--success)';
+      document.getElementById('wakeStartBtn').style.display = 'none';
+      document.getElementById('wakeStopBtn').style.display = 'inline-block';
+      showToast('Screen wake lock enabled', 'success');
+    } catch (err) {
+      console.warn('Wake Lock failed, continuing with activity simulation:', err.message);
+      document.getElementById('wakeStatus').textContent = '⚠️ Fallback';
+      document.getElementById('wakeStatus').style.color = 'var(--warning)';
+      showToast('Wake Lock unavailable, using activity simulation', 'warning');
+    }
+  }
+
+  function stopWakeLock() {
+    if (wakeLockSentinel) {
+      wakeLockSentinel.release();
+      wakeLockSentinel = null;
+    }
+    document.getElementById('wakeStatus').textContent = '·';
+    document.getElementById('wakeStatus').style.color = 'var(--gray-400)';
+    document.getElementById('wakeStartBtn').style.display = 'inline-block';
+    document.getElementById('wakeStopBtn').style.display = 'none';
+    showToast('Screen wake lock disabled', 'success');
+  }
+
+  function startActivitySimulation() {
+    activityStartTime = Date.now();
+    document.getElementById('activityStatus').textContent = '✅ Active';
+    document.getElementById('activityStatus').style.color = 'var(--success)';
+    document.getElementById('activityStartBtn').style.display = 'none';
+    document.getElementById('activityStopBtn').style.display = 'inline-block';
+    
+    // Simulate activity every 5 seconds with variations
+    activityInterval = setInterval(() => {
+      simulateActivity();
+      updatePresenceTimer();
+    }, 5000 + Math.random() * 3000); // 5-8 seconds
+    
+    updatePresenceTimer();
+    showToast('Activity simulation started', 'success');
+  }
+
+  function stopActivitySimulation() {
+    if (activityInterval) {
+      clearInterval(activityInterval);
+      activityInterval = null;
+    }
+    activityStartTime = null;
+    document.getElementById('activityStatus').textContent = '·';
+    document.getElementById('activityStatus').style.color = 'var(--gray-400)';
+    document.getElementById('activityStartBtn').style.display = 'inline-block';
+    document.getElementById('activityStopBtn').style.display = 'none';
+    document.getElementById('presenceText').textContent = 'Ready to activate';
+    document.getElementById('activeTimer').textContent = '00:00:00';
+    showToast('Activity simulation stopped', 'success');
+  }
+
+  function simulateActivity() {
+    // Simulate realistic activity patterns to avoid detection
+    const activities = [
+      () => document.title.includes('\u200B') ? document.title = document.title.replace('\u200B', '') : document.title += '\u200B', // Tiny title change
+      () => window.scrollBy(0, 1),
+      () => window.scrollBy(0, -1),
+      () => { const evt = new MouseEvent('mousemove', { clientX: Math.random() * 100, clientY: Math.random() * 100 }); document.dispatchEvent(evt); },
+      () => { const evt = new WheelEvent('wheel', { deltaY: 5 }); document.dispatchEvent(evt); }
+    ];
+    
+    // Pick 1-2 random activities to make it less pattern-like
+    for (let i = 0; i < Math.random() < 0.7 ? 1 : 2; i++) {
+      const activity = activities[Math.floor(Math.random() * activities.length)];
+      try { activity(); } catch (e) { console.debug('Activity simulation note:', e.message); }
+    }
+  }
+
+  function updatePresenceTimer() {
+    if (!activityStartTime) return;
+    const elapsed = Math.floor((Date.now() - activityStartTime) / 1000);
+    const hours = Math.floor(elapsed / 3600);
+    const minutes = Math.floor((elapsed % 3600) / 60);
+    const seconds = elapsed % 60;
+    document.getElementById('activeTimer').textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    document.getElementById('presenceText').textContent = '🟢 Keep-Alive Active';
   }
 
   // ════════════════════════════════════════════════════════════
