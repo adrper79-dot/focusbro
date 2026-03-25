@@ -833,7 +833,7 @@ router.post('/users/delete-account', async (request, env) => {
 // ════════════════════════════════════════════════════════════
 
 // ── SYNC USER DATA ──
-router.post('/api/sync/data', async (request, env) => {
+router.post('/sync/data', async (request, env) => {
   try {
     const auth = verifyAuth(request, env);
     if (!auth.valid) {
@@ -925,7 +925,7 @@ router.post('/api/sync/data', async (request, env) => {
 });
 
 // ── GET LATEST SYNC DATA ──
-router.get('/api/sync/data', async (request, env) => {
+router.get('/sync/data', async (request, env) => {
   try {
     const auth = verifyAuth(request);
     if (!auth.valid) {
