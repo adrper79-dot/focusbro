@@ -1056,17 +1056,41 @@
   }
 
   function simulateActivity() {
-    // Simulate realistic activity patterns to avoid detection
+    // Simulate realistic activity patterns with keyboard and mouse events
+    // Teams/Slack primarily detect keyboard activity, so prioritize that
     const activities = [
-      () => document.title.includes('\u200B') ? document.title = document.title.replace('\u200B', '') : document.title += '\u200B', // Tiny title change
-      () => window.scrollBy(0, 1),
-      () => window.scrollBy(0, -1),
-      () => { const evt = new MouseEvent('mousemove', { clientX: Math.random() * 100, clientY: Math.random() * 100 }); document.dispatchEvent(evt); },
-      () => { const evt = new WheelEvent('wheel', { deltaY: 5 }); document.dispatchEvent(evt); }
+      // Keyboard events (highest priority - most apps monitor these)
+      () => {
+        const keys = ['a', 'b', 'c', 'd', 'e', '1', '2', '3', '4', '5'];
+        const key = keys[Math.floor(Math.random() * keys.length)];
+        const opts = { key, code: `Key${key.toUpperCase()}`, keyCode: key.charCodeAt(0), bubbles: true };
+        document.dispatchEvent(new KeyboardEvent('keydown', opts));
+        setTimeout(() => document.dispatchEvent(new KeyboardEvent('keyup', opts)), 50);
+      },
+      // Title nudge (invisible but detectable by some services)
+      () => document.title.includes('\u200B') ? document.title = document.title.replace('\u200B', '') : document.title += '\u200B',
+      // Scroll (minimal, less noticeable)
+      () => window.scrollBy(0, Math.random() > 0.5 ? 1 : -1),
+      // Mouse events with realistic timing
+      () => {
+        const opts = { button: 0, bubbles: true, cancelable: true };
+        document.dispatchEvent(new MouseEvent('mousemove', { ...opts, clientX: Math.random() * 200, clientY: Math.random() * 200 }));
+      },
+      // Wheel/scroll simulation
+      () => {
+        const opts = { deltaY: Math.random() > 0.5 ? 5 : -5, bubbles: true, cancelable: true };
+        document.dispatchEvent(new WheelEvent('wheel', opts));
+      },
+      // Pointer events (modern apps)
+      () => {
+        const opts = { pointerId: 1, pointerType: 'mouse', bubbles: true, cancelable: true };
+        document.dispatchEvent(new PointerEvent('pointermove', { ...opts, clientX: Math.random() * 200, clientY: Math.random() * 200 }));
+      }
     ];
     
-    // Pick 1-2 random activities to make it less pattern-like
-    for (let i = 0; i < Math.random() < 0.7 ? 1 : 2; i++) {
+    // Pick 1-2 random activities, weighted toward keyboard
+    const activityCount = Math.random() < 0.7 ? 1 : 2;
+    for (let i = 0; i < activityCount; i++) {
       const activity = activities[Math.floor(Math.random() * activities.length)];
       try { activity(); } catch (e) { console.debug('Activity simulation note:', e.message); }
     }
