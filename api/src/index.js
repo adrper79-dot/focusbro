@@ -1258,16 +1258,22 @@ export default {
         // Use extended router to handle the modified request
         const extResponse = await extendedRouter.handle(modifiedRequest, env, ctx);
         
+        console.log('[/API] Extended router returned status:', extResponse?.status);
+        
         if (extResponse && extResponse.status !== 404) {
           return extResponse;
         }
+        
+        console.log('[/API] Extended router returned 404, falling through to main router');
       } catch (err) {
         console.error('[ROUTER-ERROR]', err?.message || err);
       }
     }
     
     // Fallback: try main router for all routes
+    console.log('[MAIN] Routing to main router for:', pathname);
     const response = await router.handle(request, env);
+    console.log('[MAIN] Main router returned status:', response?.status);
     return response;
   }
 };
