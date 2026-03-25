@@ -1226,12 +1226,22 @@ export default {
       });
       
       try {
+        // Verify extended router is properly configured
+        if (!extendedRouter || typeof extendedRouter.fetch !== 'function') {
+          console.error('ERROR: Extended router not configured properly', {
+            exists: !!extendedRouter,
+            hasFetch: typeof extendedRouter?.fetch === 'function',
+            type: typeof extendedRouter
+          });
+          throw new Error('Extended router initialization failed');
+        }
+        
         const extResponse = await extendedRouter.fetch(modifiedRequest, env);
         if (extResponse && extResponse.status !== 404) {
           return extResponse;
         }
       } catch (err) {
-        console.warn('Extended router error:', err?.message || err);
+        console.error('Extended router error:', err?.message || err, { pathname: pathWithoutApi });
       }
     }
     
