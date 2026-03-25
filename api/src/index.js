@@ -494,74 +494,73 @@ router.get('/sync/data', async (request, env) => {
     
     const userId = tokenPayload.sub;
     
-    try {
-      // Try KV first (faster)
-      const kvKey = `user:${userId}:latest`;
-      let data = await env.KV_CACHE.get(kvKey);
-      
-      if (data) {
-        try {
-          return new Response(JSON.stringify({
-            success: true,
-            data: JSON.parse(data),
-            source: 'cache'
-          }), {
-            status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          });
-        } catch (parseError) {
-          console.error('[SYNC] Failed to parse cached data:', parseError.message);
-          // Fall through to DB if cache is corrupt
-        }
-      }
-      
-      // Fallback to D1 (slower but persistent)
-      const snapshot = await env.DB.prepare(
-        `SELECT snapshot_data FROM user_data_snapshots 
-         WHERE user_id = ? 
-         ORDER BY created_at DESC 
-         LIMIT 1`
-      ).bind(userId).first();
-      
-      if (!snapshot) {
-        return new Response(JSON.stringify({
-          success: true,
-          data: null,
-          message: 'No data found'
-        }), {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
-      }
-      
+    // Try KV first (faster)
+    const kvKey = `user:${userId}:latest`;
+    let data = await env.KV_CACHE.get(kvKey);
+    
+    if (data) {
       try {
-        const parsedData = JSON.parse(snapshot.snapshot_data);
         return new Response(JSON.stringify({
           success: true,
-          data: parsedData,
-          source: 'database'
+          data: JSON.parse(data),
+          source: 'cache'
         }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
       } catch (parseError) {
-        console.error('[SYNC] Failed to parse database snapshot:', parseError.message);
-        return new Response(JSON.stringify({
-          success: true,
-          data: null,
-          message: 'Data corrupted, please resync'
-        }), {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        });
+        console.error('[SYNC] Failed to parse cached data:', parseError.message);
+        // Fall through to DB if cache is corrupt
       }
-    } catch (error) {
-      console.error('[SYNC] Data retrieval error:', error.message);
-      return new Response(JSON.stringify({ error: 'Failed to retrieve data' }), {
-        status: 500,
+    }
+    
+    // Fallback to D1 (slower but persistent)
+    const snapshot = await env.DB.prepare(
+      `SELECT snapshot_data FROM user_data_snapshots 
+       WHERE user_id = ? 
+       ORDER BY created_at DESC 
+       LIMIT 1`
+    ).bind(userId).first();
+    
+    if (!snapshot) {
+      return new Response(JSON.stringify({
+        success: true,
+        data: null,
+        message: 'No data found'
+      }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+    
+    try {
+      const parsedData = JSON.parse(snapshot.snapshot_data);
+      return new Response(JSON.stringify({
+        success: true,
+        data: parsedData,
+        source: 'database'
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    } catch (parseError) {
+      console.error('[SYNC] Failed to parse database snapshot:', parseError.message);
+      return new Response(JSON.stringify({
+        success: true,
+        data: null,
+        message: 'Data corrupted, please resync'
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+  } catch (error) {
+    console.error('[SYNC] Data retrieval error:', error.message);
+    return new Response(JSON.stringify({ error: 'Failed to retrieve data' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 });
 
 // ════════════════════════════════════════════════════════════
