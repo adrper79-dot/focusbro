@@ -1,4 +1,5 @@
-export default `<!DOCTYPE html>
+// Auto-generated HTML content - do not edit
+const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -538,6 +539,9 @@ export default `<!DOCTYPE html>
   // UTILITY FUNCTIONS
   // ════════════════════════════════════════════════════════════
 
+  // Get API_ORIGIN from page location
+  const env = { API_ORIGIN: window.location.origin };
+
   let user = null;
   let authMode = 'signin'; // 'signin' or 'signup'
   let pomodoroTimer = null;
@@ -546,14 +550,16 @@ export default `<!DOCTYPE html>
   let sessionCount = 0;
   let energyLogs = [];
   let medInterval = null;
+  let keepAliveRunning = false;
+  let keepAliveInterval = null;
   const dopamineMenu = ['Stretch', 'Cold water', 'Dance', 'Pet cat', 'Water', 'Stand breath', 'Walk', 'Shake'];
-  const movements = ['Cat Stretch\\nBack on floor, pull knees toward chest,\\narched, hold 15 seconds', 'Standing Desk Stretch\\nHands behind head, lean back gently,\\nroll shoulders, 20 seconds', 'Forward Fold\\nFeet shoulder-width, fold from hips,\\nlet arms hang, 20 seconds', 'Quad Stretch\\nPull one leg toward glutes, hold 15s each', 'Neck Rolls\\nSlow circles: forward, right, back, left\\nRepeat 3 times'];
+  const movements = ['Cat Stretch\nBack on floor, pull knees toward chest,\narched, hold 15 seconds', 'Standing Desk Stretch\nHands behind head, lean back gently,\nroll shoulders, 20 seconds', 'Forward Fold\nFeet shoulder-width, fold from hips,\nlet arms hang, 20 seconds', 'Quad Stretch\nPull one leg toward glutes, hold 15s each', 'Neck Rolls\nSlow circles: forward, right, back, left\nRepeat 3 times'];
 
   // Toast Notifications
   function showToast(message, type = 'success') {
     const toast = document.createElement('div');
-    toast.className = \`toast \${type}\`;
-    toast.innerHTML = \`<div class="toast-message">\${escapeHtml(message)}</div><button class="toast-close" onclick="this.parentElement.remove()">×</button>\`;
+    toast.className = \`toast ${type}\`;
+    toast.innerHTML = \`<div class="toast-message">${escapeHtml(message)}</div><button class="toast-close" onclick="this.parentElement.remove()">×</button>\`;
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 4000);
   }
@@ -566,7 +572,7 @@ export default `<!DOCTYPE html>
 
   // Form validation
   function validateEmail(email) {
-    return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
   function validatePassword(password) {
@@ -591,13 +597,75 @@ export default `<!DOCTYPE html>
   }
 
   // Authentication
-  let authMode = 'signin';
   function toggleAuthMode() {
     authMode = authMode === 'signin' ? 'signup' : 'signin';
     clearFormErrors();
     document.getElementById('authTitle').textContent = authMode === 'signin' ? 'Sign In' : 'Create Account';
     document.getElementById('authToggle').textContent = authMode === 'signin' ? 'Create account instead' : 'Sign in instead';
     document.getElementById('authBtn2').textContent = authMode === 'signin' ? 'Sign In' : 'Create Account';
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // API HELPER FUNCTIONS
+  // ════════════════════════════════════════════════════════════
+
+  function getAuthToken() {
+    return localStorage.getItem('fbToken');
+  }
+
+  async function apiCall(endpoint, options = {}) {
+    const token = getAuthToken();
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+
+    if (token) {
+      headers['Authorization'] = \`Bearer ${token}\`;
+    }
+
+    const response = await fetch(\`${env.API_ORIGIN}${endpoint}\`, {
+      ...options,
+      headers,
+    });
+
+    if (response.status === 401) {
+      // Token expired or invalid
+      logout();
+      showToast('Session expired. Please log in again.', 'error');
+      return null;
+    }
+
+    return response;
+  }
+
+  async function syncDataToServer() {
+    if (!user) return; // Not authenticated
+
+    try {
+      const response = await apiCall('/api/sync/data', {
+        method: 'POST',
+        body: JSON.stringify({
+          sessionCount,
+          energyLogs,
+          pomodoroSettings: {
+            duration: parseInt(localStorage.getItem('settingsPomodoro') || '25'),
+            breakDuration: parseInt(localStorage.getItem('settingsBreak') || '5'),
+          },
+          synced_at: new Date().toISOString(),
+        }),
+      });
+
+      if (response && response.ok) {
+        console.debug('Data synced to server');
+        return true;
+      } else if (response) {
+        console.warn('Data sync failed:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.warn('Data sync error (continuing offline):', error.message);
+    }
+    return false;
   }
 
   async function handleAuth() {
@@ -630,7 +698,7 @@ export default `<!DOCTYPE html>
 
     try {
       const endpoint = authMode === 'signin' ? '/auth/login' : '/auth/register';
-      const response = await fetch(\`\${env.API_ORIGIN}\${endpoint}\`, {
+      const response = await fetch(\`${env.API_ORIGIN}${endpoint}\`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -649,10 +717,15 @@ export default `<!DOCTYPE html>
       localStorage.setItem('fbToken', data.token);
       localStorage.setItem('fbSessionId', data.session_id);
 
+      // Ensure modal is fully closed before showing success message
       closeModal('authModal');
-      updateUI();
-      showToast(\`\${authMode === 'signin' ? 'Welcome back' : 'Account created'}! \${user.name}\`, 'success');
-      authMode = 'signin';
+      
+      // Small delay to ensure DOM state is consistent before updating UI
+      setTimeout(() => {
+        updateUI();
+        showToast(\`${authMode === 'signin' ? 'Welcome back' : 'Account created'}! ${user.name}\`, 'success');
+        authMode = 'signin';
+      }, 50);
     } catch (error) {
       console.error('Auth error:', error);
       showFormError('email', 'Network error - check console');
@@ -662,14 +735,11 @@ export default `<!DOCTYPE html>
     }
   }
 
-  // Get API_ORIGIN from page location
-  const env = {
-    API_ORIGIN: window.location.origin // Will use focusbro.net or localhost
-  };
-
   function logout() {
     user = null;
     localStorage.removeItem('fbUser');
+    localStorage.removeItem('fbToken');
+    localStorage.removeItem('fbSessionId');
     updateUI();
     showToast('Logged out');
   }
@@ -784,7 +854,7 @@ export default `<!DOCTYPE html>
     senses.forEach(sense => {
       let html = '';
       for (let i = 1; i <= sense.count; i++) {
-        html += \`<div class="grounding-item" onclick="this.classList.toggle('completed')">\${i}</div>\`;
+        html += \`<div class="grounding-item" onclick="this.classList.toggle('completed')">${i}</div>\`;
       }
       const el = document.getElementById('grounding' + sense.id);
       if (el) el.innerHTML = html;
@@ -813,7 +883,7 @@ export default `<!DOCTYPE html>
         return;
       }
       const display = document.getElementById('bodyScanDisplay');
-      display.innerHTML = \`<strong>\${checks[current]}</strong><br><br>Take a breath and adjust.\`;
+      display.innerHTML = \`<strong>${checks[current]}</strong><br><br>Take a breath and adjust.\`;
       current++;
     }, 20000);
   }
@@ -841,7 +911,7 @@ export default `<!DOCTYPE html>
 
       const m = Math.floor(remaining / 60);
       const s = remaining % 60;
-      document.getElementById('meditationTimer').textContent = \`\${m}:\${String(s).padStart(2, '0')}\`;
+      document.getElementById('meditationTimer').textContent = \`${m}:${String(s).padStart(2, '0')}\`;
 
       if (remaining <= 0) {
         stopMeditation();
@@ -880,7 +950,10 @@ export default `<!DOCTYPE html>
     }
     energyLogs.push({ time: new Date().toISOString(), energy, mood: currentMood });
     localStorage.setItem('energyLogs', JSON.stringify(energyLogs));
-    showToast(\`Energy \${energy}/10 logged\`, 'success');
+    showToast(\`Energy ${energy}/10 logged\`, 'success');
+    
+    // Sync data to server
+    syncDataToServer();
   }
 
   // ════════════════════════════════════════════════════════════
@@ -890,7 +963,7 @@ export default `<!DOCTYPE html>
   function initDopamineMenu() {
     let html = '';
     dopamineMenu.forEach(item => {
-      html += \`<div class="dopamine-item" onclick="showToast('\${item} - Great choice!', 'success')">\${item}</div>\`;
+      html += \`<div class="dopamine-item" onclick="showToast('${item} - Great choice!', 'success')">${item}</div>\`;
     });
     document.getElementById('dopamineList').innerHTML = html;
   }
@@ -959,7 +1032,7 @@ export default `<!DOCTYPE html>
         y: Math.random() * canvas.height,
         vx: (Math.random() - 0.5) * 2,
         vy: (Math.random() - 0.5) * 2,
-        color: \`hsl(\${Math.random() * 360}, 70%, 50%)\`
+        color: \`hsl(${Math.random() * 360}, 70%, 50%)\`
       });
     }
 
@@ -1007,7 +1080,7 @@ export default `<!DOCTYPE html>
       const remaining = Math.max(0, defaultDuration * 60 - elapsed);
       const m = Math.floor(remaining / 60);
       const s = remaining % 60;
-      document.getElementById('pomodoroDisplay').textContent = \`\${m}:\${String(s).padStart(2, '0')}\`;
+      document.getElementById('pomodoroDisplay').textContent = \`${m}:${String(s).padStart(2, '0')}\`;
 
       if (remaining === 0) {
         stopPomodoro(true);
@@ -1020,7 +1093,7 @@ export default `<!DOCTYPE html>
     pomodoroRunning = false;
     document.getElementById('pomodoroStartBtn').style.display = 'inline-block';
     document.getElementById('pomodoroStopBtn').style.display = 'none';
-    document.getElementById('pomodoroDisplay').textContent = \`\${parseInt(localStorage.getItem('settingsPomodoro') || '25')}:00\`;
+    document.getElementById('pomodoroDisplay').textContent = \`${parseInt(localStorage.getItem('settingsPomodoro') || '25')}:00\`;
 
     if (complete) {
       document.getElementById('pomodoroEnergyForm').style.display = 'block';
@@ -1034,7 +1107,10 @@ export default `<!DOCTYPE html>
     localStorage.setItem('sessionCount', sessionCount);
     document.getElementById('sessionCount').textContent = sessionCount;
     document.getElementById('pomodoroEnergyForm').style.display = 'none';
-    showToast(\`Session \${sessionCount} recorded!\`, 'success');
+    showToast(\`Session ${sessionCount} recorded!\`, 'success');
+    
+    // Sync data to server
+    syncDataToServer();
   }
 
   // ════════════════════════════════════════════════════════════
@@ -1071,10 +1147,10 @@ export default `<!DOCTYPE html>
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
 
-    document.getElementById('medDisplay').textContent = \`\${diffHours}h \${diffMins}m\`;
-    document.getElementById('medStatus').textContent = diffHours > 8 ? '⚠️ Consider next dose' : \`\${diffHours}h ago\`;
-    document.getElementById('medHours').textContent = \`\${diffHours}:\${String(diffMins).padStart(2, '0')}\`;
-    document.getElementById('medText').textContent = diffHours > 0 ? \`Last dose \${diffHours}h ago\` : \`Last dose \${diffMins}m ago\`;
+    document.getElementById('medDisplay').textContent = \`${diffHours}h ${diffMins}m\`;
+    document.getElementById('medStatus').textContent = diffHours > 8 ? '⚠️ Consider next dose' : \`${diffHours}h ago\`;
+    document.getElementById('medHours').textContent = \`${diffHours}:${String(diffMins).padStart(2, '0')}\`;
+    document.getElementById('medText').textContent = diffHours > 0 ? \`Last dose ${diffHours}h ago\` : \`Last dose ${diffMins}m ago\`;
   }
 
   // ════════════════════════════════════════════════════════════
@@ -1093,6 +1169,9 @@ export default `<!DOCTYPE html>
     localStorage.setItem('settingsPomodoro', pomodoro);
     localStorage.setItem('settingsBreak', breakDuration);
     showToast('Settings saved!', 'success');
+    
+    // Sync data to server
+    syncDataToServer();
   }
 
   // ════════════════════════════════════════════════════════════
@@ -1115,15 +1194,23 @@ export default `<!DOCTYPE html>
     try {
       const savedUser = localStorage.getItem('fbUser');
       const savedToken = localStorage.getItem('fbToken');
+      
+      // Only restore session if both user data and token exist
       if (savedUser && savedToken) {
-        user = JSON.parse(savedUser);
-        // Validate token is still valid by checking localStorage
-        // In future: call /profile endpoint to validate
+        const parsedUser = JSON.parse(savedUser);
+        // Validate that parsed user has required fields
+        if (parsedUser && parsedUser.email && parsedUser.id) {
+          user = parsedUser;
+        } else {
+          throw new Error('Invalid user data');
+        }
       }
     } catch (e) {
       console.error('Failed to restore session:', e);
+      user = null;
       localStorage.removeItem('fbUser');
       localStorage.removeItem('fbToken');
+      localStorage.removeItem('fbSessionId');
     }
 
     sessionCount = parseInt(localStorage.getItem('sessionCount') || '0');
@@ -1132,19 +1219,32 @@ export default `<!DOCTYPE html>
     const savedSettings = localStorage.getItem('settingsPomodoro');
     if (savedSettings) {
       document.getElementById('defaultPomodoro').value = savedSettings;
-      document.getElementById('pomodoroDisplay').textContent = \`\${savedSettings}:00\`;
+      document.getElementById('pomodoroDisplay').textContent = \`${savedSettings}:00\`;
     }
 
     document.getElementById('defaultBreak').value = localStorage.getItem('settingsBreak') || '5';
 
     initDopamineMenu();
     updateUI();
+    
+    // Ensure auth modal is properly closed if user is authenticated
+    if (user) {
+      closeModal('authModal');
+    }
+    
     updateMedDisplay();
 
     // Update med display every minute
     setInterval(updateMedDisplay, 60000);
+
+    // Sync data to server every 5 minutes if authenticated
+    if (user) {
+      setInterval(syncDataToServer, 5 * 60 * 1000);
+    }
   });
 </script>
 </body>
 </html>
 `;
+
+export default htmlContent;
