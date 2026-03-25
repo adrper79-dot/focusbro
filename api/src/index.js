@@ -1227,6 +1227,151 @@ self.addEventListener('fetch', (event) => {
   });
 });
 
+// ── GALLERY ENDPOINT (Direct in main router) ──
+router.get('/api/gallery', async (request, env) => {
+  try {
+    const url = new URL(request.url);
+    const seed = url.searchParams.get('seed') || Math.random().toString();
+    let category = url.searchParams.get('category') || 'focus';
+    const limit = Math.min(20, Math.max(5, parseInt(url.searchParams.get('limit') || '10')));
+
+    // Safe keyword mappings (whitelist prevents NSFW content)
+    const safeKeywords = {
+      focus: ['focus work', 'concentration', 'productivity', 'mindfulness', 'deep work'],
+      adhd: ['neurodiversity', 'colorful', 'creative chaos', 'vibrant energy', 'flowing'],
+      energy: ['lightning', 'electricity', 'bright light', 'glowing', 'power'],
+      growth: ['mountain climb', 'progress', 'success', 'achievement', 'growth'],
+      brain: ['brain circuits', 'neurons', 'neural', 'mind', 'intelligence'],
+      nature: ['forest', 'water', 'calm nature', 'peaceful landscape', 'zen'],
+      motivation: ['inspiration', 'celebration', 'success', 'achievement', 'victory'],
+    };
+
+    // Randomize category if requested
+    if (category === 'random') {
+      const categories = Object.keys(safeKeywords);
+      const hash = seed.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+      category = categories[hash % categories.length];
+    }
+
+    // Validate category
+    if (!safeKeywords[category]) {
+      return errorResponse('Invalid category', 400);
+    }
+
+    const keywords = safeKeywords[category];
+    const cacheKey = `gallery:${category}`;
+    
+    // Check KV cache first
+    const cached = await env.KV_CACHE.get(cacheKey);
+    let images = [];
+
+    if (cached) {
+      images = JSON.parse(cached);
+    } else {
+      // Fetch from Pexels API (free tier, no auth required for basic requests)
+      for (const keyword of keywords) {
+        try {
+          const response = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(keyword)}&per_page=80&page=1`, {
+            headers: {
+              'Authorization': env.PEXELS_API_KEY || 'PexelsSignup-Optional',
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            
+            // ✅ SECURITY: Validate Pexels response structure before accessing nested properties
+            if (data.photos && Array.isArray(data.photos) && data.photos.length > 0) {
+              // Safely extract photo data with defaults
+              images = images.concat(data.photos.map(p => {
+                // Defensive extraction: use optional chaining + defaults
+                return {
+                  url: p?.src?.medium || p?.src?.small || '',
+                  alt: p?.photographer || 'Photo',
+                  source: 'pexels'
+                };
+              }).filter(img => img.url)); // Filter out invalid entries
+            }
+          }
+        } catch (e) {
+          console.warn(`Pexels API error for "${keyword}":`, e.message);
+        }
+      }
+
+      // Try Unsplash as fallback
+      if (images.length < 50) {
+        try {
+          const keyword = keywords[0];
+          const response = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(keyword)}&per_page=80&page=1`, {
+            headers: {
+              'Authorization': 'Client-ID ' + (env.UNSPLASH_ACCESS_KEY || 'demo')
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            
+            // ✅ SECURITY: Validate Unsplash response structure before accessing nested properties
+            if (data.results && Array.isArray(data.results) && data.results.length > 0) {
+              // Safely extract photo data with defaults
+              images = images.concat(data.results.map(p => {
+                // Defensive extraction: use optional chaining + defaults
+                return {
+                  url: p?.urls?.regular || p?.urls?.full || '',
+                  alt: p?.user?.name || 'Photo',
+                  source: 'unsplash'
+                };
+              }).filter(img => img.url)); // Filter out invalid entries
+            }
+          }
+        } catch (e) {
+          console.warn('Unsplash API error:', e.message);
+        }
+      }
+
+      // If we got at least some images, cache them (24 hour TTL)
+      if (images.length > 0) {
+        await env.KV_CACHE.put(cacheKey, JSON.stringify(images), { expirationTtl: 86400 });
+      }
+    }
+
+    // Seeded random selection (deterministic based on user seed)
+    // Same user always gets same images, different users get different random selections
+    const seededShuffle = (arr, seed) => {
+      const result = [...arr];
+      let hash = seed.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+      
+      for (let i = result.length - 1; i > 0; i--) {
+        hash = (hash * 9301 + 49297) % 233280;
+        const j = Math.floor((hash / 233280) * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      
+      return result;
+    };
+
+    const shuffled = seededShuffle(images, seed);
+    const selected = shuffled.slice(0, limit);
+
+    return successResponse({
+      images: selected,
+      category,
+      count: selected.length,
+      total: images.length,
+      seed: seed.substring(0, 8) // Return truncated seed
+    });
+
+  } catch (error) {
+    console.error('Gallery endpoint error:', error.message);
+    // Graceful fallback - return empty array, frontend will use local SVG set
+    return successResponse({
+      images: [],
+      error: 'Gallery service temporarily unavailable',
+      count: 0
+    });
+  }
+});
+
 // ── 404 Fallback ──
 router.all('*', () => new Response(JSON.stringify({ error: 'Not found' }), {
   status: 404,
@@ -1239,41 +1384,9 @@ export default {
     // Initialize database on first request
     await initializeDatabase(env);
     
-    const url = new URL(request.url);
-    const pathname = url.pathname;
-    
-    // ✅ BEST PRACTICE: Try main router first (handles HTML, health, static assets)
-    const mainResponse = await router.handle(request, env);
-    if (mainResponse && mainResponse.status !== 404) {
-      return mainResponse;
-    }
-    
-    // ✅ For /api/* routes, try extended router with proper request handling
-    if (pathname.startsWith('/api/')) {
-      // Create request with /api prefix stripped for extended router
-      const path = pathname.replace(/^\/api/, '') || '/';
-      const newUrl = new URL(url);
-      newUrl.pathname = path;
-      
-      const apiRequest = new Request(newUrl.toString(), {
-        method: request.method,
-        headers: request.headers,
-        ...(request.method !== 'GET' && { body: request.body }),
-        ...(request.cf && { cf: request.cf }),
-      });
-      
-      try {
-        // Try extended router - use fetch() method which is more reliable
-        const apiResponse = await extendedRouter.fetch(apiRequest, env);
-        if (apiResponse && apiResponse.status !== 404) {
-          return apiResponse;
-        }
-      } catch (err) {
-        console.error('[API-ERROR]', err?.message || err);
-      }
-    }
-    
-    // Fallback: return 404 from main router
-    return mainResponse;
+    // ✅ BEST PRACTICE: Single unified router with all endpoints
+    // Try main router which now includes both static routes and API endpoints
+    const response = await router.handle(request, env);
+    return response;
   }
 };
