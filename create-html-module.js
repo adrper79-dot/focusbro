@@ -1,12 +1,70 @@
 const fs = require('fs');
-const html = fs.readFileSync('public/index.html', 'utf-8');
+let html = fs.readFileSync('public/index.html', 'utf-8');
+
+// Ensure initGallery() contains robust fallback logic so generated module is safe
+try {
+	const startMarker = 'async function initGallery() {';
+	const renderMarker = '\n\n  function renderGallery() {';
+	const startIdx = html.indexOf(startMarker);
+	const renderIdx = html.indexOf(renderMarker, startIdx);
+
+	if (startIdx !== -1 && renderIdx !== -1 && renderIdx > startIdx) {
+		const newInit = `async function initGallery() {
+			try {
+				const userId = getOrCreateUserId();
+				const category = 'random';
+
+				// Fetch gallery from API with timeout and safe parse
+				const controller = new AbortController();
+				const timeout = setTimeout(() => controller.abort(), 5000);
+				let response = null;
+				try {
+					const url = '/api/gallery?seed=' + encodeURIComponent(userId) + '&category=' + category + '&limit=12';
+					response = await fetch(url, { signal: controller.signal });
+				} catch (fetchErr) {
+					console.warn('Gallery fetch failed:', fetchErr && fetchErr.message);
+				} finally {
+					clearTimeout(timeout);
+				}
+
+				let data = null;
+				if (response && response.ok) {
+					try { data = await response.json(); } catch (jsonErr) { console.warn('initGallery: invalid JSON from API:', jsonErr && jsonErr.message); }
+					if (data && Array.isArray(data.images) && data.images.length > 0) {
+						galleryImages = data.images.map(img => ({
+							title: 'Motivational Image - ' + (data.category || category),
+							quote: img.quote || 'Keep pushing. Every moment of focus counts.',
+							url: img.url,
+							alt: img.alt || 'Motivational image'
+						}));
+						log('✅ Loaded ' + galleryImages.length + ' images from API');
+						currentGalleryIndex = 0;
+						renderGallery();
+						return;
+					} else {
+						console.warn('Gallery API returned no images or invalid data; using fallback.');
+					}
+				} else {
+					console.warn('Gallery API non-OK response; using fallback.', response && response.status);
+				}
+			} catch (e) {
+				console.warn('Gallery API unavailable, using fallback SVGs:', e && e.message);
+			}
+
+			// Fallback
+			galleryImages = [...FALLBACK_GALLERY];
+			currentGalleryIndex = 0;
+			renderGallery();
+		}`;
+
+		html = html.slice(0, startIdx) + newInit + html.slice(renderIdx);
+	}
+} catch (e) {
+	console.warn('create-html-module: failed to patch initGallery in source HTML:', e && e.message);
+}
 
 // Use JSON.stringify to properly escape the HTML string, avoiding backtick escaping issues
 const jsonString = JSON.stringify(html);
-const content = `// Auto-generated HTML content - do not edit
-const htmlContent = ${jsonString};
-
-export default htmlContent;
-`;
+const content = `// Auto-generated HTML content - do not edit\nconst htmlContent = ${jsonString};\n\nexport default htmlContent;\n`;
 fs.writeFileSync('api/src/html.js', content);
 console.log('Created api/src/html.js with HTML embedded (' + html.length + ' bytes)');
