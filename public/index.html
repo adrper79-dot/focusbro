@@ -608,7 +608,7 @@
 <div class="app">
   <div class="sidebar">
     <div class="logo">FocusBro</div>
-    <nav class="nav" id="appNav" style="display:none;">
+    <nav class="nav" id="appNav">
       <div class="nav-label">Priority</div>
       <div class="nav-item active" onclick="switchView('dashboard')">Dashboard</div>
       <div class="nav-item" onclick="switchView('keep-alive')">⚡ Keep Alive</div>
@@ -1324,7 +1324,7 @@
     const keyboardHint = document.getElementById('keyboardHint');
 
     // Navigation always visible (tools work without login)
-    appNav.style.display = 'flex';
+    appNav.style.display = 'block';
     keyboardHint.style.display = 'inline';
     switchView('dashboard');
 
