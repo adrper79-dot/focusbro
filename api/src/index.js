@@ -1200,8 +1200,8 @@ export default {
       const modifiedRequest = new Request(newUrl, request);
       
       try {
-        // Try extended router as a callable function
-        const extResponse = await extendedRouter(modifiedRequest, env, ctx);
+        // ✅ FIX: Use .handle() method for itty-router instances (not callable as function)
+        const extResponse = await extendedRouter.handle(modifiedRequest, env);
         if (extResponse && extResponse.status !== 404) {
           return extResponse;
         }
