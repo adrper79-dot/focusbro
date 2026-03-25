@@ -149,6 +149,9 @@ async function verifyPassword(password, hash) {
   return passwordHash === hash;
 }
 
+// ── EXPORT UTILITIES FOR OTHER MODULES ──
+export { hashPassword, verifyPassword, generateToken, verifyToken, generateUUID };
+
 // ── UTILITY: Generate JWT Token with HMAC-SHA256 ──
 async function generateToken(userId, jwtSecret) {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));

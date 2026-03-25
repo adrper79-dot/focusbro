@@ -17,10 +17,10 @@ export async function verifyAuth(request, env) {
   const token = authHeader.slice(7);
   
   try {
-    // In production, use proper JWT library
+    // Verify 3-part JWT: header.payload.signature
     const parts = token.split('.');
-    if (parts.length !== 2) {
-      return { valid: false, error: 'Invalid token format' };
+    if (parts.length !== 3) {
+      return { valid: false, error: 'Invalid token format (must be 3 parts)' };
     }
     
     const payload = JSON.parse(atob(parts[1]));

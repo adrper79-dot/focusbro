@@ -2,6 +2,8 @@ name = "focusbro"
 compatibility_date = "2024-03-24"
 main = "api/src/index.js"
 site = { bucket = "public" }
+workers_dev = true
+preview_urls = true
 
 # Cloudflare D1 Database (SQLite)
 [[d1_databases]]
@@ -17,9 +19,13 @@ preview_id = "placeholder-kv-preview-id"
 
 # Environment-specific config
 [env.production]
+routes = [
+  { pattern = "focusbro.net", zone_name = "focusbro.net" },
+  { pattern = "*.focusbro.net", zone_name = "focusbro.net" }
+]
 d1_databases = [{ binding = "DB", database_id = "2ac20b08-66e3-4abd-92de-f0e6380bdad0", database_name = "focusbro" }]
 kv_namespaces = [{ binding = "KV", id = "60c1852cd70f4999a380b9ea290fccb3", preview_id = "60c1852cd70f4999a380b9ea290fccb3" }]
-vars = { ENV = "production", API_ORIGIN = "https://focusbro-production.adrper79.workers.dev", JWT_SECRET = "focusbro-secret-key-prod-2024" }
+vars = { ENV = "production", API_ORIGIN = "https://focusbro.net", JWT_SECRET = "focusbro-secret-key-prod-2024" }
 
 [env.development]
 vars = { ENV = "development", API_ORIGIN = "http://localhost:8787", JWT_SECRET = "focusbro-secret-key-dev" }

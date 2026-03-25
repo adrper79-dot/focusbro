@@ -623,22 +623,49 @@
       return;
     }
 
-    // Demo auth (will replace with API)
-    if (authMode === 'signin') {
-      user = { email, name: email.split('@')[0] };
+    // Disable button during request
+    const btn = document.getElementById('authBtn2');
+    btn.disabled = true;
+    btn.classList.add('loading');
+
+    try {
+      const endpoint = authMode === 'signin' ? '/auth/login' : '/auth/register';
+      const response = await fetch(`${env.API_ORIGIN}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showFormError('email', data.error || 'Authentication failed');
+        return;
+      }
+
+      // Store user and token
+      user = { email, name: email.split('@')[0], id: data.user_id };
       localStorage.setItem('fbUser', JSON.stringify(user));
+      localStorage.setItem('fbToken', data.token);
+      localStorage.setItem('fbSessionId', data.session_id);
+
       closeModal('authModal');
       updateUI();
-      showToast(`Welcome back, ${user.name}!`);
-    } else {
-      user = { email, name: email.split('@')[0] };
-      localStorage.setItem('fbUser', JSON.stringify(user));
-      closeModal('authModal');
-      updateUI();
-      showToast(`Account created! Welcome ${user.name}`, 'success');
+      showToast(`${authMode === 'signin' ? 'Welcome back' : 'Account created'}! ${user.name}`, 'success');
       authMode = 'signin';
+    } catch (error) {
+      console.error('Auth error:', error);
+      showFormError('email', 'Network error - check console');
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
     }
   }
+
+  // Get API_ORIGIN from page location
+  const env = {
+    API_ORIGIN: window.location.origin // Will use focusbro.net or localhost
+  };
 
   function logout() {
     user = null;
@@ -1083,11 +1110,20 @@
     }
   });
 
-  // Initialize on load
+  // Restore session on page load
   window.addEventListener('DOMContentLoaded', () => {
-    const savedUser = localStorage.getItem('fbUser');
-    if (savedUser) {
-      user = JSON.parse(savedUser);
+    try {
+      const savedUser = localStorage.getItem('fbUser');
+      const savedToken = localStorage.getItem('fbToken');
+      if (savedUser && savedToken) {
+        user = JSON.parse(savedUser);
+        // Validate token is still valid by checking localStorage
+        // In future: call /profile endpoint to validate
+      }
+    } catch (e) {
+      console.error('Failed to restore session:', e);
+      localStorage.removeItem('fbUser');
+      localStorage.removeItem('fbToken');
     }
 
     sessionCount = parseInt(localStorage.getItem('sessionCount') || '0');
