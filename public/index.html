@@ -1382,6 +1382,52 @@
     return false;
   }
 
+  /**
+   * Sync event queue to backend.
+   * Sends all unsynced events to /events endpoint.
+   * Called periodically if user is authenticated.
+   */
+  async function syncEventQueue() {
+    if (!user) return; // Not authenticated
+    
+    // Load current events
+    fbEvents = JSON.parse(localStorage.getItem('fbEvents') || '[]');
+    
+    // Find unsynced events
+    const unsyncedEvents = fbEvents.filter(e => !e.synced);
+    
+    if (unsyncedEvents.length === 0) return; // Nothing to sync
+    
+    try {
+      const response = await apiCall('/events', {
+        method: 'POST',
+        body: JSON.stringify({ events: unsyncedEvents }),
+      });
+
+      if (response && response.ok) {
+        const result = await response.json();
+        
+        // Mark synced events in localStorage
+        if (result.accepted_ids && Array.isArray(result.accepted_ids)) {
+          fbEvents.forEach(e => {
+            if (result.accepted_ids.includes(e.id)) {
+              e.synced = true;
+            }
+          });
+          localStorage.setItem('fbEvents', JSON.stringify(fbEvents));
+          console.debug(`✓ Synced ${result.accepted} events to backend`);
+        }
+        return true;
+      } else if (response) {
+        const errorData = await response.json().catch(() => ({}));
+        console.warn('⚠ Event sync failed:', response.status, errorData.error);
+      }
+    } catch (error) {
+      console.warn('Event sync error (will retry):', error.message);
+    }
+    return false;
+  }
+
   async function handleAuth(event) {
     // Allow event to be passed (from form submission) or called without event
     if (event && event.preventDefault) {
@@ -2136,7 +2182,13 @@
     // Sync data to server every 5 minutes if authenticated (prevent multiple intervals)
     if (user) {
       if (syncInterval) clearInterval(syncInterval);
-      syncInterval = setInterval(syncDataToServer, 5 * 60 * 1000);
+      syncInterval = setInterval(() => {
+        syncDataToServer();
+        syncEventQueue(); // Also sync events with each data sync
+      }, 5 * 60 * 1000);
+      
+      // Initial event sync
+      syncEventQueue();
     }
   });
 </script>

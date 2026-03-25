@@ -77,6 +77,31 @@ async function initializeDatabase(env) {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
       )`,
+      // ── PHASE 0: ANALYTICS INFRASTRUCTURE ──
+      `CREATE TABLE IF NOT EXISTS focus_events (
+        id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(8)))),
+        user_id TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        tool TEXT,
+        duration_seconds INTEGER DEFAULT 0,
+        data TEXT DEFAULT '{}',
+        client_timestamp DATETIME NOT NULL,
+        server_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS user_streaks (
+        user_id TEXT PRIMARY KEY,
+        current_streak INTEGER DEFAULT 0,
+        longest_streak INTEGER DEFAULT 0,
+        last_active_date TEXT,
+        total_sessions INTEGER DEFAULT 0,
+        total_focus_seconds INTEGER DEFAULT 0,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`,
+      `CREATE INDEX IF NOT EXISTS idx_events_user_time ON focus_events(user_id, client_timestamp)`,
+      `CREATE INDEX IF NOT EXISTS idx_events_type ON focus_events(user_id, event_type)`,
+      // ── END PHASE 0 TABLES ──
       `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`,
       `CREATE INDEX IF NOT EXISTS idx_snapshots_user ON user_data_snapshots(user_id)`,
       `CREATE INDEX IF NOT EXISTS idx_sync_logs_user ON sync_logs(user_id)`,

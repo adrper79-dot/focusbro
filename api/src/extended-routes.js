@@ -536,6 +536,191 @@ router.get('/api/sync/data', async (request, env) => {
   }
 });
 
+// ════════════════════════════════════════════════════════════
+// PHASE 0: ANALYTICS - EVENT LOGGING ENDPOINTS
+// ════════════════════════════════════════════════════════════
+
+// ── POST /events - Batch upload focus events ──
+router.post('/events', async (request, env) => {
+  try {
+    const auth = await verifyAuth(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+
+    const contentType = request.headers.get('Content-Type') || '';
+    if (!contentType.includes('application/json')) {
+      return errorResponse('Content-Type must be application/json', 400);
+    }
+
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      return errorResponse('Invalid JSON in request body', 400);
+    }
+
+    const { events } = body;
+    if (!Array.isArray(events)) {
+      return errorResponse('events must be an array', 400);
+    }
+
+    if (events.length > 500) {
+      return errorResponse('Maximum 500 events per request', 400);
+    }
+
+    // Validate and filter events
+    const validEvents = events.filter(e => {
+      // Check required fields
+      if (!e.id || !e.type || !e.timestamp) return false;
+      
+      // Validate timestamp is ISO and not too old/new
+      const ts = new Date(e.timestamp);
+      if (isNaN(ts.getTime())) return false;
+      
+      const now = new Date();
+      const diffDays = (now - ts) / (1000 * 60 * 60 * 24);
+      if (diffDays > 730 || diffDays < -7) return false; // 2 years back, 7 days forward
+      
+      return true;
+    });
+
+    const acceptedIds = [];
+    for (const event of validEvents) {
+      try {
+        // Check if event already exists (prevent duplicates)
+        const existing = await env.DB.prepare(
+          `SELECT id FROM focus_events WHERE id = ? AND user_id = ?`
+        ).bind(event.id, auth.user.id).first();
+
+        if (!existing) {
+          await env.DB.prepare(
+            `INSERT INTO focus_events 
+             (id, user_id, event_type, tool, duration_seconds, data, client_timestamp) 
+             VALUES (?, ?, ?, ?, ?, ?, ?)`
+          ).bind(
+            event.id,
+            auth.user.id,
+            event.type,
+            event.tool || '',
+            event.duration_seconds || 0,
+            JSON.stringify(event.data || {}),
+            event.timestamp
+          ).run();
+
+          acceptedIds.push(event.id);
+        }
+      } catch (e) {
+        console.warn(`Failed to insert event ${event.id}:`, e.message);
+      }
+    }
+
+    // Update user_streaks cache
+    try {
+      // Count focus sessions
+      const streakResult = await env.DB.prepare(
+        `SELECT COUNT(*) as count FROM focus_events 
+         WHERE user_id = ? AND event_type = 'session_complete'`
+      ).bind(auth.user.id).first();
+
+      const totalSessions = streakResult?.count || 0;
+
+      // Sum focus time
+      const focusResult = await env.DB.prepare(
+        `SELECT SUM(duration_seconds) as total FROM focus_events 
+         WHERE user_id = ? AND event_type = 'session_complete'`
+      ).bind(auth.user.id).first();
+
+      const totalFocusSeconds = focusResult?.total || 0;
+
+      // Simple current streak (will be refined in production)
+      const lastActiveResult = await env.DB.prepare(
+        `SELECT DATE(client_timestamp) as date FROM focus_events 
+         WHERE user_id = ? AND event_type = 'session_complete'
+         ORDER BY client_timestamp DESC LIMIT 1`
+      ).bind(auth.user.id).first();
+
+      const lastActiveDate = lastActiveResult?.date || null;
+
+      // Update or insert streak record
+      await env.DB.prepare(
+        `INSERT OR REPLACE INTO user_streaks 
+         (user_id, current_streak, longest_streak, last_active_date, total_sessions, total_focus_seconds, updated_at)
+         VALUES (?, 0, 0, ?, ?, ?, CURRENT_TIMESTAMP)`
+      ).bind(auth.user.id, lastActiveDate, totalSessions, totalFocusSeconds).run();
+    } catch (e) {
+      console.warn('Failed to update streaks:', e.message);
+    }
+
+    return successResponse({
+      accepted: acceptedIds.length,
+      events_received: validEvents.length,
+      accepted_ids: acceptedIds
+    });
+  } catch (error) {
+    console.error('POST /events error:', error);
+    return errorResponse('Internal server error', 500);
+  }
+});
+
+// ── GET /stats/summary - Retrieve user analytics summary ──
+router.get('/stats/summary', async (request, env) => {
+  try {
+    const auth = await verifyAuth(request, env);
+    if (!auth.valid) return errorResponse('Unauthorized', 401);
+
+    // Get cached streaks
+    const streakData = await env.DB.prepare(
+      `SELECT * FROM user_streaks WHERE user_id = ?`
+    ).bind(auth.user.id).first();
+
+    const currentStreak = streakData?.current_streak || 0;
+    const longestStreak = streakData?.longest_streak || 0;
+    const totalSessions = streakData?.total_sessions || 0;
+    const totalFocusSeconds = streakData?.total_focus_seconds || 0;
+
+    // Count today's sessions
+    const today = new Date().toISOString().slice(0, 10);
+    const todayResult = await env.DB.prepare(
+      `SELECT COUNT(*) as count FROM focus_events 
+       WHERE user_id = ? AND event_type = 'session_complete' AND DATE(client_timestamp) = ?`
+    ).bind(auth.user.id, today).first();
+
+    const sessionsToday = todayResult?.count || 0;
+
+    // Get most used tool
+    const toolResult = await env.DB.prepare(
+      `SELECT tool, COUNT(*) as count FROM focus_events 
+       WHERE user_id = ? AND tool != '' 
+       GROUP BY tool ORDER BY count DESC LIMIT 1`
+    ).bind(auth.user.id).first();
+
+    const mostUsedTool = toolResult?.tool || '';
+
+    // Average daily energy (last 30 days)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const avgEnergyResult = await env.DB.prepare(
+      `SELECT AVG(CAST(JSON_EXTRACT(data, '$.energy') AS REAL)) as avg 
+       FROM focus_events 
+       WHERE user_id = ? AND event_type = 'energy_log' AND DATE(client_timestamp) >= ?`
+    ).bind(auth.user.id, thirtyDaysAgo).first();
+
+    const avgDailyEnergy = (avgEnergyResult?.avg || 0).toFixed(1);
+
+    return successResponse({
+      current_streak: currentStreak,
+      longest_streak: longestStreak,
+      total_sessions: totalSessions,
+      total_focus_hours: (totalFocusSeconds / 3600).toFixed(1),
+      sessions_today: sessionsToday,
+      most_used_tool: mostUsedTool,
+      avg_daily_energy: parseFloat(avgDailyEnergy),
+      last_active_date: streakData?.last_active_date || null
+    });
+  } catch (error) {
+    console.warn('GET /stats/summary error:', error.message);
+    return errorResponse('Failed to retrieve stats: ' + error.message, 500);
+  }
+});
+
 // ── 404 FALLBACK ──
 router.all('*', () => errorResponse('Not found', 404));
 
