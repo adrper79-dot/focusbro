@@ -1224,8 +1224,8 @@ export default {
       });
       
       try {
-        // Use .handle() - more reliable than .fetch() in some environments
-        const extResponse = await extendedRouter.handle(modifiedRequest, env);
+        // Pass all three parameters: request, env, ctx
+        const extResponse = await extendedRouter.handle(modifiedRequest, env, ctx);
         if (extResponse && extResponse.status !== 404) {
           return extResponse;
         }
