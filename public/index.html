@@ -38,14 +38,17 @@
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { height: 100%; overflow: hidden; }
-  body { font-family: var(--font); background: var(--white); color: var(--gray-900); line-height: 1.5; }
+  body { font-family: var(--font); background: var(--white); color: var(--gray-900); line-height: 1.6; }
+  
   .app { display: flex; height: 100vh; }
   .sidebar { width: 260px; background: var(--gray-900); color: var(--white); overflow-y: auto; display: flex; flex-direction: column; border-right: 1px solid var(--gray-800); }
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .header { background: var(--white); border-bottom: 1px solid var(--gray-200); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow-sm); min-height: 64px; }
   .content { flex: 1; overflow-y: auto; padding: 24px 32px; background: var(--gray-50); }
+  
   .logo { padding: 20px 24px; border-bottom: 1px solid var(--gray-800); font-size: 16px; font-weight: 700; }
   .nav { flex: 1; padding: 16px 0; }
   .nav-item { padding: 12px 20px; color: var(--gray-400); cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.2s; border-left: 3px solid transparent; display: flex; align-items: center; gap: 8px; }
@@ -53,71 +56,106 @@
   .nav-item.active { color: var(--primary-light); border-left-color: var(--primary-light); background: rgba(59, 130, 246, 0.1); }
   .nav-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--gray-600); padding: 12px 20px; font-weight: 700; }
   .sidebar-footer { padding: 16px 24px; border-top: 1px solid var(--gray-800); }
+  
   .header-title { font-size: 20px; font-weight: 600; }
   .header-actions { display: flex; gap: 12px; align-items: center; }
-  .user-badge { font-size: 12px; background: var(--primary-bg); color: var(--primary); padding: 6px 12px; border-radius: 6px; }
+  .user-badge { font-size: 12px; background: var(--primary-bg); color: var(--primary); padding: 6px 12px; border-radius: 6px; font-weight: 600; }
   .keyboard-hint { font-size: 10px; color: var(--gray-400); background: var(--gray-100); padding: 4px 8px; border-radius: 4px; }
-  .btn { padding: 10px 18px; border: none; border-radius: 6px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+  
+  .btn { padding: 10px 18px; border: none; border-radius: 6px; font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; position: relative; overflow: hidden; }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn.loading::after { content: ''; position: absolute; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; right: 8px; }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+  
   .btn-primary { background: var(--primary); color: var(--white); }
-  .btn-primary:hover { background: var(--primary-dark); box-shadow: var(--shadow); }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-dark); box-shadow: var(--shadow); }
   .btn-secondary { background: var(--gray-200); color: var(--gray-900); }
-  .btn-secondary:hover { background: var(--gray-300); }
+  .btn-secondary:hover:not(:disabled) { background: var(--gray-300); }
   .btn-success { background: var(--success); color: var(--white); }
-  .btn-success:hover { background: #0d9488; }
+  .btn-success:hover:not(:disabled) { background: #0d9488; }
+  .btn-danger { background: var(--danger); color: var(--white); }
+  .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+  
   .btn-lg { padding: 14px 24px; font-size: 14px; }
   .btn-block { width: 100%; justify-content: center; }
   .btn-sm { padding: 6px 12px; font-size: 11px; }
+  
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px; }
-  .card { background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; padding: 20px; box-shadow: var(--shadow); transition: all 0.2s; }
+  .card { background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; padding: 20px; box-shadow: var(--shadow); transition: all 0.2s ease; }
   .card:hover { border-color: var(--gray-300); box-shadow: var(--shadow-md); }
+  
   .card-header { font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 12px; }
   .card-value { font-size: 32px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; font-family: var(--mono); }
   .card-subtext { font-size: 12px; color: var(--gray-500); }
-  .panel { background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 20px; }
+  
+  .panel { background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
   .panel-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center; }
   .panel-title { font-size: 14px; font-weight: 700; }
   .panel-body { padding: 20px; }
-  .breathing-circle { width: 180px; height: 180px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-light), var(--primary)); margin: 30px auto; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: var(--white); animation: breathe-scale 8s ease-in-out infinite; box-shadow: var(--shadow-lg); }
+  
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-700); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .form-label.required::after { content: ' *'; color: var(--danger); }
+  .form-input, .form-textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-family: var(--font); font-size: 13px; color: var(--gray-900); background: var(--white); transition: all 0.2s ease; }
+  .form-input:focus, .form-textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1); }
+  .form-input.error { border-color: var(--danger); }
+  .form-error { font-size: 12px; color: var(--danger); margin-top: 4px; }
+  
+  .breathing-circle { width: 180px; height: 180px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-light), var(--primary)); margin: 30px auto; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; color: var(--white); animation: breathe-scale 8s ease-in-out infinite; box-shadow: var(--shadow-lg); touch-action: manipulation; }
   .breathing-circle.box-breath { animation: box-breath-scale 16s ease-in-out infinite; }
   .breathing-circle.tactical { animation: tactical-breath-scale 8s ease-in-out infinite; }
   @keyframes breathe-scale { 0%, 100% { transform: scale(1); } 25% { transform: scale(1.2); } 50% { transform: scale(1.3); } 75% { transform: scale(1.1); } }
   @keyframes box-breath-scale { 0%, 100% { transform: scale(1); } 25% { transform: scale(1.2); } 50% { transform: scale(1.2); } 75% { transform: scale(1); } }
   @keyframes tactical-breath-scale { 0%, 100% { transform: scale(1); } 12.5% { transform: scale(1.15); } 25% { transform: scale(1.15); } 37.5% { transform: scale(1); } }
+  
   .breathing-text { font-size: 13px; color: var(--gray-600); text-align: center; margin-top: 16px; }
+  
   .grounding-section { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 20px 0; }
-  .grounding-item { padding: 16px; background: var(--gray-50); border: 2px solid var(--gray-200); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s; }
+  .grounding-item { padding: 16px; background: var(--gray-50); border: 2px solid var(--gray-200); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s ease; user-select: none; }
   .grounding-item:hover { border-color: var(--primary); background: var(--primary-bg); }
-  .grounding-item.completed { border-color: var(--success); background: var(--success-bg); }
+  .grounding-item.completed { border-color: var(--success); background: var(--success-bg); color: var(--success); font-weight: 600; }
   .grounding-number { font-size: 24px; font-weight: 700; color: var(--primary); display: block; margin-bottom: 4px; }
   .grounding-label { font-size: 11px; color: var(--gray-600); font-weight: 600; }
-  .body-scan-display { font-family: var(--mono); font-size: 12px; line-height: 1.8; color: var(--gray-700); margin: 16px 0; background: var(--gray-50); padding: 16px; border-radius: 6px; }
-  .energy-slider { width: 100%; margin: 16px 0; }
+  
+  .energy-slider { width: 100%; margin: 16px 0; accent-color: var(--primary); }
   .slider-track { display: flex; gap: 8px; margin: 16px 0; }
-  .slider-item { flex: 1; padding: 12px; text-align: center; border: 2px solid var(--gray-200); border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s; }
-  .slider-item:hover { border-color: var(--primary); }
-  .slider-item.active { border-color: var(--primary); background: var(--primary-bg); }
+  .slider-item { flex: 1; padding: 12px; text-align: center; border: 2px solid var(--gray-200); border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s ease; user-select: none; touch-action: manipulation; }
+  .slider-item:hover { border-color: var(--primary); background: var(--primary-bg); }
+  .slider-item.active { border-color: var(--primary); background: var(--primary-bg); color: var(--primary); }
+  
   .dopamine-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin: 16px 0; }
-  .dopamine-item { padding: 12px; background: linear-gradient(135deg, #f59e0b, #f97316); color: var(--white); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s; font-weight: 600; font-size: 12px; box-shadow: var(--shadow); }
+  .dopamine-item { padding: 12px; background: linear-gradient(135deg, #f59e0b, #f97316); color: var(--white); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s ease; font-weight: 600; font-size: 12px; box-shadow: var(--shadow); user-select: none; touch-action: manipulation; }
   .dopamine-item:hover { transform: scale(1.05); box-shadow: var(--shadow-lg); }
+  
   .fidget-spinner { width: 120px; height: 120px; margin: 30px auto; border-radius: 50%; background: conic-gradient(from 45deg, #3b82f6, #8b5cf6, #3b82f6); animation: spin 2s linear infinite; box-shadow: var(--shadow-lg); }
-  @keyframes spin { 100% { transform: rotate(360deg); } }
   .particle-canvas { width: 100%; height: 300px; background: linear-gradient(135deg, #1e40af15, #8b5cf615); border-radius: 8px; border: 1px solid var(--gray-200); }
-  .form-group { margin-bottom: 16px; }
-  .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-700); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
-  .form-input, .form-textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-family: var(--font); font-size: 13px; color: var(--gray-900); background: var(--white); }
-  .form-input:focus, .form-textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1); }
+  
+  .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; animation: fadeIn 0.2s ease; }
+  .modal.active { display: flex; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal-content { background: var(--white); border-radius: 8px; box-shadow: var(--shadow-lg); width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; animation: slideUp 0.3s ease; }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-header { padding: 20px; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .close-btn { background: none; border: none; font-size: 24px; color: var(--gray-500); cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px; transition: all 0.2s ease; }
+  .close-btn:hover { background: var(--gray-100); color: var(--gray-900); }
+  .modal-body { padding: 20px; }
+  .modal-footer { padding: 16px 20px; border-top: 1px solid var(--gray-200); display: flex; gap: 8px; justify-content: flex-end; }
+  
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--white); border-left: 4px solid var(--primary); border-radius: 6px; padding: 16px 20px; box-shadow: var(--shadow-lg); z-index: 2000; animation: slideInRight 0.3s ease; max-width: 320px; }
+  @keyframes slideInRight { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .toast.success { border-left-color: var(--success); }
+  .toast.error { border-left-color: var(--danger); }
+  .toast.warning { border-left-color: var(--warning); }
+  .toast-message { font-size: 13px; color: var(--gray-900); font-weight: 500; }
+  .toast-close { position: absolute; top: 8px; right: 8px; background: none; border: none; color: var(--gray-400); cursor: pointer; font-size: 16px; padding: 0; width: 24px; height: 24px; }
+  
+  .mini-chart { width: 100%; height: 80px; background: linear-gradient(to right, var(--primary-bg), var(--success-bg)); border-radius: 6px; }
+  
   .table { width: 100%; font-size: 12px; }
   .table th { padding: 12px 0; text-align: left; font-weight: 700; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.3px; font-size: 10px; border-bottom: 1px solid var(--gray-200); }
   .table td { padding: 12px 0; border-bottom: 1px solid var(--gray-100); color: var(--gray-700); }
-  .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
-  .modal.active { display: flex; }
-  .modal-content { background: var(--white); border-radius: 8px; box-shadow: var(--shadow-lg); width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; }
-  .modal-header { padding: 20px; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; }
-  .modal-title { font-size: 16px; font-weight: 700; }
-  .close-btn { background: none; border: none; font-size: 24px; color: var(--gray-500); cursor: pointer; }
-  .modal-body { padding: 20px; }
-  .modal-footer { padding: 16px 20px; border-top: 1px solid var(--gray-200); display: flex; gap: 8px; justify-content: flex-end; }
-  .mini-chart { width: 100%; height: 80px; background: linear-gradient(to right, var(--primary-bg), var(--success-bg)); border-radius: 6px; }
+  
   @media (max-width: 768px) {
     .app { flex-direction: column; }
     .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; }
@@ -126,6 +164,7 @@
     .nav-item.active { border-left: none; border-bottom-color: var(--primary-light); }
     .grounding-section { grid-template-columns: repeat(2, 1fr); }
     .dopamine-list { grid-template-columns: repeat(2, 1fr); }
+    .content { padding: 16px 20px; }
   }
 </style>
 </head>
@@ -164,7 +203,7 @@
     <div class="header">
       <div class="header-title" id="viewTitle">FocusBro</div>
       <div class="header-actions">
-        <span id="userDisplay" style="display:none;" class="user-badge">Logged in</span>
+        <span id="userDisplay" style="display:none;" class="user-badge" aria-label="User email">Logged in</span>
         <span class="keyboard-hint" id="keyboardHint" style="display:none;">Press ? for help</span>
       </div>
     </div>
@@ -201,21 +240,26 @@
 
       <!-- POMODORO -->
       <div id="pomodoro-view" class="view" style="display:none;">
-        <div style="background: var(--primary-bg); border: 2px solid var(--primary); border-radius: 12px; padding: 32px; text-align: center; margin-bottom: 24px;">
-          <div style="font-size: 12px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Pomodoro Timer</div>
-          <div style="font-family: var(--mono); font-size: 56px; font-weight: 700; color: var(--primary); margin: 16px 0; line-height: 1;" id="pomodoroDisplay">25:00</div>
-          <div style="font-size: 13px; font-weight: 600; color: var(--gray-700); margin-bottom: 16px;" id="pomodoroStatus">Ready to start</div>
-          <div style="display: flex; gap: 12px; justify-content: center;">
-            <button class="btn btn-success" id="pomodoroStart" onclick="startPomodoro()">Start</button>
-            <button class="btn btn-secondary" id="pomodoroStop" onclick="stopPomodoro()" style="display:none;">Stop</button>
+        <div class="panel">
+          <div class="panel-header"><div class="panel-title">Pomodoro Timer</div></div>
+          <div class="panel-body">
+            <div style="text-align: center; margin: 30px 0;">
+              <div style="font-family: var(--mono); font-size: 72px; font-weight: 700; color: var(--primary); margin: 20px 0;" id="pomodoroDisplay">25:00</div>
+              <div style="margin: 20px 0;">
+                <button class="btn btn-success btn-lg" id="pomodoroStartBtn" onclick="startPomodoro()">Start</button>
+                <button class="btn btn-danger btn-lg" id="pomodoroStopBtn" onclick="stopPomodoro()" style="display:none;">Stop</button>
+              </div>
+            </div>
+            <div id="pomodoroEnergyForm" style="display:none;">
+              <div class="form-group">
+                <label class="form-label">Energy After Session (1-10)</label>
+                <input type="range" min="1" max="10" id="pomodoroEnergy" class="energy-slider" value="5">
+                <div style="text-align: center; font-size: 12px; color: var(--gray-600);" id="pomodoroEnergyValue">5</div>
+              </div>
+              <button class="btn btn-primary btn-lg btn-block" onclick="recordPomodoroSession()">Record Session</button>
+            </div>
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Log energy level (1-10)</label>
-          <input type="range" min="1" max="10" id="pomodoroEnergy" style="width: 100%; cursor: pointer;">
-          <div style="text-align: center; font-size: 12px; color: var(--gray-600); margin-top: 4px;" id="energyDisplay">5</div>
-        </div>
-        <button class="btn btn-primary btn-block" onclick="recordPomodoroSession()">Log This Session</button>
       </div>
 
       <!-- BREATHING -->
@@ -223,15 +267,17 @@
         <div class="panel">
           <div class="panel-header"><div class="panel-title">Breathing Exercises</div></div>
           <div class="panel-body">
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px;">
-              <button class="btn btn-primary" onclick="startBreathing('4-7-8')">4-7-8</button>
-              <button class="btn btn-primary" onclick="startBreathing('box')">Box</button>
-              <button class="btn btn-primary" onclick="startBreathing('tactical')">Tactical</button>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+              <button class="btn btn-primary btn-block" onclick="startBreathing('4-7-8')">4-7-8</button>
+              <button class="btn btn-primary btn-block" onclick="startBreathing('box')">Box (4-4-4-4)</button>
+              <button class="btn btn-primary btn-block" onclick="startBreathing('tactical')">Tactical</button>
             </div>
             <div id="breathing-display" style="display:none;">
-              <div class="breathing-circle" id="breathingCircle">Inhale</div>
-              <div class="breathing-text" id="breathingText">4 seconds</div>
-              <button class="btn btn-secondary btn-block" onclick="stopBreathing()">Stop</button>
+              <div class="breathing-circle" id="breathingCircle">Breathe</div>
+              <div class="breathing-text" id="breathingText">Follow the circle's movement</div>
+              <div style="text-align: center; margin-top: 16px;">
+                <button class="btn btn-secondary" onclick="stopBreathing()">Stop</button>
+              </div>
             </div>
           </div>
         </div>
@@ -240,9 +286,9 @@
       <!-- GROUNDING -->
       <div id="grounding-view" class="view" style="display:none;">
         <div class="panel">
-          <div class="panel-header"><div class="panel-title">5-4-3-2-1 Grounding</div></div>
+          <div class="panel-header"><div class="panel-title">5-4-3-2-1 Grounding Exercise</div></div>
           <div class="panel-body">
-            <p style="font-size: 12px; color: var(--gray-600); margin-bottom: 16px;">Notice and click each item:</p>
+            <p style="font-size: 12px; color: var(--gray-600); margin-bottom: 16px;">Click each item as you notice it. Use when feeling overwhelmed.</p>
             <div style="margin-bottom: 20px;">
               <div style="font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; margin-bottom: 8px;">5 Things You See</div>
               <div class="grounding-section" id="groundingSee"></div>
@@ -276,10 +322,10 @@
           <div class="panel-header"><div class="panel-title">Quick Body Scan (60-90 sec)</div></div>
           <div class="panel-body">
             <div style="text-align: center; margin: 20px 0;">
-              <button class="btn btn-success btn-lg" onclick="startBodyScan()">Start Scan</button>
+              <button class="btn btn-success btn-lg" id="bodyScanStart" onclick="startBodyScan()">Start Scan</button>
               <button class="btn btn-secondary btn-lg" id="bodyScanStop" onclick="stopBodyScan()" style="display:none;">Stop</button>
             </div>
-            <div id="bodyScanDisplay" class="body-scan-display" style="display:none;"></div>
+            <div id="bodyScanDisplay" style="display:none; font-family: var(--mono); font-size: 12px; line-height: 1.8; color: var(--gray-700); margin: 16px 0; background: var(--gray-50); padding: 16px; border-radius: 6px;"></div>
             <div style="background: var(--primary-bg); border: 1px solid var(--primary); border-radius: 8px; padding: 16px; margin-top: 16px;">
               <div style="font-size: 12px; color: var(--gray-700);">Check:
                 <br>• Posture - Shoulders back?
@@ -303,9 +349,11 @@
               <button class="btn btn-primary btn-block" onclick="startMeditation(5)">5 min</button>
               <button class="btn btn-primary btn-block" onclick="startMeditation(10)">10 min</button>
             </div>
-            <div id="meditationDisplay" style="display:none; text-align: center;">
-              <div style="font-family: var(--mono); font-size: 48px; font-weight: 700; color: var(--primary); margin: 20px 0;" id="meditationTimer">5:00</div>
-              <button class="btn btn-secondary" onclick="stopMeditation()">Stop</button>
+            <div id="meditationDisplay" style="display:none;">
+              <div style="font-family: var(--mono); font-size: 48px; font-weight: 700; color: var(--primary); margin: 30px 0; text-align: center;" id="meditationTimer">5:00</div>
+              <div style="text-align: center;">
+                <button class="btn btn-secondary" onclick="stopMeditation()">Stop</button>
+              </div>
             </div>
           </div>
         </div>
@@ -318,7 +366,7 @@
           <div class="panel-body">
             <div class="form-group">
               <label class="form-label">Current Energy Level (1-10)</label>
-              <input type="range" min="1" max="10" class="energy-slider" id="energyLevel" oninput="updateEnergyDisplay()">
+              <input type="range" min="1" max="10" class="energy-slider" id="energyLevel" oninput="updateEnergyDisplay()" value="5">
               <div style="text-align: center; font-size: 32px; font-weight: 700; color: var(--primary);" id="energyValue">5</div>
             </div>
             <div class="form-group">
@@ -333,7 +381,7 @@
             <button class="btn btn-primary btn-lg btn-block" onclick="saveEnergyLog()">Save Log</button>
             <div style="margin-top: 20px; padding: 16px; background: var(--gray-50); border-radius: 8px;">
               <div style="font-size: 11px; font-weight: 700; color: var(--gray-600); text-transform: uppercase; margin-bottom: 12px;">Energy History</div>
-              <div class="mini-chart" style="opacity: 0.5;"></div>
+              <div class="mini-chart"></div>
               <div style="font-size: 12px; color: var(--gray-600); margin-top: 8px; text-align: center;">Log sessions to see trends</div>
             </div>
           </div>
@@ -343,7 +391,7 @@
       <!-- DOPAMINE MENU -->
       <div id="dopamine-menu-view" class="view" style="display:none;">
         <div class="panel">
-          <div class="panel-header"><div class="panel-title">Dopamine Menu - Quick Breaks</div></panel-header>
+          <div class="panel-header"><div class="panel-title">Dopamine Menu - Quick Breaks</div></div>
           <div class="panel-body">
             <p style="font-size: 12px; color: var(--gray-600); margin-bottom: 16px;">Click for a quick dopamine hit during breaks:</p>
             <div class="dopamine-list" id="dopamineList"></div>
@@ -367,12 +415,12 @@
             <p style="font-size: 12px; color: var(--gray-600); margin-bottom: 16px;">Rate your task to decide if it's a good fit:</p>
             <div class="form-group">
               <label class="form-label">Difficulty (1-10)</label>
-              <input type="range" min="1" max="10" id="taskDifficulty" oninput="updateTaskGrid()" style="width: 100%;">
+              <input type="range" min="1" max="10" id="taskDifficulty" oninput="updateTaskGrid()" style="width: 100%;" value="5">
               <div style="text-align: center; font-size: 12px; color: var(--gray-600);" id="difficultyValue">5</div>
             </div>
             <div class="form-group">
               <label class="form-label">Interest Level (1-10)</label>
-              <input type="range" min="1" max="10" id="taskInterest" oninput="updateTaskGrid()" style="width: 100%;">
+              <input type="range" min="1" max="10" id="taskInterest" oninput="updateTaskGrid()" style="width: 100%;" value="5">
               <div style="text-align: center; font-size: 12px; color: var(--gray-600);" id="interestValue">5</div>
             </div>
             <div style="background: var(--primary-bg); border: 1px solid var(--primary); border-radius: 8px; padding: 16px; margin-top: 16px; text-align: center;">
@@ -395,8 +443,8 @@
             <div id="fidgetDisplay" style="display:none;">
               <div class="fidget-spinner" id="fidgetSpinner" style="display:none;"></div>
               <div id="colorCycle" style="display:none; width: 200px; height: 200px; margin: 30px auto; border-radius: 50%; background: #3b82f6; animation: color-cycle 6s linear infinite; box-shadow: var(--shadow-lg);"></div>
+              <style>@keyframes color-cycle { 0% { background: #3b82f6; } 20% { background: #8b5cf6; } 40% { background: #ec4899; } 60% { background: #f59e0b; } 80% { background: #10b981; } 100% { background: #3b82f6; } }</style>
               <canvas id="particleCanvas" class="particle-canvas" style="display:none;"></canvas>
-              <style>@keyframes color-cycle { 0% { background: #3b82f6; } 25% { background: #8b5cf6; } 50% { background: #ec4899; } 75% { background: #f59e0b; } 100% { background: #3b82f6; } }</style>
               <button class="btn btn-secondary btn-block" onclick="hideFidget()">Done</button>
             </div>
           </div>
@@ -419,10 +467,12 @@
 
       <!-- MEDICATION -->
       <div id="medication-view" class="view" style="display:none;">
-        <div class="card">
-          <div class="card-header">Hours Since Last Dose</div>
-          <div class="card-value" id="medHours">--:--</div>
-          <div class="card-subtext" id="medText">No dose logged</div>
+        <div class="grid">
+          <div class="card">
+            <div class="card-header">Hours Since Last Dose</div>
+            <div class="card-value" id="medHours">--:--</div>
+            <div class="card-subtext" id="medText">No dose logged</div>
+          </div>
         </div>
         <div class="panel">
           <div class="panel-header"><div class="panel-title">Log Medication</div></div>
@@ -439,15 +489,15 @@
       <!-- SETTINGS -->
       <div id="settings-view" class="view" style="display:none;">
         <div class="panel">
-          <div class="panel-header"><div class="panel-title">Settings</div></div>
+          <div class="panel-header"><div class="panel-title">Settings</div></panel-header>
           <div class="panel-body">
             <div class="form-group">
               <label class="form-label">Default Pomodoro Duration (minutes)</label>
-              <input type="number" id="defaultPomodoro" class="form-input" value="25" min="5">
+              <input type="number" id="defaultPomodoro" class="form-input" value="25" min="5" max="60">
             </div>
             <div class="form-group">
               <label class="form-label">Break Duration (minutes)</label>
-              <input type="number" id="defaultBreak" class="form-input" value="5" min="1">
+              <input type="number" id="defaultBreak" class="form-input" value="5" min="1" max="30">
             </div>
             <button class="btn btn-primary btn-block" onclick="saveSettings()">Save Settings</button>
           </div>
@@ -461,263 +511,603 @@
 <div id="authModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
-      <div class="modal-title">Sign In</div>
-      <button class="close-btn" onclick="closeModal('authModal')">&times;</button>
+      <div class="modal-title" id="authTitle">Sign In</div>
+      <button class="close-btn" onclick="closeModal('authModal')" aria-label="Close">&times;</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label">Email</label>
-        <input type="email" id="email" class="form-input" placeholder="you@example.com">
+        <label class="form-label required" for="email">Email</label>
+        <input type="email" id="email" class="form-input" placeholder="you@example.com" aria-label="Email address">
+        <div class="form-error" id="emailError" style="display:none;"></div>
       </div>
       <div class="form-group">
-        <label class="form-label">Password</label>
-        <input type="password" id="password" class="form-input" placeholder="••••••••">
+        <label class="form-label required" for="password">Password</label>
+        <input type="password" id="password" class="form-input" placeholder="••••••••" aria-label="Password">
+        <div class="form-error" id="passwordError" style="display:none;"></div>
       </div>
-      <button class="btn btn-primary btn-lg btn-block" onclick="handleSignIn()">Sign In</button>
+      <button class="btn btn-primary btn-lg btn-block" id="authBtn2" onclick="handleAuth()">Sign In</button>
+      <div style="text-align: center; font-size: 12px; color: var(--gray-600); margin-top: 12px;">
+        <a href="#" style="color: var(--primary); text-decoration: none;" onclick="toggleAuthMode();return false;" id="authToggle">Create account instead</a>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
+  // ════════════════════════════════════════════════════════════
+  // UTILITY FUNCTIONS
+  // ════════════════════════════════════════════════════════════
+
   let user = null;
+  let authMode = 'signin'; // 'signin' or 'signup'
   let pomodoroTimer = null;
-  let pomodoroTime = 25 * 60;
+  let pomodoroStartTime = 0;
+  let pomodoroRunning = false;
   let sessionCount = 0;
   let energyLogs = [];
   let medInterval = null;
-  let dopamineMenu = ['Stretch 30s', 'Cold water face', 'Dance to 1 song', 'Pet cat', 'Glass of water', 'Stand & breathe', 'Quick walk', 'Shake it out'];
+  const dopamineMenu = ['Stretch', 'Cold water', 'Dance', 'Pet cat', 'Water', 'Stand breath', 'Walk', 'Shake'];
   const movements = ['Cat Stretch\nBack on floor, pull knees toward chest,\narched, hold 15 seconds', 'Standing Desk Stretch\nHands behind head, lean back gently,\nroll shoulders, 20 seconds', 'Forward Fold\nFeet shoulder-width, fold from hips,\nlet arms hang, 20 seconds', 'Quad Stretch\nPull one leg toward glutes, hold 15s each', 'Neck Rolls\nSlow circles: forward, right, back, left\nRepeat 3 times'];
 
-  function handleSignIn() {
-    const email = document.getElementById('email').value;
-    if (!email) { alert('Enter email'); return; }
-    user = { email, name: email.split('@')[0] };
-    localStorage.setItem('fbUser', JSON.stringify(user));
-    closeModal('authModal');
-    updateUI();
+  // Toast Notifications
+  function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<div class="toast-message">${escapeHtml(message)}</div><button class="toast-close" onclick="this.parentElement.remove()">×</button>`;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Form validation
+  function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  function validatePassword(password) {
+    return password.length >= 8;
+  }
+
+  function clearFormErrors() {
+    document.getElementById('emailError').style.display = 'none';
+    document.getElementById('passwordError').style.display = 'none';
+    document.getElementById('email').classList.remove('error');
+    document.getElementById('password').classList.remove('error');
+  }
+
+  function showFormError(field, message) {
+    const errorEl = document.getElementById(field + 'Error');
+    const inputEl = document.getElementById(field);
+    if (errorEl) {
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+      inputEl.classList.add('error');
+    }
+  }
+
+  // Authentication
+  let authMode = 'signin';
+  function toggleAuthMode() {
+    authMode = authMode === 'signin' ? 'signup' : 'signin';
+    clearFormErrors();
+    document.getElementById('authTitle').textContent = authMode === 'signin' ? 'Sign In' : 'Create Account';
+    document.getElementById('authToggle').textContent = authMode === 'signin' ? 'Create account instead' : 'Sign in instead';
+    document.getElementById('authBtn2').textContent = authMode === 'signin' ? 'Sign In' : 'Create Account';
+  }
+
+  async function handleAuth() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    clearFormErrors();
+
+    // Validation
+    if (!email) {
+      showFormError('email', 'Email required');
+      return;
+    }
+    if (!validateEmail(email)) {
+      showFormError('email', 'Invalid email');
+      return;
+    }
+    if (!password) {
+      showFormError('password', 'Password required');
+      return;
+    }
+    if (!validatePassword(password)) {
+      showFormError('password', 'Min 8 characters');
+      return;
+    }
+
+    // Demo auth (will replace with API)
+    if (authMode === 'signin') {
+      user = { email, name: email.split('@')[0] };
+      localStorage.setItem('fbUser', JSON.stringify(user));
+      closeModal('authModal');
+      updateUI();
+      showToast(`Welcome back, ${user.name}!`);
+    } else {
+      user = { email, name: email.split('@')[0] };
+      localStorage.setItem('fbUser', JSON.stringify(user));
+      closeModal('authModal');
+      updateUI();
+      showToast(`Account created! Welcome ${user.name}`, 'success');
+      authMode = 'signin';
+    }
   }
 
   function logout() {
     user = null;
     localStorage.removeItem('fbUser');
     updateUI();
+    showToast('Logged out');
   }
 
-  function openModal(id) { document.getElementById(id).classList.add('active'); }
-  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+  function updateUI() {
+    const appNav = document.getElementById('appNav');
+    const authBtn = document.getElementById('authBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const userDisplay = document.getElementById('userDisplay');
+    const keyboardHint = document.getElementById('keyboardHint');
 
+    if (user) {
+      appNav.style.display = 'flex';
+      authBtn.style.display = 'none';
+      logoutBtn.style.display = 'block';
+      userDisplay.style.display = 'block';
+      userDisplay.textContent = user.email;
+      keyboardHint.style.display = 'inline';
+      switchView('dashboard');
+    } else {
+      appNav.style.display = 'none';
+      authBtn.style.display = 'block';
+      logoutBtn.style.display = 'none';
+      userDisplay.style.display = 'none';
+      keyboardHint.style.display = 'none';
+    }
+  }
+
+  // Modal management
+  function openModal(id) {
+    document.getElementById(id).classList.add('active');
+    if (id === 'authModal') {
+      setTimeout(() => document.getElementById('email').focus(), 100);
+    }
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    if (id === 'authModal') {
+      clearFormErrors();
+      document.getElementById('email').value = '';
+      document.getElementById('password').value = '';
+    }
+  }
+
+  // View switching
   function switchView(view) {
-    if (!user) {
+    if (!user && view !== 'dashboard') {
       openModal('authModal');
       return;
     }
     document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-    document.getElementById(view + '-view') && (document.getElementById(view + '-view').style.display = 'block');
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    event?.target?.classList.add('active');
+    const viewEl = document.getElementById(view + '-view');
+    if (viewEl) viewEl.style.display = 'block';
+    updateNavActive(view);
   }
 
-  // Breathing
-  function startBreathing(type) {
-    document.getElementById('breathing-display').style.display = 'block';
-    const circle = document.getElementById('breathingCircle');
-    circle.classList.remove('box-breath', 'tactical');
-    if (type === 'box') circle.classList.add('box-breath');
-    if (type === 'tactical') circle.classList.add('tactical');
-  }
-  function stopBreathing() { document.getElementById('breathing-display').style.display = 'none'; }
-
-  // Grounding
-  function initGrounding() {
-    ['See', 'Touch', 'Hear', 'Smell', 'Taste'].forEach((sense, idx) => {
-      const count = [5, 4, 3, 2, 1][idx];
-      let html = '';
-      for (let i = 1; i <= count; i++) {
-        html += `<div class="grounding-item" onclick="this.classList.add('completed')">${i}</div>`;
+  function updateNavActive(view) {
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.remove('active');
+      if (item.textContent.toLowerCase().includes(view === 'dopamine-menu' ? 'dopamine' : view === 'task-difficulty' ? 'task' : view === 'body-scan' ? 'body' : view)) {
+        item.classList.add('active');
       }
-      document.getElementById('grounding' + sense).innerHTML = html;
     });
   }
 
-  // Body Scan
+  // ════════════════════════════════════════════════════════════
+  // BREATHING
+  // ════════════════════════════════════════════════════════════
+
+  function startBreathing(type) {
+    const display = document.getElementById('breathing-display');
+    const circle = document.getElementById('breathingCircle');
+    const text = document.getElementById('breathingText');
+
+    display.style.display = 'block';
+    circle.classList.remove('box-breath', 'tactical');
+
+    if (type === '4-7-8') {
+      circle.textContent = '4-7-8';
+      text.textContent = 'Inhale(4) - Hold(7) - Exhale(8)';
+    } else if (type === 'box') {
+      circle.classList.add('box-breath');
+      circle.textContent = '4-4-4-4';
+      text.textContent = 'Inhale - Hold - Exhale - Hold';
+    } else {
+      circle.classList.add('tactical');
+      circle.textContent = 'TACTICAL';
+      text.textContent = 'Combat breathing: 4 counts each';
+    }
+
+    showToast('Follow the circle movement', 'success');
+  }
+
+  function stopBreathing() {
+    document.getElementById('breathing-display').style.display = 'none';
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // GROUNDING
+  // ════════════════════════════════════════════════════════════
+
+  function initGrounding() {
+    const senses = [
+      { id: 'See', count: 5 },
+      { id: 'Touch', count: 4 },
+      { id: 'Hear', count: 3 },
+      { id: 'Smell', count: 2 },
+      { id: 'Taste', count: 1 }
+    ];
+
+    senses.forEach(sense => {
+      let html = '';
+      for (let i = 1; i <= sense.count; i++) {
+        html += `<div class="grounding-item" onclick="this.classList.toggle('completed')">${i}</div>`;
+      }
+      const el = document.getElementById('grounding' + sense.id);
+      if (el) el.innerHTML = html;
+    });
+
+    switchView('grounding');
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // BODY SCAN
+  // ════════════════════════════════════════════════════════════
+
   let bodyScanInterval;
   function startBodyScan() {
+    document.getElementById('bodyScanStart').style.display = 'none';
     document.getElementById('bodyScanStop').style.display = 'inline-block';
     document.getElementById('bodyScanDisplay').style.display = 'block';
-    const checks = ['Shoulders', 'Jaw tension', 'Back posture', 'Neck strain'];
+
+    const checks = ['Posture - Are shoulders back?', 'Shoulders - Notice any tension?', 'Jaw - Clenched or loose?', 'Back - Any pain or stiffness?'];
     let current = 0;
+
     bodyScanInterval = setInterval(() => {
       if (current >= checks.length) {
         stopBodyScan();
+        showToast('Body scan complete!', 'success');
         return;
       }
-      document.getElementById('bodyScanDisplay').innerHTML = `<strong>${checks[current]}</strong><br>Notice any tension? Take a breath and adjust.`;
+      const display = document.getElementById('bodyScanDisplay');
+      display.innerHTML = `<strong>${checks[current]}</strong><br><br>Take a breath and adjust.`;
       current++;
     }, 20000);
   }
+
   function stopBodyScan() {
     clearInterval(bodyScanInterval);
     document.getElementById('bodyScanDisplay').style.display = 'none';
+    document.getElementById('bodyScanStart').style.display = 'inline-block';
     document.getElementById('bodyScanStop').style.display = 'none';
   }
 
-  // Meditation
+  // ════════════════════════════════════════════════════════════
+  // MEDITATION
+  // ════════════════════════════════════════════════════════════
+
   let meditationTimer;
   function startMeditation(minutes) {
     document.getElementById('meditationDisplay').style.display = 'block';
-    let seconds = minutes * 60;
+    let remaining = minutes * 60;
+    const startTime = Date.now();
+
     meditationTimer = setInterval(() => {
-      seconds--;
-      const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      remaining = Math.max(0, minutes * 60 - elapsed);
+
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
       document.getElementById('meditationTimer').textContent = `${m}:${String(s).padStart(2, '0')}`;
-      if (seconds <= 0) {
-        clearInterval(meditationTimer);
-        alert('Meditation complete!');
-        document.getElementById('meditationDisplay').style.display = 'none';
+
+      if (remaining <= 0) {
+        stopMeditation();
+        showToast('Meditation complete!', 'success');
       }
-    }, 1000);
+    }, 100); // Update frequently for accuracy
   }
+
   function stopMeditation() {
     clearInterval(meditationTimer);
     document.getElementById('meditationDisplay').style.display = 'none';
   }
 
-  // Energy
+  // ════════════════════════════════════════════════════════════
+  // ENERGY TRACKING
+  // ════════════════════════════════════════════════════════════
+
   function updateEnergyDisplay() {
     const val = document.getElementById('energyLevel').value;
     document.getElementById('energyValue').textContent = val;
+    document.getElementById('currentEnergy').textContent = val;
   }
+
+  let currentMood = null;
   function setMood(mood) {
+    currentMood = mood;
     document.querySelectorAll('.slider-track .slider-item').forEach(el => el.classList.remove('active'));
     event?.target?.classList.add('active');
   }
+
   function saveEnergyLog() {
     const energy = document.getElementById('energyLevel').value;
-    energyLogs.push({ time: new Date(), energy });
+    if (!currentMood) {
+      showToast('Please select a mood', 'warning');
+      return;
+    }
+    energyLogs.push({ time: new Date().toISOString(), energy, mood: currentMood });
     localStorage.setItem('energyLogs', JSON.stringify(energyLogs));
-    alert(`Energy level ${energy}/10 logged`);
+    showToast(`Energy ${energy}/10 logged`, 'success');
   }
 
-  // Dopamine Menu
+  // ════════════════════════════════════════════════════════════
+  // DOPAMINE MENU
+  // ════════════════════════════════════════════════════════════
+
   function initDopamineMenu() {
     let html = '';
     dopamineMenu.forEach(item => {
-      html += `<div class="dopamine-item" onclick="alert('${item} - Great choice!')">${item}</div>`;
+      html += `<div class="dopamine-item" onclick="showToast('${item} - Great choice!', 'success')">${item}</div>`;
     });
     document.getElementById('dopamineList').innerHTML = html;
   }
 
-  // Task Difficulty
+  // ════════════════════════════════════════════════════════════
+  // TASK DIFFICULTY
+  // ════════════════════════════════════════════════════════════
+
   function updateTaskGrid() {
-    const diff = parseInt(document.getElementById('taskDifficulty').value);
+    const difficulty = parseInt(document.getElementById('taskDifficulty').value);
     const interest = parseInt(document.getElementById('taskInterest').value);
-    document.getElementById('difficultyValue').textContent = diff;
+
+    document.getElementById('difficultyValue').textContent = difficulty;
     document.getElementById('interestValue').textContent = interest;
-    
+
     let advice = '';
-    if (interest >= 7 && diff <= 5) advice = '✅ Perfect flow task - do this first!';
-    else if (interest >= 7 && diff > 5) advice = '🚀 Exciting challenge - save for peak energy';
-    else if (interest < 4) advice = '⚠️ Low interest - break into micro-steps';
-    else advice = '⚙️ Balanced task - good for mid-session';
-    
+    if (difficulty < 4 && interest > 6) advice = '✅ Easy & interesting - Perfect for flow!';
+    else if (difficulty > 7 && interest < 4) advice = '⚠️  Hard & boring - Skip this one';
+    else if (difficulty > 7 && interest > 7) advice = '💪 Challenging & engaging - Push yourself!';
+    else if (difficulty < 4 && interest < 4) advice = '😴 Easy but boring - Mix with something interesting';
+    else if (interest < 5) advice = '🎯 Focus on higher interest tasks';
+    else if (difficulty > 8) advice = '🔥 Very hard - Break into smaller steps';
+    else advice = '✓ This is a reasonable task';
+
     document.getElementById('taskAdvice').textContent = advice;
   }
 
-  // Fidget
+  // ════════════════════════════════════════════════════════════
+  // FIDGET TOOLS
+  // ════════════════════════════════════════════════════════════
+
   function showFidget(type) {
-    document.getElementById('fidgetDisplay').style.display = 'block';
-    document.getElementById('fidgetSpinner').style.display = 'none';
-    document.getElementById('colorCycle').style.display = 'none';
-    document.getElementById('particleCanvas').style.display = 'none';
-    if (type === 'spinner') document.getElementById('fidgetSpinner').style.display = 'block';
-    else if (type === 'colors') document.getElementById('colorCycle').style.display = 'block';
-    else if (type === 'particles') document.getElementById('particleCanvas').style.display = 'block';
-  }
-  function hideFidget() { document.getElementById('fidgetDisplay').style.display = 'none'; }
+    const display = document.getElementById('fidgetDisplay');
+    const spinner = document.getElementById('fidgetSpinner');
+    const colors = document.getElementById('colorCycle');
+    const canvas = document.getElementById('particleCanvas');
 
-  // Movement
-  function showMovement() {
-    document.getElementById('movementDisplay').style.display = 'block';
-    const random = movements[Math.floor(Math.random() * movements.length)];
-    document.getElementById('movementSuggestion').textContent = random;
-  }
+    spinner.style.display = 'none';
+    colors.style.display = 'none';
+    canvas.style.display = 'none';
+    display.style.display = 'block';
 
-  // Pomodoro
-  function startPomodoro() {
-    pomodoroTime = parseInt(document.getElementById('defaultPomodoro').value || 25) * 60;
-    document.getElementById('pomodoroStart').style.display = 'none';
-    document.getElementById('pomodoroStop').style.display = 'inline-block';
-    pomodoroTimer = setInterval(() => {
-      pomodoroTime--;
-      const mins = Math.floor(pomodoroTime / 60);
-      const secs = pomodoroTime % 60;
-      document.getElementById('pomodoroDisplay').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-      if (pomodoroTime <= 0) {
-        alert('Pomodoro complete!');
-        stopPomodoro();
-      }
-    }, 1000);
-  }
-  function stopPomodoro() {
-    clearInterval(pomodoroTimer);
-    document.getElementById('pomodoroStart').style.display = 'inline-block';
-    document.getElementById('pomodoroStop').style.display = 'none';
-  }
-  function recordPomodoroSession() {
-    sessionCount++;
-    const energy = document.getElementById('pomodoroEnergy').value;
-    document.getElementById('sessionCount').textContent = sessionCount;
-    localStorage.setItem('sessionCount', sessionCount);
-    alert(`✅ Session logged! Energy: ${energy}/10`);
-  }
-
-  // Medication
-  function logMedication() {
-    localStorage.setItem('lastMedDose', new Date().toISOString());
-    alert('Medication dose logged');
-  }
-
-  // Settings
-  function saveSettings() {
-    localStorage.setItem('settingsPomodoro', document.getElementById('defaultPomodoro').value);
-    localStorage.setItem('settingsBreak', document.getElementById('defaultBreak').value);
-    alert('Settings saved');
-  }
-
-  // Keyboard Shortcuts
-  document.addEventListener('keydown', (e) => {
-    if (!user) return;
-    if (e.key === 'b' || e.key === 'B') switchView('breathing');
-    if (e.key === 'g' || e.key === 'G') switchView('grounding');
-    if (e.key === 'p' || e.key === 'P') startPomodoro();
-    if (e.key === '?') alert('Shortcuts: B=Breathing, G=Grounding, P=Pomodoro');
-  });
-
-  // UI
-  function updateUI() {
-    const hasNav = !!user;
-    document.getElementById('appNav').style.display = hasNav ? 'block' : 'none';
-    document.getElementById('authBtn').style.display = user ? 'none' : 'block';
-    document.getElementById('logoutBtn').style.display = user ? 'block' : 'none';
-    document.getElementById('userDisplay').style.display = user ? 'block' : 'none';
-    document.getElementById('keyboardHint').style.display = user ? 'block' : 'none';
-    if (user) {
-      document.getElementById('userDisplay').textContent = user.name;
-      switchView('dashboard');
+    if (type === 'spinner') {
+      spinner.style.display = 'block';
+    } else if (type === 'colors') {
+      colors.style.display = 'block';
+    } else if (type === 'particles') {
+      canvas.style.display = 'block';
+      initParticles(canvas);
     }
   }
 
-  // Init
-  const saved = localStorage.getItem('fbUser');
-  if (saved) user = JSON.parse(saved);
-  sessionCount = parseInt(localStorage.getItem('sessionCount')) || 0;
-  energyLogs = JSON.parse(localStorage.getItem('energyLogs')) || [];
-  document.getElementById('sessionCount').textContent = sessionCount;
-  updateUI();
-  initGrounding();
-  initDopamineMenu();
-</script>
+  function hideFidget() {
+    document.getElementById('fidgetDisplay').style.display = 'none';
+  }
 
+  function initParticles(canvas) {
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+
+    const particles = [];
+    for (let i = 0; i < 50; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 2,
+        vy: (Math.random() - 0.5) * 2,
+        color: `hsl(${Math.random() * 360}, 70%, 50%)`
+      });
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // MOVEMENT BREAKS
+  // ════════════════════════════════════════════════════════════
+
+  function showMovement() {
+    const move = movements[Math.floor(Math.random() * movements.length)];
+    document.getElementById('movementSuggestion').textContent = move;
+    document.getElementById('movementDisplay').style.display = 'block';
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // POMODORO TIMER
+  // ════════════════════════════════════════════════════════════
+
+  function startPomodoro() {
+    const defaultDuration = parseInt(localStorage.getItem('settingsPomodoro') || '25');
+    pomodoroStartTime = Date.now();
+    pomodoroRunning = true;
+    document.getElementById('pomodoroStartBtn').style.display = 'none';
+    document.getElementById('pomodoroStopBtn').style.display = 'inline-block';
+
+    pomodoroTimer = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - pomodoroStartTime) / 1000);
+      const remaining = Math.max(0, defaultDuration * 60 - elapsed);
+      const m = Math.floor(remaining / 60);
+      const s = remaining % 60;
+      document.getElementById('pomodoroDisplay').textContent = `${m}:${String(s).padStart(2, '0')}`;
+
+      if (remaining === 0) {
+        stopPomodoro(true);
+      }
+    }, 100);
+  }
+
+  function stopPomodoro(complete = false) {
+    clearInterval(pomodoroTimer);
+    pomodoroRunning = false;
+    document.getElementById('pomodoroStartBtn').style.display = 'inline-block';
+    document.getElementById('pomodoroStopBtn').style.display = 'none';
+    document.getElementById('pomodoroDisplay').textContent = `${parseInt(localStorage.getItem('settingsPomodoro') || '25')}:00`;
+
+    if (complete) {
+      document.getElementById('pomodoroEnergyForm').style.display = 'block';
+      showToast('Session complete! Rate your energy', 'success');
+    }
+  }
+
+  function recordPomodoroSession() {
+    const energy = document.getElementById('pomodoroEnergy').value;
+    sessionCount++;
+    localStorage.setItem('sessionCount', sessionCount);
+    document.getElementById('sessionCount').textContent = sessionCount;
+    document.getElementById('pomodoroEnergyForm').style.display = 'none';
+    showToast(`Session ${sessionCount} recorded!`, 'success');
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // MEDICATION TRACKING
+  // ════════════════════════════════════════════════════════════
+
+  function logMedication() {
+    const time = document.getElementById('medTime').value;
+    if (!time) {
+      showToast('Please select a time', 'warning');
+      return;
+    }
+    const now = new Date();
+    const [hours, minutes] = time.split(':');
+    const doseTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+    localStorage.setItem('lastMedDose', doseTime.toISOString());
+    updateMedDisplay();
+    showToast('Medication logged!', 'success');
+  }
+
+  function updateMedDisplay() {
+    const lastDose = localStorage.getItem('lastMedDose');
+    if (!lastDose) {
+      document.getElementById('medDisplay').textContent = '--:--';
+      document.getElementById('medStatus').textContent = 'No dose logged';
+      document.getElementById('medHours').textContent = '--:--';
+      document.getElementById('medText').textContent = 'No dose logged';
+      return;
+    }
+
+    const doseTime = new Date(lastDose);
+    const now = new Date();
+    const diffMs = now - doseTime;
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+    document.getElementById('medDisplay').textContent = `${diffHours}h ${diffMins}m`;
+    document.getElementById('medStatus').textContent = diffHours > 8 ? '⚠️ Consider next dose' : `${diffHours}h ago`;
+    document.getElementById('medHours').textContent = `${diffHours}:${String(diffMins).padStart(2, '0')}`;
+    document.getElementById('medText').textContent = diffHours > 0 ? `Last dose ${diffHours}h ago` : `Last dose ${diffMins}m ago`;
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // SETTINGS
+  // ════════════════════════════════════════════════════════════
+
+  function saveSettings() {
+    const pomodoro = document.getElementById('defaultPomodoro').value;
+    const breakDuration = document.getElementById('defaultBreak').value;
+
+    if (pomodoro < 5 || pomodoro > 60 || breakDuration < 1 || breakDuration > 30) {
+      showToast('Invalid values', 'error');
+      return;
+    }
+
+    localStorage.setItem('settingsPomodoro', pomodoro);
+    localStorage.setItem('settingsBreak', breakDuration);
+    showToast('Settings saved!', 'success');
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // INITIALIZATION
+  // ════════════════════════════════════════════════════════════
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'b' || e.key === 'B') startBreathing('4-7-8');
+    if (e.key === 'g' || e.key === 'G') initGrounding();
+    if (e.key === 'p' || e.key === 'P') switchView('pomodoro');
+    if (e.key === '?') showToast('B=Breathing, G=Grounding, P=Pomodoro', 'success');
+    if (e.key === 'Escape') {
+      ['authModal'].forEach(modal => closeModal(modal));
+      if (document.getElementById('breathing-display').style.display !== 'none') stopBreathing();
+    }
+  });
+
+  // Initialize on load
+  window.addEventListener('DOMContentLoaded', () => {
+    const savedUser = localStorage.getItem('fbUser');
+    if (savedUser) {
+      user = JSON.parse(savedUser);
+    }
+
+    sessionCount = parseInt(localStorage.getItem('sessionCount') || '0');
+    document.getElementById('sessionCount').textContent = sessionCount;
+
+    const savedSettings = localStorage.getItem('settingsPomodoro');
+    if (savedSettings) {
+      document.getElementById('defaultPomodoro').value = savedSettings;
+      document.getElementById('pomodoroDisplay').textContent = `${savedSettings}:00`;
+    }
+
+    document.getElementById('defaultBreak').value = localStorage.getItem('settingsBreak') || '5';
+
+    initDopamineMenu();
+    updateUI();
+    updateMedDisplay();
+
+    // Update med display every minute
+    setInterval(updateMedDisplay, 60000);
+  });
+</script>
 </body>
 </html>

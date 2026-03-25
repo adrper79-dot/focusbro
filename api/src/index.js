@@ -149,8 +149,8 @@ async function verifyPassword(password, hash) {
   return passwordHash === hash;
 }
 
-// ── UTILITY: Generate JWT Token ──
-function generateToken(userId) {
+// ── UTILITY: Generate JWT Token with HMAC-SHA256 ──
+async function generateToken(userId, jwtSecret) {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const now = Math.floor(Date.now() / 1000);
   const payload = btoa(JSON.stringify({
@@ -159,23 +159,55 @@ function generateToken(userId) {
     exp: now + 30 * 24 * 60 * 60, // 30 days
   }));
   
-  // Simple HMAC (not cryptographically secure for production - use node-jose in real scenario)
-  const token = `${header}.${payload}`;
-  return token;
+  // Create HMAC-SHA256 signature
+  const headerPayload = `${header}.${payload}`;
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(jwtSecret);
+  const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(headerPayload));
+  
+  // Convert signature to base64url
+  const signatureArray = Array.from(new Uint8Array(signature));
+  const signatureBase64 = btoa(String.fromCharCode(...signatureArray))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+  
+  return `${headerPayload}.${signatureBase64}`;
 }
 
 // ── UTILITY: Verify JWT Token ──
-function verifyToken(token) {
+async function verifyToken(token, jwtSecret) {
   try {
     const parts = token.split('.');
-    if (parts.length !== 2) return null;
+    if (parts.length !== 3) return null;
     
+    // Re-create signature to verify
+    const headerPayload = `${parts[0]}.${parts[1]}`;
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(jwtSecret);
+    const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+    
+    // Convert base64url signature back to binary
+    const signaturePadded = parts[2] + '='.repeat((4 - parts[2].length % 4) % 4);
+    const signatureBinary = atob(signaturePadded.replace(/-/g, '+').replace(/_/g, '/'));
+    const signatureArray = new Uint8Array(signatureBinary.length);
+    for (let i = 0; i < signatureBinary.length; i++) {
+      signatureArray[i] = signatureBinary.charCodeAt(i);
+    }
+    
+    // Verify signature
+    const isValid = await crypto.subtle.verify('HMAC', key, signatureArray, encoder.encode(headerPayload));
+    if (!isValid) return null;
+    
+    // Check expiration
     const payload = JSON.parse(atob(parts[1]));
     const now = Math.floor(Date.now() / 1000);
-    
     if (payload.exp < now) return null;
+    
     return payload;
   } catch (e) {
+    console.error('Token verification error:', e);
     return null;
   }
 }
@@ -198,8 +230,16 @@ router.post('/auth/register', async (request, env) => {
   try {
     const { email, password } = await request.json();
     
+    // Validate input
     if (!email || !password) {
       return new Response(JSON.stringify({ error: 'Email and password required' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      return new Response(JSON.stringify({ error: 'Invalid email format' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -230,9 +270,9 @@ router.post('/auth/register', async (request, env) => {
        VALUES (?, ?, ?, datetime('now'), datetime('now'))`
     ).bind(userId, email, passwordHash).run();
     
-    // Create session
+    // Create session with proper JWT
     const sessionId = generateUUID();
-    const token = generateToken(userId);
+    const token = await generateToken(userId, env.JWT_SECRET);
     
     await env.DB.prepare(
       `INSERT INTO sessions (id, user_id, token, created_at, expires_at)
@@ -256,7 +296,8 @@ router.post('/auth/register', async (request, env) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Registration error:', error);
+    return new Response(JSON.stringify({ error: 'Registration failed' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
@@ -268,6 +309,7 @@ router.post('/auth/login', async (request, env) => {
   try {
     const { email, password } = await request.json();
     
+    // Validate input
     if (!email || !password) {
       return new Response(JSON.stringify({ error: 'Email and password required' }), {
         status: 400,
@@ -279,6 +321,7 @@ router.post('/auth/login', async (request, env) => {
     const user = await env.DB.prepare('SELECT id, password_hash FROM users WHERE email = ? AND is_active = 1').bind(email).first();
     
     if (!user) {
+      // Generic error to prevent email enumeration attacks
       return new Response(JSON.stringify({ error: 'Invalid email or password' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -294,9 +337,9 @@ router.post('/auth/login', async (request, env) => {
       });
     }
     
-    // Create session
+    // Create session with proper JWT
     const sessionId = generateUUID();
-    const token = generateToken(user.id);
+    const token = await generateToken(user.id, env.JWT_SECRET);
     
     await env.DB.prepare(
       `INSERT INTO sessions (id, user_id, token, created_at, expires_at)
@@ -304,7 +347,7 @@ router.post('/auth/login', async (request, env) => {
     ).bind(sessionId, user.id, token).run();
     
     // Update last_login
-    await env.DB.prepare('UPDATE users SET updated_at = datetime("now") WHERE id = ?').bind(user.id).run();
+    await env.DB.prepare('UPDATE users SET last_login = datetime("now"), updated_at = datetime("now") WHERE id = ?').bind(user.id).run();
     
     // Log audit
     await env.DB.prepare(
@@ -323,7 +366,8 @@ router.post('/auth/login', async (request, env) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('Login error:', error);
+    return new Response(JSON.stringify({ error: 'Login failed' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
@@ -354,7 +398,7 @@ router.post('/sync/data', async (request, env) => {
       });
     }
     
-    const tokenPayload = verifyToken(token);
+    const tokenPayload = await verifyToken(token, env.JWT_SECRET);
     if (!tokenPayload) {
       return new Response(JSON.stringify({ error: 'Invalid token' }), {
         status: 401,
@@ -420,7 +464,7 @@ router.get('/sync/data', async (request, env) => {
       });
     }
     
-    const tokenPayload = verifyToken(token);
+    const tokenPayload = await verifyToken(token, env.JWT_SECRET);
     if (!tokenPayload) {
       return new Response(JSON.stringify({ error: 'Invalid token' }), {
         status: 401,

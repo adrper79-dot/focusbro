@@ -19,7 +19,7 @@ preview_id = "placeholder-kv-preview-id"
 [env.production]
 d1_databases = [{ binding = "DB", database_id = "2ac20b08-66e3-4abd-92de-f0e6380bdad0", database_name = "focusbro" }]
 kv_namespaces = [{ binding = "KV", id = "60c1852cd70f4999a380b9ea290fccb3", preview_id = "60c1852cd70f4999a380b9ea290fccb3" }]
-vars = { ENV = "production", API_ORIGIN = "https://focusbro-production.adrper79.workers.dev" }
+vars = { ENV = "production", API_ORIGIN = "https://focusbro-production.adrper79.workers.dev", JWT_SECRET = "focusbro-secret-key-prod-2024" }
 
 [env.development]
-vars = { ENV = "development", API_ORIGIN = "http://localhost:8787" }
+vars = { ENV = "development", API_ORIGIN = "http://localhost:8787", JWT_SECRET = "focusbro-secret-key-dev" }
