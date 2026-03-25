@@ -963,6 +963,17 @@ router.get('/health', async (request, env) => {
   });
 });
 
+// ── DEBUG API PASSTHROUGH ROUTE ──
+router.get('/api/test', async (request, env) => {
+  return new Response(JSON.stringify({
+    message: 'Direct /api test route works!',
+    pathname: new URL(request.url).pathname
+  }), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+});
+
 // ── API TEST ROUTE (for debugging) ──
 router.get('/debug-api', async (request, env) => {
   return new Response(JSON.stringify({
@@ -1209,13 +1220,13 @@ export default {
       }
     }
     
-    // Route /api/* requests to extended router
+    // Route /api/* requests to extended router (after stripping /api prefix)
     if (pathname.startsWith('/api/')) {
       const pathWithoutApi = pathname.replace(/^\/api/, '') || '/';
       const newUrl = new URL(request.url);
       newUrl.pathname = pathWithoutApi;
       
-      // ✅ Create modified request with correct pathname
+      // Create modified request with stripped /api prefix
       const modifiedRequest = new Request(newUrl.toString(), {
         method: request.method,
         headers: request.headers,
@@ -1224,13 +1235,14 @@ export default {
       });
       
       try {
-        // Pass all three parameters: request, env, ctx
+        // Use extended router to handle the modified request
         const extResponse = await extendedRouter.handle(modifiedRequest, env, ctx);
+        
         if (extResponse && extResponse.status !== 404) {
           return extResponse;
         }
       } catch (err) {
-        console.error('Extended router error:', err?.message || err);
+        console.error('[ROUTER-ERROR]', err?.message || err);
       }
     }
     
