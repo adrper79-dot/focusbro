@@ -963,6 +963,25 @@ router.get('/api/gallery/test', async (request, env) => {
   });
 });
 
+// ── DEBUG ROUTES ENDPOINT ──
+router.get('/debug-routes', async (request, env) => {
+  // List routes registered in the router
+  const routesList = (router.routes || []).map(r => ({
+    method: r.method || 'all',
+    path: r.path || r.pathname || 'unknown'
+  }));
+  
+  return new Response(JSON.stringify({
+    message: 'Registered routes',
+    routeCount: routesList.length,
+    routes: routesList.slice(0, 20), // First 20 routes
+    timestamp: new Date().toISOString()
+  }), {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+});
+
 // ── API TEST ROUTE (for debugging) ──
 router.get('/debug-api', async (request, env) => {
   return new Response(JSON.stringify({
