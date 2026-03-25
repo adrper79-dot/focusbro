@@ -168,6 +168,8 @@
     .content { padding: 16px 20px; }
   }
 </style>
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7015938501859914" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -813,20 +815,21 @@
     const userDisplay = document.getElementById('userDisplay');
     const keyboardHint = document.getElementById('keyboardHint');
 
+    // Navigation always visible (tools work without login)
+    appNav.style.display = 'flex';
+    keyboardHint.style.display = 'inline';
+    switchView('dashboard');
+
+    // Auth button visibility depends on login status
     if (user) {
-      appNav.style.display = 'flex';
       authBtn.style.display = 'none';
       logoutBtn.style.display = 'block';
       userDisplay.style.display = 'block';
       userDisplay.textContent = user.email;
-      keyboardHint.style.display = 'inline';
-      switchView('dashboard');
     } else {
-      appNav.style.display = 'none';
       authBtn.style.display = 'block';
       logoutBtn.style.display = 'none';
       userDisplay.style.display = 'none';
-      keyboardHint.style.display = 'none';
     }
   }
 
@@ -847,12 +850,8 @@
     }
   }
 
-  // View switching
+  // View switching (all tools available, login only needed for persistent data)
   function switchView(view) {
-    if (!user && view !== 'dashboard') {
-      openModal('authModal');
-      return;
-    }
     document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
     const viewEl = document.getElementById(view + '-view');
     if (viewEl) viewEl.style.display = 'block';
