@@ -671,6 +671,21 @@
             <div class="card-value" id="sessionCount">0</div>
             <div class="card-subtext">Pomodoro cycles</div>
           </div>
+          <div class="card">
+            <div class="card-header">Current Streak</div>
+            <div class="card-value" id="dashboardStreak">0</div>
+            <div class="card-subtext">days 🔥</div>
+          </div>
+          <div class="card">
+            <div class="card-header">Total Sessions</div>
+            <div class="card-value" id="dashboardTotalSessions">0</div>
+            <div class="card-subtext">all time</div>
+          </div>
+          <div class="card">
+            <div class="card-header">Total Focus Time</div>
+            <div class="card-value" id="dashboardFocusHours">0h</div>
+            <div class="card-subtext">hours</div>
+          </div>
         </div>
         <div class="panel">
           <div class="panel-header"><div class="panel-title">Quick Access</div></div>
@@ -1046,6 +1061,7 @@
   let pomodoroRunning = false;
   let sessionCount = 0;
   let energyLogs = [];
+  let fbEvents = [];  // Structured event log for analytics
   let medInterval = null;
   let medDisplayInterval = null;
   let syncInterval = null;
@@ -1053,6 +1069,157 @@
   let keepAliveInterval = null;
   const dopamineMenu = ['Stretch', 'Cold water', 'Dance', 'Pet cat', 'Water', 'Stand breath', 'Walk', 'Shake'];
   const movements = ['Cat Stretch\nBack on floor, pull knees toward chest,\narched, hold 15 seconds', 'Standing Desk Stretch\nHands behind head, lean back gently,\nroll shoulders, 20 seconds', 'Forward Fold\nFeet shoulder-width, fold from hips,\nlet arms hang, 20 seconds', 'Quad Stretch\nPull one leg toward glutes, hold 15s each', 'Neck Rolls\nSlow circles: forward, right, back, left\nRepeat 3 times'];
+
+  // ════════════════════════════════════════════════════════════
+  // EVENT LOGGING (Phase 0 — Analytics Foundation)
+  // ════════════════════════════════════════════════════════════
+
+  /**
+   * Log a structured event to the analytics system.
+   * Events are stored in localStorage and synced to the backend.
+   * 
+   * @param {string} eventType - Type of event (session_complete, tool_use, energy_log, etc.)
+   * @param {string} tool - Which tool generated the event (pomodoro, breathing, etc.)
+   * @param {number} durationSeconds - Duration in seconds (for timed events)
+   * @param {object} data - Tool-specific metadata (optional)
+   */
+  function logEvent(eventType, tool = '', durationSeconds = 0, data = {}) {
+    const event = {
+      id: crypto.randomUUID(),
+      type: eventType,
+      tool,
+      duration_seconds: durationSeconds,
+      data,
+      timestamp: new Date().toISOString(),
+      synced: false
+    };
+
+    // Load existing events
+    fbEvents = JSON.parse(localStorage.getItem('fbEvents') || '[]');
+    
+    // Add the new event
+    fbEvents.push(event);
+
+    // Cap at 10,000 events locally; prune oldest if exceeded
+    if (fbEvents.length > 10000) {
+      fbEvents = fbEvents.slice(-10000);
+    }
+
+    // Write back to localStorage
+    localStorage.setItem('fbEvents', JSON.stringify(fbEvents));
+
+    console.log(`[Event] ${eventType} | ${tool} | ${durationSeconds}s`);
+  }
+
+  /**
+   * Calculate current and longest streaks from logged events.
+   * Streak = consecutive days with at least one focus session.
+   * Safe iteration limit: max 730 days (2 years).
+   */
+  function getStreak() {
+    fbEvents = JSON.parse(localStorage.getItem('fbEvents') || '[]');
+
+    // Filter only session_complete events with type 'focus'
+    const focusSessions = fbEvents.filter(e => 
+      e.type === 'session_complete' && e.data?.type === 'focus'
+    );
+
+    if (focusSessions.length === 0) {
+      return { currentStreak: 0, longestStreak: 0, lastActiveDate: null, totalSessions: 0 };
+    }
+
+    // Extract unique dates (YYYY-MM-DD in UTC)
+    const datesSet = new Set();
+    focusSessions.forEach(e => {
+      const date = new Date(e.timestamp).toISOString().slice(0, 10);
+      datesSet.add(date);
+    });
+
+    // Sort dates descending
+    const dates = Array.from(datesSet).sort().reverse();
+
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 1;
+
+    // Walk backward from today, checking for consecutive days
+    for (let i = 0; i < dates.length && i < 730; i++) {
+      if (i === 0) {
+        tempStreak = 1;
+        currentStreak = 1;
+      } else {
+        const prevDate = new Date(dates[i - 1]);
+        const currDate = new Date(dates[i]);
+        const diffDays = Math.floor((prevDate - currDate) / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+          // Consecutive day
+          tempStreak++;
+          if (i === 1 || dates[i] === dates[0]) {
+            // First iteration or recent date
+            currentStreak = tempStreak;
+          }
+        } else {
+          // Gap detected; reset temp streak
+          longestStreak = Math.max(longestStreak, tempStreak);
+          tempStreak = 1;
+        }
+      }
+    }
+    longestStreak = Math.max(longestStreak, tempStreak, currentStreak);
+
+    return {
+      currentStreak,
+      longestStreak,
+      lastActiveDate: dates[0] || null,
+      totalSessions: focusSessions.length
+    };
+  }
+
+  /**
+   * Get summary stats for display on dashboard.
+   * Computed from cached streaks + event counts.
+   */
+  function getAnalyticsSummary() {
+    fbEvents = JSON.parse(localStorage.getItem('fbEvents') || '[]');
+    const streak = getStreak();
+
+    // Count sessions today
+    const today = new Date().toISOString().slice(0, 10);
+    const sessionsToday = fbEvents.filter(e =>
+      e.type === 'session_complete' && 
+      e.data?.type === 'focus' &&
+      e.timestamp.slice(0, 10) === today
+    ).length;
+
+    // Total focus time in seconds
+    let totalFocusSeconds = 0;
+    fbEvents.forEach(e => {
+      if (e.type === 'session_complete' && e.data?.type === 'focus') {
+        totalFocusSeconds += e.duration_seconds || 0;
+      }
+    });
+
+    // Most used tool
+    const toolCounts = {};
+    fbEvents.forEach(e => {
+      if (e.tool && (e.type === 'tool_use' || e.type === 'session_complete')) {
+        toolCounts[e.tool] = (toolCounts[e.tool] || 0) + 1;
+      }
+    });
+    const mostUsedTool = Object.keys(toolCounts).reduce((a, b) =>
+      toolCounts[a] > toolCounts[b] ? a : b, ''
+    );
+
+    return {
+      currentStreak: streak.currentStreak,
+      longestStreak: streak.longestStreak,
+      totalSessions: streak.totalSessions,
+      totalFocusHours: (totalFocusSeconds / 3600).toFixed(1),
+      sessionsToday,
+      mostUsedTool
+    };
+  }
 
   // Hamburger menu toggle
   document.getElementById('menuToggle').addEventListener('click', () => {
@@ -1339,6 +1506,21 @@
       logoutBtn.style.display = 'none';
       userDisplay.style.display = 'none';
     }
+
+    // Update analytics cards
+    updateDashboardStats();
+  }
+
+  /**
+   * Refresh dashboard statistics from event log.
+   * Called on page load and whenever dashboard is viewed.
+   */
+  function updateDashboardStats() {
+    const stats = getAnalyticsSummary();
+    
+    document.getElementById('dashboardStreak').textContent = stats.currentStreak;
+    document.getElementById('dashboardTotalSessions').textContent = stats.totalSessions;
+    document.getElementById('dashboardFocusHours').textContent = stats.totalFocusHours + 'h';
   }
 
   // Modal management
@@ -1404,6 +1586,7 @@
   }
 
   function stopBreathing() {
+    logEvent('tool_use', 'breathing');
     document.getElementById('breathing-display').style.display = 'none';
   }
 
@@ -1462,6 +1645,7 @@
 
   function stopBodyScan() {
     clearInterval(bodyScanInterval);
+    logEvent('tool_use', 'body-scan');
     document.getElementById('bodyScanDisplay').style.display = 'none';
     document.getElementById('bodyScanStart').style.display = 'inline-block';
     document.getElementById('bodyScanStop').style.display = 'none';
@@ -1497,6 +1681,7 @@
 
   function stopMeditation() {
     clearInterval(meditationTimer);
+    logEvent('tool_use', 'meditation');
     document.getElementById('meditationDisplay').style.display = 'none';
   }
 
@@ -1644,6 +1829,10 @@
     }
     energyLogs.push({ time: new Date().toISOString(), energy, mood: currentMood });
     localStorage.setItem('energyLogs', JSON.stringify(energyLogs));
+    
+    // Log the energy event
+    logEvent('energy_log', 'energy', 0, { energy: parseInt(energy), mood: currentMood });
+    
     showToast(`Energy ${energy}/10 logged`, 'success');
     
     // Sync data to server
@@ -1756,6 +1945,9 @@
     const move = movements[Math.floor(Math.random() * movements.length)];
     document.getElementById('movementSuggestion').textContent = move;
     document.getElementById('movementDisplay').style.display = 'block';
+    
+    // Log movement tool use
+    logEvent('tool_use', 'movement');
   }
 
   // ════════════════════════════════════════════════════════════
@@ -1797,6 +1989,11 @@
 
   function recordPomodoroSession() {
     const energy = document.getElementById('pomodoroEnergy').value;
+    const duration = parseInt(localStorage.getItem('settingsPomodoro') || '25');
+    
+    // Log the session event
+    logEvent('session_complete', 'pomodoro', duration * 60, { type: 'focus', energy: parseInt(energy) });
+    
     sessionCount++;
     localStorage.setItem('sessionCount', sessionCount);
     document.getElementById('sessionCount').textContent = sessionCount;
@@ -1821,6 +2018,10 @@
     const [hours, minutes] = time.split(':');
     const doseTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
     localStorage.setItem('lastMedDose', doseTime.toISOString());
+    
+    // Log the medication event
+    logEvent('medication_dose', 'medication', 0, { time: doseTime.toISOString() });
+    
     updateMedDisplay();
     showToast('Medication logged!', 'success');
   }
