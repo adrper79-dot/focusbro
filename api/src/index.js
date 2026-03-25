@@ -1053,7 +1053,20 @@ router.all('/api/*', async (request, env, ctx) => {
   newUrl.pathname = pathWithoutApi;
   
   const modifiedRequest = new Request(newUrl, request);
-  return extendedRouter.handle(modifiedRequest, env, ctx);
+  // Call extendedRouter like the main export - it should have .fetch() method
+  try {
+    return await extendedRouter.fetch?.(modifiedRequest, env) || 
+           await extendedRouter.handle?.(modifiedRequest, env) ||
+           new Response(JSON.stringify({ error: 'API route not found' }), { 
+             status: 404,
+             headers: { 'Content-Type': 'application/json' }
+           });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 });
 
 // ── SERVICE WORKER ──
