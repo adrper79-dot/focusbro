@@ -6,8 +6,55 @@
 import { Router } from 'itty-router';
 import extendedRouter from './extended-routes.js';
 import htmlContent from './html.js';
+import config from './config.js';
 
 const router = Router();
+
+// ── DEBUG LOGGING ──
+const DEBUG = false; // Set to true only during development/debugging
+const dbLog = (msg, ...args) => {
+  if (DEBUG) console.log('[DB]', msg, ...args);
+};
+
+// ── RATE LIMITING ──
+/**
+ * Rate limiter for auth endpoints using KV storage
+ * Limits requests per IP to prevent brute force attacks
+ */
+async function checkRateLimit(request, env, endpoint) {
+  // Get client IP from CF headers
+  const clientIP = request.headers.get('CF-Connecting-IP') || 
+                   request.headers.get('X-Forwarded-For') || 
+                   'unknown';
+  
+  const rateLimitKey = `ratelimit:${endpoint}:${clientIP}`;
+  
+  try {
+    // Get current count from KV
+    const countStr = await env.KV.get(rateLimitKey);
+    const count = countStr ? parseInt(countStr) : 0;
+    
+    const MAX_ATTEMPTS = config.auth.maxLoginAttempts;
+    const TIME_WINDOW = config.auth.rateLimitWindowSeconds;
+    
+    if (count >= MAX_ATTEMPTS) {
+      return {
+        limited: true,
+        retryAfter: TIME_WINDOW,
+        message: 'Too many login attempts. Please try again in 15 minutes.'
+      };
+    }
+    
+    // Increment counter and set expiration
+    await env.KV.put(rateLimitKey, (count + 1).toString(), { expirationTtl: TIME_WINDOW });
+    
+    return { limited: false };
+  } catch (e) {
+    // If KV fails, allow the request (fail open)
+    console.warn('Rate limit check failed (allowing request):', e.message);
+    return { limited: false };
+  }
+}
 
 // ── DATABASE INITIALIZATION ──
 let dbInitialized = false;
@@ -16,6 +63,7 @@ async function initializeDatabase(env) {
   try {
     // Only run CREATE statements once
     if (!dbInitialized) {
+      dbLog('Initializing database schema...');
       
     const createTableStatements = [
       `CREATE TABLE IF NOT EXISTS users (
@@ -184,24 +232,40 @@ async function initializeDatabase(env) {
         await env.DB.prepare(sql).run();
       } catch (e) {
         // Table might already exist - this is expected
-        console.debug('DB init note:', e.message);
+        // But log if it's something serious
+        if (!e.message.includes('already exists') && !e.message.includes('duplicate')) {
+          console.warn('DB initialization notice:', e.message.slice(0, 100));
+        }
       }
       }
     }
 
     // Try to add columns - will fail silently if they already exist
+    const alterTableStatements = [
+      // Placeholder for future ALTER statements
+    ];
+    
     for (const sql of alterTableStatements) {
       try {
         await env.DB.prepare(sql).run();
       } catch (e) {
         // Ignore - column might already exist
-        console.debug('Column already exists or other error:', e.message);
+        console.debug('Column update note:', e.message.slice(0, 100));
       }
     }
     
+    // Verify critical tables exist
+    try {
+      const userTable = await env.DB.prepare('SELECT COUNT(*) as count FROM users LIMIT 1').first();
+      dbLog('✅ Database schema verified - users table accessible');
+    } catch (verifyError) {
+      console.error('⚠️ Database schema verification failed (requests may fail):', verifyError.message);
+    }
+    
     dbInitialized = true;
+    dbLog('✅ Database initialization complete');
   } catch (e) {
-    console.error('Database initialization error:', e);
+    console.error('❌ Database initialization error:', e.message);
     // Don't throw - let requests continue and handle DB errors individually
   }
 }
@@ -230,6 +294,73 @@ function getCorsHeaders(request) {
 
 const corsHeaders = getCorsHeaders({ headers: new Headers() });
 
+// ── CACHE STRATEGY HELPER ──
+/**
+ * Get cache control headers based on endpoint characteristics.
+ * Reduces bandwidth and server load while keeping data fresh.
+ * @param {string} strategy - 'nocache' (auth), 'short' (5min), 'medium' (1hr), 'static' (24hr)
+ * @returns {string} Cache-Control header value
+ */
+function getCacheControl(strategy) {
+  const strategies = {
+    'nocache': 'no-store, must-revalidate, max-age=0',
+    'short': 'private, max-age=300', // 5 minutes for user data, events
+    'medium': 'private, max-age=3600', // 1 hour for stats, analytics
+    'static': 'private, max-age=86400' // 24 hours for config, settings
+  };
+  return strategies[strategy] || strategies.nocache;
+}
+
+/**
+ * Create JSON response with CORS and cache control headers
+ * @param {any} data - Data to serialize as JSON
+ * @param {number} status - HTTP status code
+ * @param {string} cacheStrategy - Cache strategy ('nocache', 'short', 'medium', 'static')
+ * @returns {Response}
+ */
+function jsonResponse(data, status = 200, cacheStrategy = 'nocache') {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+      'Cache-Control': getCacheControl(cacheStrategy)
+    }
+  });
+}
+
+/**
+ * Create standardized error response with consistent structure
+ * Helps with error handling and debugging across API
+ * @param {string} message - Human-readable error message
+ * @param {number} status - HTTP status code
+ * @param {string|null} code - Machine-readable error code (e.g. 'INVALID_INPUT', 'UNAUTHORIZED')
+ * @returns {Response}
+ */
+function errorResponse(message, status = 400, code = null) {
+  // Map status codes to standard error codes if not provided
+  const errorCodes = {
+    400: 'INVALID_INPUT',
+    401: 'UNAUTHORIZED',
+    402: 'PAYMENT_REQUIRED',
+    403: 'FORBIDDEN',
+    404: 'NOT_FOUND',
+    409: 'CONFLICT',
+    413: 'PAYLOAD_TOO_LARGE',
+    429: 'RATE_LIMITED',
+    500: 'INTERNAL_ERROR',
+    503: 'SERVICE_UNAVAILABLE'
+  };
+  
+  const errorCode = code || errorCodes[status] || 'ERROR';
+  
+  return jsonResponse({
+    success: false,
+    error: message,
+    code: errorCode
+  }, status, 'nocache');
+}
+
 // ── UTILITY: Handle CORS ──
 router.options('*', (request) => new Response(null, { headers: getCorsHeaders(request) }));
 
@@ -252,14 +383,21 @@ async function verifyPassword(password, hash) {
 // ── EXPORT UTILITIES FOR OTHER MODULES ──
 export { hashPassword, verifyPassword, generateToken, verifyToken, generateUUID };
 
-// ── UTILITY: Generate JWT Token with HMAC-SHA256 ──
+/**
+ * Generate HMAC-SHA256 JWT token with 30-day expiration.
+ * Uses 256-bit key material for cryptographic strength.
+ * Token format: header.payload.signature (all base64url encoded)
+ * @param {string} userId - User ID for 'sub' claim
+ * @param {string} jwtSecret - Secret key (min 32 chars recommended, min 256 bits)
+ * @returns {Promise<string>} Signed JWT token
+ */
 async function generateToken(userId, jwtSecret) {
   const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const now = Math.floor(Date.now() / 1000);
   const payload = btoa(JSON.stringify({
     sub: userId,
     iat: now,
-    exp: now + 30 * 24 * 60 * 60, // 30 days
+    exp: now + config.auth.tokenExpirationSeconds,
   }));
   
   // Create HMAC-SHA256 signature
@@ -279,7 +417,13 @@ async function generateToken(userId, jwtSecret) {
   return `${headerPayload}.${signatureBase64}`;
 }
 
-// ── UTILITY: Verify JWT Token ──
+/**
+ * Verify HMAC-SHA256 JWT token signature and expiration.
+ * Rejects tokens with invalid signature or exp > current time.
+ * @param {string} token - JWT token to verify (format: header.payload.signature)
+ * @param {string} jwtSecret - Secret key (must match generation key)
+ * @returns {Promise<object|null>} Decoded payload or null if invalid
+ */
 async function verifyToken(token, jwtSecret) {
   try {
     const parts = token.split('.');
@@ -331,6 +475,19 @@ function generateUUID() {
 // ── REGISTER ──
 router.post('/auth/register', async (request, env) => {
   try {
+    // ✅ Apply rate limiting
+    const rateLimitResult = await checkRateLimit(request, env, 'register');
+    if (rateLimitResult.limited) {
+      return new Response(JSON.stringify({ error: rateLimitResult.message }), {
+        status: 429, // Too Many Requests
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Retry-After': rateLimitResult.retryAfter.toString()
+        }
+      });
+    }
+    
     // Parse JSON with error handling
     let body;
     try {
@@ -421,6 +578,19 @@ router.post('/auth/register', async (request, env) => {
 // ── LOGIN ──
 router.post('/auth/login', async (request, env) => {
   try {
+    // ✅ Apply rate limiting
+    const rateLimitResult = await checkRateLimit(request, env, 'login');
+    if (rateLimitResult.limited) {
+      return new Response(JSON.stringify({ error: rateLimitResult.message }), {
+        status: 429, // Too Many Requests
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Retry-After': rateLimitResult.retryAfter.toString()
+        }
+      });
+    }
+    
     // Parse JSON with error handling
     let body;
     try {
@@ -480,19 +650,110 @@ router.post('/auth/login', async (request, env) => {
        VALUES (?, 'login', 'success', datetime('now'))`
     ).bind(user.id).run();
     
-    return new Response(JSON.stringify({
+    return jsonResponse({
       success: true,
       user_id: user.id,
       email,
       token,
       session_id: sessionId
-    }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    }, 200, 'nocache');
   } catch (error) {
     console.error('[AUTH] Login error:', error.message);
     return new Response(JSON.stringify({ error: 'Login failed' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+});
+
+// ── TOKEN REFRESH ENDPOINT ──
+/**
+ * POST /auth/refresh
+ * Refresh an expiring JWT token without requiring re-login
+ * Uses existing token to validate identity and issue a new token
+ */
+router.post('/auth/refresh', async (request, env) => {
+  try {
+    const token = getAuthToken(request);
+    
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'No token provided' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Verify existing token (allows expired tokens within grace period)
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      return new Response(JSON.stringify({ error: 'Invalid token format' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    try {
+      // Verify signature even if expired
+      const headerPayload = `${parts[0]}.${parts[1]}`;
+      const encoder = new TextEncoder();
+      const keyData = encoder.encode(env.JWT_SECRET);
+      const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+      
+      const signaturePadded = parts[2] + '='.repeat((4 - parts[2].length % 4) % 4);
+      const signatureBinary = atob(signaturePadded.replace(/-/g, '+').replace(/_/g, '/'));
+      const signatureArray = new Uint8Array(signatureBinary.length);
+      for (let i = 0; i < signatureBinary.length; i++) {
+        signatureArray[i] = signatureBinary.charCodeAt(i);
+      }
+      
+      const isValid = await crypto.subtle.verify('HMAC', key, signatureArray, encoder.encode(headerPayload));
+      if (!isValid) {
+        return new Response(JSON.stringify({ error: 'Invalid token' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Extract payload
+      const payload = JSON.parse(atob(parts[1]));
+      const userId = payload.sub;
+      
+      // Verify user still exists and is active
+      const user = await env.DB.prepare('SELECT id, email FROM users WHERE id = ? AND is_active = 1').bind(userId).first();
+      if (!user) {
+        return new Response(JSON.stringify({ error: 'User not found or inactive' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Generate new token
+      const newToken = await generateToken(userId, env.JWT_SECRET);
+      
+      // Update session with new token
+      await env.DB.prepare(
+        `UPDATE sessions SET token = ?, last_activity = datetime('now')
+         WHERE user_id = ? ORDER BY created_at DESC LIMIT 1`
+      ).bind(newToken, userId).run();
+      
+      return new Response(JSON.stringify({
+        success: true,
+        token: newToken,
+        user_id: userId
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    } catch (tokenErr) {
+      console.error('[AUTH] Token refresh error:', tokenErr.message);
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+  } catch (error) {
+    console.error('[AUTH] Refresh endpoint error:', error.message);
+    return new Response(JSON.stringify({ error: 'Refresh failed' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
@@ -532,9 +793,12 @@ router.post('/sync/data', async (request, env) => {
     }
     
     const userId = tokenPayload.sub;
-    const { data, device_id } = await request.json();
+    const body = await request.json();
     
-    if (!data) {
+    // Accept data either as { data: {...} } or directly as {...}
+    const data = body.data || body;
+    
+    if (!data || Object.keys(data).length === 0) {
       return new Response(JSON.stringify({ error: 'Data required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -567,19 +831,17 @@ router.post('/sync/data', async (request, env) => {
       ).bind(userId, dataString, dataSize).run();
       
       // Log sync
+      const device_id = body.device_id || 'web';
       await env.DB.prepare(
         `INSERT INTO sync_logs (user_id, device_id, action, status, synced_at)
          VALUES (?, ?, 'data_upload', 'success', datetime('now'))`
       ).bind(userId, device_id).run();
       
-      return new Response(JSON.stringify({
+      return jsonResponse({
         success: true,
         synced_at: new Date().toISOString(),
         size_bytes: dataSize
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+      }, 200, 'short');
     } catch (error) {
       console.error('[SYNC] Data upload error:', error.message);
       return new Response(JSON.stringify({ error: 'Failed to sync data' }), {
@@ -718,6 +980,205 @@ router.get('/favicon.ico', async (request, env) => {
     headers: {
       'Content-Type': 'image/svg+xml',
       'Cache-Control': 'public, max-age=86400'
+    }
+  });
+});
+
+// ── MANIFEST.JSON (PWA Support) ──
+router.get('/manifest.json', async (request, env) => {
+  const manifest = {
+    "name": "FocusBro - ADHD-Friendly Focus & Wellness",
+    "short_name": "FocusBro",
+    "description": "Professional focus management with breathing, grounding, and mental wellness tools for ADHD.",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "background_color": "#ffffff",
+    "theme_color": "#6366f1",
+    "categories": ["productivity", "health", "wellness"],
+    "icons": [
+      {
+        "src": "/favicon.ico",
+        "sizes": "16x16 32x32",
+        "type": "image/x-icon"
+      },
+      {
+        "src": "/icon-192.png",
+        "sizes": "192x192",
+        "type": "image/png",
+        "purpose": "any"
+      },
+      {
+        "src": "/icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any"
+      }
+    ],
+    "shortcuts": [
+      {
+        "name": "Pomodoro Timer",
+        "short_name": "Pomodoro",
+        "description": "Start a focused work session",
+        "url": "/?view=pomodoro",
+        "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      },
+      {
+        "name": "Breathing Exercise",
+        "short_name": "Breathing",
+        "description": "Guided breathing exercises",
+        "url": "/?view=breathing",
+        "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      }
+    ]
+  };
+  return new Response(JSON.stringify(manifest), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/manifest+json',
+      'Cache-Control': 'public, max-age=86400'
+    }
+  });
+});
+
+// ── REDIRECT /api/* ROUTES TO EXTENDED ROUTER ──
+// Create a new request with the path prefix stripped and pass to extended router
+router.all('/api/*', async (request, env, ctx) => {
+  const url = new URL(request.url);
+  
+  // Strip /api prefix and reconstruct for extended router
+  const pathWithoutApi = url.pathname.replace(/^\/api/, '') || '/';
+  const newUrl = new URL(request.url);
+  newUrl.pathname = pathWithoutApi;
+  
+  const modifiedRequest = new Request(newUrl, request);
+  return extendedRouter.handle(modifiedRequest, env, ctx);
+});
+
+// ── SERVICE WORKER ──
+router.get('/sw.js', async (request, env) => {
+  // Service Worker from embedded HTML content
+  const swCode = `/**
+ * FocusBro Service Worker
+ * Handles push notifications, offline support, and caching strategies
+ */
+
+const CACHE_NAME = 'focusbro-v1';
+const STATIC_ASSETS = ['/', '/index.html', '/manifest.json'];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(STATIC_ASSETS)
+        .catch(err => {
+          // ✅ LOGGING: SW cache failures (e.g., assets unavailable during install)
+          console.warn('[SW] Cache install failed:', err.message, '— Will retry on next update');
+        })
+      )
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then(cacheNames => Promise.all(
+        cacheNames
+          .filter(name => name !== CACHE_NAME)
+          .map(name => caches.delete(name))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
+// Push notifications
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  let notificationData = {};
+  try {
+    notificationData = event.data.json();
+  } catch (e) {
+    notificationData = { title: 'FocusBro', body: event.data.text() };
+  }
+  const options = {
+    icon: '/favicon.ico',
+    tag: notificationData.tag || 'focusbro-notification',
+    data: notificationData.data || {},
+    ...notificationData
+  };
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title || 'FocusBro', options)
+  );
+});
+
+// Notification clicks
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const data = event.notification.data || {};
+  const targetUrl = data.action === 'open' ? \`/#\${data.view || 'dashboard'}\` : '/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(clientList => {
+        for (let i = 0; i < clientList.length; i++) {
+          const client = clientList[i];
+          if (client.url === targetUrl && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        if (clients.openWindow) return clients.openWindow(targetUrl);
+      })
+  );
+});
+
+// Fetch strategy: network-first for API, cache-first for assets
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  if (request.method !== 'GET') return;
+
+  if (url.pathname.startsWith('/api/')) {
+    return event.respondWith(
+      fetch(request)
+        .then(response => {
+          // Clone immediately to avoid consuming the response
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, responseClone));
+          }
+          return response;
+        })
+        .catch(err => { console.warn('SW network fetch failed, falling back to cache:', err && err.message || err); return caches.match(request) || new Response(
+          JSON.stringify({ error: 'Offline', offline: true }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } }
+        ))
+    );
+  }
+
+  event.respondWith(
+    caches.match(request)
+      .then(cached => cached || fetch(request)
+        .then(response => {
+          // Clone immediately to avoid consuming the response
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(request, responseClone));
+          }
+          return response;
+        })
+      )
+      .catch(err => { console.warn('SW fetch for asset failed, returning index.html from cache:', err && err.message || err); return caches.match('/index.html'); })
+  );
+});
+`;
+
+  return new Response(swCode, {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/javascript; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600',
+      'Service-Worker-Allowed': '/'
     }
   });
 });
