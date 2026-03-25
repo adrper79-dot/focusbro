@@ -1200,13 +1200,20 @@ export default {
       const modifiedRequest = new Request(newUrl, request);
       
       try {
-        // ✅ FIX: Use .handle() method for itty-router instances (not callable as function)
-        const extResponse = await extendedRouter.handle(modifiedRequest, env);
+        // ✅ FIX: Use .fetch() method for itty-router instances
+        // Note: Some versions of itty-router require .fetch() instead of .handle()
+        console.log('DEBUG: Routing to extended router:', pathWithoutApi);
+        const extResponse = typeof extendedRouter.fetch === 'function' 
+          ? await extendedRouter.fetch(modifiedRequest, env)
+          : await (typeof extendedRouter.handle === 'function'
+              ? extendedRouter.handle(modifiedRequest, env)
+              : extendedRouter(modifiedRequest, env));
+        console.log('DEBUG: Extended router response status:', extResponse?.status);
         if (extResponse && extResponse.status !== 404) {
           return extResponse;
         }
       } catch (err) {
-        console.warn('Extended router error:', err);
+        console.warn('Extended router error:', err?.message || err);
       }
     }
     
