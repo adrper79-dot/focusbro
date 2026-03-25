@@ -328,7 +328,18 @@ function generateUUID() {
 // ── REGISTER ──
 router.post('/auth/register', async (request, env) => {
   try {
-    const { email, password } = await request.json();
+    // Parse JSON with error handling
+    let body;
+    try {
+      body = await request.json();
+    } catch (jsonErr) {
+      return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const { email, password } = body;
     
     // Validate input
     if (!email || !password) {
@@ -407,7 +418,18 @@ router.post('/auth/register', async (request, env) => {
 // ── LOGIN ──
 router.post('/auth/login', async (request, env) => {
   try {
-    const { email, password } = await request.json();
+    // Parse JSON with error handling
+    let body;
+    try {
+      body = await request.json();
+    } catch (jsonErr) {
+      return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const { email, password } = body;
     
     // Validate input
     if (!email || !password) {

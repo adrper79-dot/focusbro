@@ -42,6 +42,15 @@ const corsHeaders = getCorsHeaders({ headers: new Headers() });
 // ── CORS PREFLIGHT ──
 router.options('*', (request) => new Response(null, { headers: getCorsHeaders(request) }));
 
+// ── SAFE JSON PARSING ──
+async function safeRequestJSON(request) {
+  try {
+    return { success: true, data: await request.json() };
+  } catch (err) {
+    return { success: false, error: 'Invalid JSON in request body' };
+  }
+}
+
 // ════════════════════════════════════════════════════════════
 // USER PROFILE ENDPOINTS
 // ════════════════════════════════════════════════════════════
@@ -105,7 +114,13 @@ router.put('/users/profile', async (request, env) => {
     }
     
     const userId = auth.userId;
-    const { firstName, lastName, avatarUrl } = await request.json();
+    
+    // Parse JSON safely
+    const jsonResult = await safeRequestJSON(request);
+    if (!jsonResult.success) {
+      return errorResponse(jsonResult.error, 400);
+    }
+    const { firstName, lastName, avatarUrl } = jsonResult.data;
     
     // Validate input
     if (firstName && firstName.length > 100) {
@@ -151,7 +166,13 @@ router.post('/users/change-password', async (request, env) => {
     }
     
     const userId = auth.userId;
-    const { currentPassword, newPassword } = await request.json();
+    
+    // Parse JSON safely
+    const jsonResult = await safeRequestJSON(request);
+    if (!jsonResult.success) {
+      return errorResponse(jsonResult.error, 400);
+    }
+    const { currentPassword, newPassword } = jsonResult.data;
     
     if (!currentPassword || !newPassword) {
       return errorResponse('Missing password fields', 400);
@@ -256,7 +277,12 @@ router.post('/auth/request-password-reset', async (request, env) => {
 // ── CONFIRM PASSWORD RESET ──
 router.post('/auth/confirm-password-reset', async (request, env) => {
   try {
-    const { resetToken, newPassword } = await request.json();
+    // Parse JSON safely
+    const jsonResult = await safeRequestJSON(request);
+    if (!jsonResult.success) {
+      return errorResponse(jsonResult.error, 400);
+    }
+    const { resetToken, newPassword } = jsonResult.data;
     
     if (!resetToken || !newPassword) {
       return errorResponse('Reset token and new password required', 400);
