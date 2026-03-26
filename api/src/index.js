@@ -7,6 +7,8 @@ import { Router } from 'itty-router';
 import extendedRouter from './extended-routes.js';
 import htmlContent from './html.js';
 import config from './config.js';
+import syncModule from './sync.js';
+import billingModule from './billing.js';
 import {
   verifyAuth,
   validateEmail,
@@ -762,6 +764,13 @@ router.post('/sync/data', async (request, env) => {
     }
     
     const userId = tokenPayload.sub;
+    
+    // ✅ TIER CHECK: Verify user has cloud sync access
+    const tierCheckResult = await syncModule.validateSyncTier(env, userId);
+    if (tierCheckResult.error) {
+      return tierCheckResult.response;
+    }
+    
     const body = await request.json();
     
     // Accept data either as { data: {...} } or directly as {...}
@@ -794,25 +803,24 @@ router.post('/sync/data', async (request, env) => {
       });
       
       // Store in D1 for archival
-      await env.DB.prepare(
-        `INSERT INTO user_data_snapshots (user_id, snapshot_data, size_bytes, created_at)
+      const snapshotId = await env.DB.prepare(
+        `INSERT INTO user_data_snapshots (user_id, snapshot_data, snapshot_size, created_at)
          VALUES (?, ?, ?, datetime('now'))`
       ).bind(userId, dataString, dataSize).run();
       
-      // Log sync
-      const device_id = body.device_id || 'web';
-      await env.DB.prepare(
-        `INSERT INTO sync_logs (user_id, device_id, action, status, synced_at)
-         VALUES (?, ?, 'data_upload', 'success', datetime('now'))`
-      ).bind(userId, device_id).run();
+      // Record sync in logs
+      const deviceId = body.device_id || 'web';
+      await syncModule.recordSync(env, userId, deviceId, 'data_upload', 'success', dataSize);
       
       return jsonResponse({
         success: true,
         synced_at: new Date().toISOString(),
-        size_bytes: dataSize
+        size_bytes: dataSize,
+        snapshot_id: snapshotId
       }, 200, 'short');
     } catch (error) {
       console.error('[SYNC] Data upload error:', error.message);
+      await syncModule.recordSync(env, userId, body.device_id || 'web', 'data_upload', 'error', 0);
       return new Response(JSON.stringify({ error: 'Failed to sync data' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -847,12 +855,19 @@ router.get('/sync/data', async (request, env) => {
     
     const userId = tokenPayload.sub;
     
+    // ✅ TIER CHECK: Verify user has cloud sync access
+    const tierCheckResult = await syncModule.validateSyncTier(env, userId);
+    if (tierCheckResult.error) {
+      return tierCheckResult.response;
+    }
+    
     // Try KV first (faster)
     const kvKey = `user:${userId}:latest`;
     let data = await env.KV_CACHE.get(kvKey);
     
     if (data) {
       try {
+        await syncModule.recordSync(env, userId, 'web', 'data_download', 'success', data.length);
         return new Response(JSON.stringify({
           success: true,
           data: JSON.parse(data),
@@ -888,6 +903,7 @@ router.get('/sync/data', async (request, env) => {
     
     try {
       const parsedData = JSON.parse(snapshot.snapshot_data);
+      await syncModule.recordSync(env, userId, 'web', 'data_download', 'success', snapshot.snapshot_data.length);
       return new Response(JSON.stringify({
         success: true,
         data: parsedData,
@@ -898,6 +914,7 @@ router.get('/sync/data', async (request, env) => {
       });
     } catch (parseError) {
       console.error('[SYNC] Failed to parse database snapshot:', parseError.message);
+      await syncModule.recordSync(env, userId, 'web', 'data_download', 'error', 0);
       return new Response(JSON.stringify({
         success: true,
         data: null,
@@ -910,6 +927,374 @@ router.get('/sync/data', async (request, env) => {
   } catch (error) {
     console.error('[SYNC] Data retrieval error:', error.message);
     return new Response(JSON.stringify({ error: 'Failed to retrieve data' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+});
+
+// ── SYNC ANALYTICS EVENTS ──
+router.post('/sync/events', async (request, env) => {
+  try {
+    const token = getAuthToken(request);
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const tokenPayload = await verifyToken(token, env.JWT_SECRET);
+    if (!tokenPayload) {
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const userId = tokenPayload.sub;
+    const body = await request.json();
+    const events = body.events || [];
+    
+    // Sync events (analytics tracking)
+    const result = await syncModule.syncAnalyticsEvents(env, userId, events);
+    
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('[SYNC] Analytics sync error:', error.message);
+    return new Response(JSON.stringify({ error: 'Failed to sync events' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+});
+
+// ── REGISTER DEVICE ──
+router.post('/sync/devices', async (request, env) => {
+  try {
+    const token = getAuthToken(request);
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const tokenPayload = await verifyToken(token, env.JWT_SECRET);
+    if (!tokenPayload) {
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const userId = tokenPayload.sub;
+    const deviceInfo = await request.json();
+    
+    // Register device for multi-device sync
+    const device = await syncModule.registerDevice(env, userId, deviceInfo);
+    
+    return new Response(JSON.stringify({ success: true, device }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('[SYNC] Device registration error:', error.message);
+    return new Response(JSON.stringify({ error: 'Failed to register device' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+});
+
+// ── GET USER DEVICES ──
+router.get('/sync/devices', async (request, env) => {
+  try {
+    const token = getAuthToken(request);
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const tokenPayload = await verifyToken(token, env.JWT_SECRET);
+    if (!tokenPayload) {
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const userId = tokenPayload.sub;
+    const devices = await syncModule.getUserDevices(env, userId);
+    
+    return new Response(JSON.stringify({ success: true, devices }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('[SYNC] Device fetch error:', error.message);
+    return new Response(JSON.stringify({ error: 'Failed to fetch devices' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+});
+
+// ── GET DATA HISTORY (version control) ──
+router.get('/sync/history', async (request, env) => {
+  try {
+    const token = getAuthToken(request);
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const tokenPayload = await verifyToken(token, env.JWT_SECRET);
+    if (!tokenPayload) {
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const userId = tokenPayload.sub;
+    const limit = new URL(request.url).searchParams.get('limit') || 10;
+    
+    const history = await syncModule.getDataHistory(env, userId, parseInt(limit));
+    
+    return new Response(JSON.stringify({ success: true, history }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('[SYNC] History fetch error:', error.message);
+    return new Response(JSON.stringify({ error: 'Failed to fetch history' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+// BILLING & STRIPE INTEGRATION
+// ════════════════════════════════════════════════════════════
+
+// ── CREATE CHECKOUT SESSION ──
+router.post('/api/billing/create-checkout', async (request, env) => {
+  try {
+    const token = getAuthToken(request);
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const tokenPayload = await verifyToken(token, env.JWT_SECRET);
+    if (!tokenPayload) {
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const userId = tokenPayload.sub;
+    const { plan } = await request.json();
+    
+    // Get user email
+    const user = await env.DB.prepare(
+      'SELECT email, subscription_tier FROM users WHERE id = ?'
+    ).bind(userId).first();
+    
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'User not found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Don't allow checkout if already subscribed
+    if (user.subscription_tier !== 'free') {
+      return new Response(JSON.stringify({
+        error: 'Already subscribed',
+        tier: user.subscription_tier,
+        message: 'Use billing portal to manage your subscription'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Create Stripe checkout session
+    const result = await billingModule.createCheckoutSession(env, userId, user.email, plan);
+    
+    if (!result.success) {
+      return new Response(JSON.stringify({ error: result.error || 'Failed to create checkout' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    return new Response(JSON.stringify({
+      url: result.url,
+      sessionId: result.sessionId
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('[BILLING] Checkout creation error:', error.message);
+    return new Response(JSON.stringify({ error: 'Failed to create checkout session' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+});
+
+// ── BILLING PORTAL ──
+router.get('/api/billing/portal', async (request, env) => {
+  try {
+    const token = getAuthToken(request);
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const tokenPayload = await verifyToken(token, env.JWT_SECRET);
+    if (!tokenPayload) {
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const userId = tokenPayload.sub;
+    
+    // Get Stripe customer ID
+    const subscription = await env.DB.prepare(
+      'SELECT stripe_customer_id FROM stripe_subscriptions WHERE user_id = ?'
+    ).bind(userId).first();
+    
+    if (!subscription || !subscription.stripe_customer_id) {
+      return new Response(JSON.stringify({ error: 'No active subscription found' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Create Stripe billing portal session
+    const response = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.STRIPE_SECRET_KEY}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: `customer=${subscription.stripe_customer_id}&return_url=${env.APP_URL}/billing`
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('[BILLING] Portal creation failed:', error);
+      throw new Error(`Stripe error: ${error.error?.message || 'Unknown error'}`);
+    }
+    
+    const session = await response.json();
+    
+    return new Response(JSON.stringify({
+      url: session.url
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('[BILLING] Portal error:', error.message);
+    return new Response(JSON.stringify({ error: 'Failed to open billing portal' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+});
+
+// ── WEBHOOK HANDLER ──
+router.post('/api/billing/webhook', async (request, env) => {
+  try {
+    // Verify webhook signature
+    const verification = await billingModule.verifyWebhookSignature(request, env);
+    if (!verification.valid) {
+      console.warn('[BILLING] Webhook signature verification failed:', verification.reason);
+      return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Parse event body
+    const body = await request.text();
+    const event = JSON.parse(body);
+    
+    // Process webhook
+    const result = await billingModule.processWebhookEvent(env, event);
+    
+    console.log(`[BILLING] Webhook processed: ${event.type} - ${result.processed ? 'success' : 'skipped'}`);
+    
+    return new Response(JSON.stringify({
+      received: true,
+      processed: result.processed
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('[BILLING] Webhook handler error:', error.message);
+    // Always return 200 to acknowledge receipt (prevent Stripe retries)
+    return new Response(JSON.stringify({
+      received: true,
+      error: error.message
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+});
+
+// ── GET CURRENT SUBSCRIPTION ──
+router.get('/api/billing/tier', async (request, env) => {
+  try {
+    const token = getAuthToken(request);
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const tokenPayload = await verifyToken(token, env.JWT_SECRET);
+    if (!tokenPayload) {
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const userId = tokenPayload.sub;
+    const subscription = await billingModule.getUserSubscription(env, userId);
+    
+    return new Response(JSON.stringify(subscription), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('[BILLING] Tier fetch error:', error.message);
+    return new Response(JSON.stringify({ error: 'Failed to fetch tier' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

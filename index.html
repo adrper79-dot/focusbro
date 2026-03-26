@@ -1113,6 +1113,18 @@
     .time-bar-wrap { margin: 8px 16px 0; }
     .fidget-grid { grid-template-columns: 1fr; }
     .binaural-grid { grid-template-columns: repeat(2, 1fr); }
+    /* Accessibility focus styles */
+    button:focus, [role="button"]:focus, a:focus, input:focus, select:focus, textarea:focus {
+      outline: 3px solid var(--primary);
+      outline-offset: 2px;
+    }
+    button:focus:not(:focus-visible) { outline: none; }
+    .sound-btn[aria-pressed="true"] {
+      box-shadow: 0 0 0 4px var(--primary-glow);
+    }
+    /* Skip link for keyboard users */
+    .skip-link { position: absolute; top: -40px; left: 8px; background: var(--primary); color: #fff; padding: 8px 12px; border-radius: 4px; z-index: 9999; transition: top 0.18s ease; text-decoration: none; }
+    .skip-link:focus { top: 8px; }
     .pomo-time { font-size: 48px; }
     .keep-awake { padding: 40px 24px; }
     .awake-ring { width: 120px; height: 120px; }
@@ -1120,6 +1132,7 @@
 </style>
 </head>
 <body>
+  <a href="#intentionBanner" class="skip-link">Skip to main content</a>
 
 <!-- HEADER -->
 <header class="header">
@@ -1146,6 +1159,7 @@
   <span class="intention-label">🎯 One Thing</span>
   <input class="intention-input" id="intentionInput" type="text" maxlength="120"
     placeholder="What is the ONE thing you're working on right now?"
+    aria-label="One thing intention"
     oninput="saveIntention()" />
 </div>
 
@@ -1209,8 +1223,8 @@
           <div class="card-title"><span class="icon">📅</span> Meeting Countdown</div>
         </div>
         <div class="meeting-input-row">
-          <input type="text" id="meetingName" placeholder="Meeting name" />
-          <input type="time" id="meetingTime" />
+          <input type="text" id="meetingName" placeholder="Meeting name" aria-label="Meeting name" />
+          <input type="time" id="meetingTime" aria-label="Meeting time" />
           <button class="btn btn-sm btn-accent" onclick="setMeeting()">Set</button>
         </div>
         <div class="meeting-countdown-display" id="meetingDisplay">
@@ -1227,7 +1241,7 @@
           <span style="font-size: 12px; color: var(--text-muted);" id="taskCount">0 tasks</span>
         </div>
         <div class="task-input-row">
-          <input type="text" id="taskInput" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()" />
+          <input type="text" id="taskInput" placeholder="Add a task..." aria-label="Add task" onkeydown="if(event.key==='Enter')addTask()" />
           <button class="btn btn-sm btn-accent" onclick="addTask()">Add</button>
         </div>
         <ul class="task-list" id="taskList"></ul>
@@ -1259,28 +1273,28 @@
           <div class="card-title"><span class="icon">🎧</span> Ambient Sounds</div>
         </div>
         <div class="sounds-grid">
-          <button class="sound-btn" onclick="toggleSound('rain', this)">
+          <button class="sound-btn" aria-pressed="false" aria-label="Play Rain ambient sound" onclick="toggleSound('rain', this)">
             <span class="sound-icon">🌧️</span> Rain
           </button>
-          <button class="sound-btn" onclick="toggleSound('cafe', this)">
+          <button class="sound-btn" aria-pressed="false" aria-label="Play Café ambient sound" onclick="toggleSound('cafe', this)">
             <span class="sound-icon">☕</span> Café
           </button>
-          <button class="sound-btn" onclick="toggleSound('whitenoise', this)">
+          <button class="sound-btn" aria-pressed="false" aria-label="Play White Noise ambient sound" onclick="toggleSound('whitenoise', this)">
             <span class="sound-icon">📻</span> White Noise
           </button>
-          <button class="sound-btn" onclick="toggleSound('fireplace', this)">
+          <button class="sound-btn" aria-pressed="false" aria-label="Play Fireplace ambient sound" onclick="toggleSound('fireplace', this)">
             <span class="sound-icon">🔥</span> Fireplace
           </button>
-          <button class="sound-btn" onclick="toggleSound('forest', this)">
+          <button class="sound-btn" aria-pressed="false" aria-label="Play Forest ambient sound" onclick="toggleSound('forest', this)">
             <span class="sound-icon">🌲</span> Forest
           </button>
-          <button class="sound-btn" onclick="toggleSound('ocean', this)">
+          <button class="sound-btn" aria-pressed="false" aria-label="Play Ocean ambient sound" onclick="toggleSound('ocean', this)">
             <span class="sound-icon">🌊</span> Ocean
           </button>
         </div>
         <div class="sound-volume">
           <label>Vol</label>
-          <input type="range" min="0" max="100" value="50" id="soundVolume" oninput="updateVolume(this.value)" />
+          <input type="range" min="0" max="100" value="50" id="soundVolume" aria-label="Ambient volume" oninput="updateVolume(this.value)" />
         </div>
       </div>
 
@@ -1370,9 +1384,9 @@
       <div style="margin-bottom: 12px;">
         <div style="font-size: 11px; font-weight: 600; margin-bottom: 6px; color: var(--text);">Binaural Frequency</div>
         <div class="binaural-grid">
-          <button class="binaural-btn" onclick="toggleBinaural('focus')">🎯 Focus (40Hz)</button>
-          <button class="binaural-btn" onclick="toggleBinaural('calm')">😌 Calm (8Hz)</button>
-          <button class="binaural-btn" onclick="toggleBinaural('alert')">⚡ Alert (20Hz)</button>
+          <button class="binaural-btn" aria-pressed="false" aria-label="Enable Focus binaural (40Hz)" onclick="toggleBinaural('focus')">🎯 Focus (40Hz)</button>
+          <button class="binaural-btn" aria-pressed="false" aria-label="Enable Calm binaural (8Hz)" onclick="toggleBinaural('calm')">😌 Calm (8Hz)</button>
+          <button class="binaural-btn" aria-pressed="false" aria-label="Enable Alert binaural (20Hz)" onclick="toggleBinaural('alert')">⚡ Alert (20Hz)</button>
         </div>
         <div class="binaural-info">Combine with ambient sounds for best effect.</div>
       </div>
@@ -1387,12 +1401,12 @@
       </div>
       <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">Log your energy throughout the day.</div>
       
-      <div class="energy-scale">
-        <button class="energy-btn" onclick="logEnergy(1)" title="Exhausted">1</button>
-        <button class="energy-btn" onclick="logEnergy(2)">2</button>
-        <button class="energy-btn" onclick="logEnergy(3)">3</button>
-        <button class="energy-btn" onclick="logEnergy(4)">4</button>
-        <button class="energy-btn" onclick="logEnergy(5)" title="Peak">5</button>
+        <div class="energy-scale">
+        <button class="energy-btn" aria-label="Energy level 1" aria-pressed="false" onclick="logEnergy(1)" title="Exhausted">1</button>
+        <button class="energy-btn" aria-label="Energy level 2" aria-pressed="false" onclick="logEnergy(2)">2</button>
+        <button class="energy-btn" aria-label="Energy level 3" aria-pressed="false" onclick="logEnergy(3)">3</button>
+        <button class="energy-btn" aria-label="Energy level 4" aria-pressed="false" onclick="logEnergy(4)">4</button>
+        <button class="energy-btn" aria-label="Energy level 5" aria-pressed="false" onclick="logEnergy(5)" title="Peak">5</button>
       </div>
 
       <div class="energy-chart" id="energyChart"></div>
@@ -1431,7 +1445,7 @@
       </div>
 
       <div class="med-input-row">
-        <input type="time" id="medTime" placeholder="HH:MM" />
+        <input type="time" id="medTime" placeholder="HH:MM" aria-label="Medication time" />
         <button onclick="logMedication()">Log Dose</button>
       </div>
       <button class="btn" style="width: 100%; margin-top: 8px; font-size: 12px; background: var(--warn); color: #000; border: none;" onclick="openDopamineMenu()">⚡ Dopamine Menu</button>
@@ -1484,7 +1498,7 @@
   <div class="distract-box">
     <h3>🧠 Park That Thought</h3>
     <p>Don't lose focus — write the distraction down and come back to it later. Press <strong>Enter</strong> to park it, <strong>Esc</strong> to cancel.</p>
-    <input type="text" id="distractInput" maxlength="200" placeholder="What just popped into your head?" />
+    <input type="text" id="distractInput" maxlength="200" placeholder="What just popped into your head?" aria-label="Distraction capture input" />
     <div style="display:flex;gap:10px;">
       <button class="btn btn-accent" style="flex:1;" onclick="parkDistraction()">Park It 🚗</button>
       <button class="btn" onclick="closeDistractionOverlay()">Cancel</button>
@@ -1525,31 +1539,31 @@
       <div class="grounding-item" onclick="startGroundingStep(5)">
         <span class="grounding-number">5</span>
         <span class="grounding-text">Things You SEE</span>
-        <input type="text" class="grounding-input" id="ground5" placeholder="Describe what you see around you..." />
+        <input type="text" class="grounding-input" id="ground5" placeholder="Describe what you see around you..." aria-label="Grounding: things you see" />
         <div id="result5" class="grounding-result" style="display: none;"></div>
       </div>
       <div class="grounding-item" onclick="startGroundingStep(4)">
         <span class="grounding-number">4</span>
         <span class="grounding-text">Things You can TOUCH</span>
-        <input type="text" class="grounding-input" id="ground4" placeholder="Describe textures you can feel..." />
+        <input type="text" class="grounding-input" id="ground4" placeholder="Describe textures you can feel..." aria-label="Grounding: textures you feel" />
         <div id="result4" class="grounding-result" style="display: none;"></div>
       </div>
       <div class="grounding-item" onclick="startGroundingStep(3)">
         <span class="grounding-number">3</span>
         <span class="grounding-text">Things You HEAR</span>
-        <input type="text" class="grounding-input" id="ground3" placeholder="What sounds surround you?..." />
+        <input type="text" class="grounding-input" id="ground3" placeholder="What sounds surround you?..." aria-label="Grounding: sounds around you" />
         <div id="result3" class="grounding-result" style="display: none;"></div>
       </div>
       <div class="grounding-item" onclick="startGroundingStep(2)">
         <span class="grounding-number">2</span>
         <span class="grounding-text">Things You SMELL</span>
-        <input type="text" class="grounding-input" id="ground2" placeholder="What scents are present?..." />
+        <input type="text" class="grounding-input" id="ground2" placeholder="What scents are present?..." aria-label="Grounding: scents present" />
         <div id="result2" class="grounding-result" style="display: none;"></div>
       </div>
       <div class="grounding-item" onclick="startGroundingStep(1)">
         <span class="grounding-number">1</span>
         <span class="grounding-text">Thing You TASTE</span>
-        <input type="text" class="grounding-input" id="ground1" placeholder="Gum? Coffee? Water?..." />
+        <input type="text" class="grounding-input" id="ground1" placeholder="Gum? Coffee? Water?..." aria-label="Grounding: things you taste" />
         <div id="result1" class="grounding-result" style="display: none;"></div>
       </div>
     </div>
@@ -1567,7 +1581,7 @@
     <div class="dopamine-list" id="dopamineList"></div>
     
     <div class="dopamine-input-row">
-      <input type="text" id="dopamineInput" maxlength="100" placeholder="Add: 'Stretch 30s', 'Pet cat', 'Drink water'..." />
+      <input type="text" id="dopamineInput" maxlength="100" placeholder="Add: 'Stretch 30s', 'Pet cat', 'Drink water'..." aria-label="Add quick activity" />
       <button onclick="addDopamineItem()">+</button>
     </div>
 
@@ -2166,6 +2180,7 @@ function toggleSound(name, btn) {
     activeSounds[name].source.stop();
     delete activeSounds[name];
     btn.classList.remove('active');
+    try { btn.setAttribute('aria-pressed', 'false'); } catch(e) {}
   } else {
     const ctx = getAudioCtx();
     const config = soundConfigs[name];
@@ -2185,6 +2200,7 @@ function toggleSound(name, btn) {
 
     activeSounds[name] = { source, gain, filter };
     btn.classList.add('active');
+    try { btn.setAttribute('aria-pressed', 'true'); } catch(e) {}
   }
 }
 
