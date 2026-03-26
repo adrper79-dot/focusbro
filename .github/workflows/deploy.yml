@@ -76,7 +76,7 @@ jobs:
     
     - name: Purge Cloudflare Cache
       run: |
-        echo "🧹 Purging Cloudflare cache for focusbro.net..."
+        echo "🧹 Attempting to purge Cloudflare cache for focusbro.net..."
         
         # Get zone ID for focusbro.net
         ZONE_ID=$(curl -s "https://api.cloudflare.com/client/v4/zones?name=focusbro.net" \
@@ -89,7 +89,8 @@ jobs:
           curl -s "https://api.cloudflare.com/client/v4/zones" \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -H "Content-Type: application/json" | jq -r '.result[] | "\(.name): \(.id)"'
-          exit 1
+          echo "⚠️  Skipping cache purge - check API token permissions"
+          exit 0
         fi
         
         echo "Found zone ID: $ZONE_ID"
@@ -105,7 +106,10 @@ jobs:
         else
           echo "❌ Cache purge failed:"
           echo "$PURGE_RESPONSE"
-          # Don't fail the build for cache purge issues
+          echo "⚠️  Deployment succeeded but cache not purged. Page may show old content."
+          echo "To fix: Update CLOUDFLARE_API_TOKEN to include 'Zone.Cache Purge' permission"
+          # Don't fail the build
+          exit 0
         fi
       env:
         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
