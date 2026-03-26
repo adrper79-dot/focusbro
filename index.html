@@ -1643,6 +1643,9 @@ async function activateWake() {
   awakeActive = true;
   awakeStart = Date.now();
 
+  // Show warning about presence impact
+  showToast('Screen will stay awake, but you may appear "away" in Teams/Slack during focus sessions', 'warning');
+
   document.getElementById('awakeRing').classList.add('active');
   document.getElementById('keepAwakeCard').classList.add('active');
   document.getElementById('awakeIcon').textContent = '⚡';
@@ -1766,18 +1769,19 @@ function simulateActivity() {
 
   // ── Choose which event types to fire this tick ──
   const eventSet = weightedPick([
-    { v: ['mousemove', 'pointermove'],         w: 40 }, // most common
-    { v: ['mousemove'],                        w: 25 }, // sometimes only mouse
-    { v: ['pointermove'],                      w: 10 }, // sometimes only pointer
-    { v: ['mousemove', 'pointermove', 'wheel'],w: 20 }, // move + scroll
-    { v: ['wheel'],                            w: 5  }  // scroll only (rare)
+    { v: ['mousemove', 'pointermove'],         w: 35 }, // most common
+    { v: ['mousemove'],                        w: 20 }, // sometimes only mouse
+    { v: ['pointermove'],                      w: 8  }, // sometimes only pointer
+    { v: ['mousemove', 'pointermove', 'wheel'],w: 15 }, // move + scroll
+    { v: ['wheel'],                            w: 4  }, // scroll only (rare)
+    { v: ['mousemove', 'keydown'],             w: 3  }  // mouse + safe key (very rare)
   ]);
 
   if (eventSet.includes('mousemove') || eventSet.includes('pointermove')) {
     eventSet
       .filter(t => t !== 'wheel')
       .forEach(type => {
-        window.dispatchEvent(new MouseEvent(type, {
+        document.body.dispatchEvent(new MouseEvent(type, {
           bubbles: true, cancelable: true,
           clientX: cx, clientY: cy,
           screenX: cx + (window.screenX || 0),
@@ -1790,12 +1794,29 @@ function simulateActivity() {
   if (eventSet.includes('wheel')) {
     // Real scroll: small, non-zero delta — looks like someone scrolling
     const deltaY = (Math.random() < 0.5 ? 1 : -1) * randInt(3, 40);
-    window.dispatchEvent(new WheelEvent('wheel', {
+    document.body.dispatchEvent(new WheelEvent('wheel', {
       bubbles: true, cancelable: true,
       deltaX: 0, deltaY,
       deltaMode: WheelEvent.DOM_DELTA_PIXEL,
       clientX: cx, clientY: cy
     }));
+  }
+
+  if (eventSet.includes('keydown')) {
+    // Safe modifier key press (Shift) - won't interfere with typing
+    document.body.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true, cancelable: true,
+      key: 'Shift', code: 'ShiftLeft', keyCode: 16, which: 16,
+      shiftKey: true
+    }));
+    // Immediately release it
+    setTimeout(() => {
+      document.body.dispatchEvent(new KeyboardEvent('keyup', {
+        bubbles: true, cancelable: true,
+        key: 'Shift', code: 'ShiftLeft', keyCode: 16, which: 16,
+        shiftKey: true
+      }));
+    }, 50);
   }
 
   // Title nudge (invisible zero-width space)

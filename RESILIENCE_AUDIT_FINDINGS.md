@@ -577,6 +577,52 @@ router.get('/events', async (request, env) => {
 
 ---
 
+### 7. WAKE LOCK SIDE EFFECTS - PRESENCE MANAGEMENT
+
+#### 7A. Screen Wake Lock Causes Teams Away Status
+**Date Reported**: March 26, 2026  
+**Severity**: MEDIUM (UX impact)
+
+**Issue**: Wake lock successfully prevents screen sleep during focus sessions, but causes communication apps (Teams, Slack) to detect user as "away" due to lack of keyboard/mouse activity.
+
+**Test Result**:
+- ✅ Screen stays awake (wake lock working)
+- ❌ Teams status changes to "away" automatically
+- ❌ User appears inactive to colleagues during focus time
+
+**Root Cause**:
+- `navigator.wakeLock.request('screen')` prevents display sleep
+- Does not simulate user activity for presence detection
+- Communication apps use separate idle detection (typically 5-15 minutes of no input)
+
+**Current Implementation** (from activity simulation):
+```javascript
+activityInterval = setInterval(() => {
+  simulateActivity();  // Only affects internal app state
+  updatePresenceTimer();  // Updates UI timer display
+}, 2000 + Math.random() * 56000);
+```
+
+**Problems**:
+1. `simulateActivity()` doesn't trigger OS-level activity events
+2. Teams/Slack presence based on actual input events, not app simulation
+3. Wake lock + no activity = "away" status in professional tools
+
+**Potential Solutions**:
+- **Option A**: Periodic fake mouse move (undesirable, may violate terms)
+- **Option B**: User education - "Screen will stay on, but you'll appear away"
+- **Option C**: Configurable presence simulation (opt-in)
+- **Option D**: Integration with OS presence APIs (if available)
+
+**Current Fix**: 
+- Added UI warning when wake lock is enabled to inform users about presence impact
+- Enhanced activity simulation: dispatch events to document.body instead of window
+- Added rare safe keyboard events (Shift key) to potentially trigger presence detection
+
+**Recommendation**: Monitor if enhanced activity simulation resolves presence detection issues.
+
+---
+
 ## Recommendations
 
 ### Immediate Fixes (HIGH)
@@ -591,8 +637,9 @@ router.get('/events', async (request, env) => {
 7. Implement offline sync queue UI
 8. Add network state change listeners
 9. Validate domain on Slack webhook URL
+10. **Add wake lock presence impact warning**
 
 ### Long-term Enhancements (LOW)
-10. Implement dead letter queue pattern
-11. Add distributed tracing for sync operations
-12. Build comprehensive error telemetry
+11. Implement dead letter queue pattern
+12. Add distributed tracing for sync operations
+13. Build comprehensive error telemetry
