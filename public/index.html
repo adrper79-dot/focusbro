@@ -1589,6 +1589,176 @@
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- MEDITATION MODAL - GUIDED RELAXATION SESSIONS -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="grounding-modal" id="meditationModal" style="display:none;">
+  <div class="grounding-content">
+    <div class="grounding-header">
+      <h2>🧘 Guided Meditation</h2>
+      <p>Find your center with focused breathing and mindfulness.</p>
+    </div>
+    <div class="grounding-items">
+      <div class="grounding-item" onclick="startMeditation('bodyscan')">
+        <span class="grounding-number">10</span>
+        <span class="grounding-text">Body Scan</span>
+        <div style="font-size:11px;color:var(--text-muted);">Progressive relaxation scan</div>
+      </div>
+      <div class="grounding-item" onclick="startMeditation('mindfulness')">
+        <span class="grounding-number">15</span>
+        <span class="grounding-text">Mindfulness</span>
+        <div style="font-size:11px;color:var(--text-muted);">Present moment awareness</div>
+      </div>
+      <div class="grounding-item" onclick="startMeditation('loving-kindness')">
+        <span class="grounding-number">12</span>
+        <span class="grounding-text">Loving Kindness</span>
+        <div style="font-size:11px;color:var(--text-muted);">Cultivate compassion</div>
+      </div>
+      <div class="grounding-item" onclick="startMeditation('body-scan')">
+        <span class="grounding-number">10</span>
+        <span class="grounding-text">Rapid Reset</span>
+        <div style="font-size:11px;color:var(--text-muted);">Quick 10-minute reset</div>
+      </div>
+    </div>
+    <div id="meditationPlayer" style="display:none;margin-top:20px;">
+      <div style="text-align:center;margin-bottom:20px;">
+        <div id="meditationTitle" style="font-size:16px;font-weight:600;margin-bottom:10px;">Meditation in Progress</div>
+        <div style="font-family:var(--mono);font-size:32px;color:var(--accent);margin-bottom:20px;" id="meditationTime">10:00</div>
+        <button class="btn btn-accent" onclick="stopMeditation()" style="width:100%;">Complete Meditation</button>
+      </div>
+    </div>
+    <button class="btn" style="width: 100%; margin-top: 16px;" onclick="closeMeditationModal()">Back</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- MOVEMENT + EXERCISE MODAL -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="grounding-modal" id="movementModal" style="display:none;">
+  <div class="grounding-content">
+    <div class="grounding-header">
+      <h2>🏃 Movement Break</h2>
+      <p>Energize your body and reset your dopamine.</p>
+    </div>
+    <div class="grounding-items">
+      <div class="grounding-item" onclick="startExercise('stretch')">
+        <span class="grounding-number">5</span>
+        <span class="grounding-text">Quick Stretch</span>
+        <div style="font-size:11px;color:var(--text-muted);">Neck, shoulders, wrists</div>
+      </div>
+      <div class="grounding-item" onclick="startExercise('jumping-jacks')">
+        <span class="grounding-number">2</span>
+        <span class="grounding-text">Jumping Jacks</span>
+        <div style="font-size:11px;color:var(--text-muted);">30 seconds cardio burst</div>
+      </div>
+      <div class="grounding-item" onclick="startExercise('walk')">
+        <span class="grounding-number">10</span>
+        <span class="grounding-text">Walk Around</span>
+        <div style="font-size:11px;color:var(--text-muted);">Change of scenery</div>
+      </div>
+      <div class="grounding-item" onclick="startExercise('yoga')">
+        <span class="grounding-number">5</span>
+        <span class="grounding-text">Mini Yoga</span>
+        <div style="font-size:11px;color:var(--text-muted);">Simple poses & breathing</div>
+      </div>
+    </div>
+    <button class="btn" style="width: 100%; margin-top: 16px;" onclick="closeMovementModal()">Done! 🙌</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SLEEP TRACKER MODAL -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="grounding-modal" id="sleepModal" style="display:none;">
+  <div class="grounding-content">
+    <div class="grounding-header">
+      <h2>😴 Sleep Tracker</h2>
+      <p>Monitor your sleep quality for focus insights.</p>
+    </div>
+    <div style="margin:20px 0;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Last Night's Sleep</div>
+      <div class="task-input-row">
+        <input type="number" id="sleepHours" min="0" max="12" placeholder="Hours" style="flex:1;"/>
+        <input type="number" id="sleepQuality" min="1" max="10" placeholder="Quality (1-10)" style="flex:1;"/>
+        <button class="btn btn-accent" onclick="logSleep()" style="flex:0;">Log</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">Sleep affects focus, mood, and ADHD symptoms dramatically.</div>
+    </div>
+    <div style="margin-top:20px;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Sleep Recommendations</div>
+      <ul style="font-size:12px;color:var(--text-muted);line-height:1.8;list-style:none;">
+        <li>✓ Aim for 7-9 hours (ADHD brains need more)</li>
+        <li>✓ Consistent bedtime (even on weekends)</li>
+        <li>✓ No screens 1 hour before bed</li>
+        <li>✓ Dark, cool room (65–68°F)</li>
+        <li>✓ Morning sunlight (30 min window)</li>
+      </ul>
+    </div>
+    <button class="btn" style="width: 100%; margin-top: 16px;" onclick="closeSleepModal()">Back</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- BODY SCAN MEDITATION MODAL -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="grounding-modal" id="bodyScanModal" style="display:none;">
+  <div class="grounding-content">
+    <div class="grounding-header">
+      <h2>🔍 Body Scan Meditation</h2>
+      <p>Systematic relaxation through body awareness.</p>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.6;">
+      Lie down or sit comfortably. Close your eyes. Allow attention to move slowly from your toes up through each body part. Notice sensations without judgment.
+    </div>
+    <div id="bodyScanProgress" style="margin:20px 0;">
+      <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:8px;" id="bodyScanCurrent">Toes: Notice sensations…</div>
+      <div style="width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+        <div id="bodyScanBar" style="width:0%;height:100%;background:var(--accent);transition:width 0.5s;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:8px;text-align:right;" id="bodyScanTime">0:00 / 10:00</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn" style="flex:1;" id="bodyScanStartBtn" onclick="startBodyScanMeditation()">Start</button>
+      <button class="btn" onclick="closeBodyScanModal()" style="flex:1;">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SOCIAL/ACCOUNTABILITY MODAL -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div class="grounding-modal" id="socialModal" style="display:none;">
+  <div class="grounding-content">
+    <div class="grounding-header">
+      <h2>👥 Accountability Partner</h2>
+      <p>Track sessions and stay accountable.</p>
+    </div>
+    <div style="margin:20px 0;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;">Today's Goals</div>
+      <div id="socialGoals" style="display:flex;flex-direction:column;gap:8px;">
+        <div style="background:var(--bg);padding:10px;border-radius:8px;border-left:3px solid var(--accent);">
+          <div style="font-size:12px;font-weight:500;">🍅 Pomodoros: <span id="socialPomos">0</span> / 8</div>
+        </div>
+        <div style="background:var(--bg);padding:10px;border-radius:8px;border-left:3px solid var(--primary);">
+          <div style="font-size:12px;font-weight:500;">✅ Tasks: <span id="socialTasks">0</span> / 3</div>
+        </div>
+        <div style="background:var(--bg);padding:10px;border-radius:8px;border-left:3px solid var(--purple);">
+          <div style="font-size:12px;font-weight:500;">🎯 Intention: <span id="socialIntention" style="color:var(--text-muted);">Not set</span></div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px;background:var(--bg-card-hover);padding:16px;border-radius:12px;">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Sharing Options</div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.8;">
+        📱 Take a screenshot of your stats<br/>
+        📊 Share your streak with accountability partners<br/>
+        💬 Tweet your focus wins with #FocusBro
+      </div>
+    </div>
+    <button class="btn" style="width: 100%; margin-top: 16px;" onclick="closeSocialModal()">Back</button>
+  </div>
+</div>
+
 <!-- Hidden activity canvas — drives continuous rAF rendering loop -->
 <canvas id="activityCanvas" width="20" height="20" style="position:fixed;bottom:0;right:0;opacity:0;pointer-events:none;width:1px;height:1px;"></canvas>
 
@@ -2881,7 +3051,237 @@ document.addEventListener('DOMContentLoaded', () => {
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
   }
+
+  // Initialize new meditation/movement features
+  updateSocialGoals();
 });
+
+// ══════════════════════════════════════
+// MEDITATION & MINDFULNESS
+// ══════════════════════════════════════
+let meditationTimer = null;
+let meditationDuration = 0;
+let meditationElapsed = 0;
+
+function startMeditation(type) {
+  const durations = { bodyscan: 600, mindfulness: 900, 'loving-kindness': 720, 'body-scan': 600 };
+  meditationDuration = durations[type] || 600;
+  meditationElapsed = 0;
+  
+  const titles = { bodyscan: 'Body Scan', mindfulness: 'Mindfulness Meditation', 'loving-kindness': 'Loving Kindness', 'body-scan': 'Body Scan' };
+  document.getElementById('meditationTitle').textContent = titles[type];
+  document.getElementById('meditationPlayer').style.display = 'block';
+  
+  // Play ambient audio if available
+  playAmbientAudio('forest');
+  
+  meditationTimer = setInterval(() => {
+    meditationElapsed++;
+    const m = Math.floor((meditationDuration - meditationElapsed) / 60);
+    const s = (meditationDuration - meditationElapsed) % 60;
+    document.getElementById('meditationTime').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    
+    if (meditationElapsed >= meditationDuration) {
+      stopMeditation();
+    }
+  }, 1000);
+}
+
+function stopMeditation() {
+  clearInterval(meditationTimer);
+  stopAmbientAudio('forest');
+  localStorage.setItem('fb_meditation_complete', new Date().toISOString());
+  showToast(`✨ Meditation complete! You focused on the present moment.`, 'success');
+  document.getElementById('meditationPlayer').style.display = 'none';
+  closeMeditationModal();
+}
+
+function closeMeditationModal() {
+  document.getElementById('meditationModal').style.display = 'none';
+}
+
+// ══════════════════════════════════════
+// MOVEMENT & EXERCISE
+// ══════════════════════════════════════
+function startExercise(type) {
+  const exercises = {
+    stretch: { name: 'Quick Stretch', duration: 300, instructions: 'Roll your neck slowly, shrug shoulders 10x, stretch arms overhead.' },
+    'jumping-jacks': { name: 'Jumping Jacks', duration: 120, instructions: 'Do as many jumping jacks as you can in 2 minutes. Feel the energy!' },
+    walk: { name: 'Walk Around', duration: 600, instructions: 'Walk around your space. Get some water. Look out a window. Change your perspective.' },
+    yoga: { name: 'Mini Yoga', duration: 300, instructions: 'Child pose (30s), cat/cow (30s), forward fold (30s), standing stretch (30s).' }
+  };
+  
+  const ex = exercises[type];
+  showToast(`${ex.name}: ${ex.instructions}`, 'info');
+  
+  setTimeout(() => {
+    showToast(`✅ ${ex.name} complete! You\'ve re-energized your body.`, 'success');
+  }, ex.duration * 1000);
+}
+
+function closeMovementModal() {
+  document.getElementById('movementModal').style.display = 'none';
+}
+
+// ══════════════════════════════════════
+// SLEEP TRACKER
+// ══════════════════════════════════════
+let sleepLog = JSON.parse(localStorage.getItem('fb_sleep') || '[]');
+
+function logSleep() {
+  const hours = parseFloat(document.getElementById('sleepHours').value);
+  const quality = parseInt(document.getElementById('sleepQuality').value);
+  
+  if (!hours || !quality || quality < 1 || quality > 10) {
+    showToast('Please enter valid sleep data', 'warning');
+    return;
+  }
+  
+  sleepLog.push({ date: new Date().toDateString(), hours, quality });
+  localStorage.setItem('fb_sleep', JSON.stringify(sleepLog));
+  
+  showToast(`✨ Logged ${hours}h sleep (Quality: ${quality}/10). Sleep drives focus!`, 'success');
+  document.getElementById('sleepHours').value = '';
+  document.getElementById('sleepQuality').value = '';
+}
+
+function closeSleepModal() {
+  document.getElementById('sleepModal').style.display = 'none';
+}
+
+// ══════════════════════════════════════
+// BODY SCAN MEDITATION
+// ══════════════════════════════════════
+let bodyScanTimer = null;
+let bodyScanElapsed = 0;
+const bodyParts = ['Toes', 'Feet', 'Ankles', 'Calves', 'Knees', 'Thighs', 'Hips', 'Lower Back', 'Abdomen', 'Chest', 'Upper Back', 'Shoulders', 'Arms', 'Hands', 'Neck', 'Face', 'Head', 'Entire Body'];
+let bodyScanIndex = 0;
+
+function startBodyScanMeditation() {
+  bodyScanElapsed = 0;
+  bodyScanIndex = 0;
+  const totalTime = 600; // 10 minutes
+  const timePerPart = totalTime / bodyParts.length;
+  
+  playAmbientAudio('rain');
+  
+  bodyScanTimer = setInterval(() => {
+    bodyScanElapsed++;
+    bodyScanIndex = Math.min(Math.floor(bodyScanElapsed / timePerPart), bodyParts.length - 1);
+    
+    document.getElementById('bodyScanCurrent').textContent = `${bodyParts[bodyScanIndex]}: Notice any tension...`;
+    const progress = (bodyScanElapsed / totalTime) * 100;
+    document.getElementById('bodyScanBar').style.width = progress + '%';
+    
+    const m = Math.floor(bodyScanElapsed / 60);
+    const s = bodyScanElapsed % 60;
+    document.getElementById('bodyScanTime').textContent = `${m}:${String(s).padStart(2,'0')} / 10:00`;
+    
+    if (bodyScanElapsed >= totalTime) {
+      clearInterval(bodyScanTimer);
+      stopAmbientAudio('rain');
+      showToast( '✨ Body Scan complete! You\'ve released tension throughout your body.', 'success');
+      closeBodyScanModal();
+    }
+  }, 1000);
+  
+  document.getElementById('bodyScanStartBtn').textContent = 'Pause';
+}
+
+function closeBodyScanModal() {
+  if (bodyScanTimer) clearInterval(bodyScanTimer);
+  document.getElementById('bodyScanModal').style.display = 'none';
+}
+
+// ══════════════════════════════════════
+// SOCIAL/ACCOUNTABILITY
+// ══════════════════════════════════════
+function updateSocialGoals() {
+  document.getElementById('socialPomos').textContent = pomoState.completed;
+  document.getElementById('socialTasks').textContent = tasks.filter(t => t.done).length;
+  const intention = localStorage.getItem('fb_intention') || 'Not set';
+  document.getElementById('socialIntention').textContent = intention;
+}
+
+function closeSocialModal() {
+  document.getElementById('socialModal').style.display = 'none';
+}
+
+// ══════════════════════════════════════
+// AUDIO PLAYBACK HELPERS
+// ══════════════════════════════════════
+let ambientAudioPlayers = {};
+
+function playAmbientAudio(type) {
+  try {
+    if (ambientAudioPlayers[type]) {
+      ambientAudioPlayers[type].play().catch(e => console.warn('Audio play failed:', e));
+    } else {
+      // Fallback: try to load from /audio directory
+      const audio = new Audio(`/audio/${type}.mp3`);
+      audio.loop = true;
+      audio.volume = 0.3;
+      audio.play().catch(e => console.warn('Could not play audio:', e.message));
+      ambientAudioPlayers[type] = audio;
+    }
+  } catch(e) {
+    console.warn('Ambient audio setup failed:', e.message);
+  }
+}
+
+function stopAmbientAudio(type) {
+  try {
+    if (ambientAudioPlayers[type]) {
+      ambientAudioPlayers[type].pause();
+      ambientAudioPlayers[type].currentTime = 0;
+    }
+  } catch(e) {
+    console.warn('Failed to stop audio:', e.message);
+  }
+}
+
+// ══════════════════════════════════════
+// TOAST NOTIFICATIONS
+// ══════════════════════════════════════
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: ${type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : '#0ea5e9'};
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 10000;
+    animation: slideIn 0.3s ease;
+    max-width: 400px;
+    word-wrap: break-word;
+    font-size: 14px;
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Add animations
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideIn {
+    from { transform: translateX(400px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(400px); opacity: 0; }
+  }
+`;
+document.head.appendChild(style);
 </script>
 
 </body>
