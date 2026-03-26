@@ -44,14 +44,20 @@ jobs:
     - name: Check deployment secret
       if: failure()
       run: |
-        echo "❌ Deployment failed!"
-        echo "CLOUDFLARE_API_TOKEN secret status: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}"
+        echo "❌ Deployment failed - CLOUDFLARE_API_TOKEN secret is not set"
         echo ""
-        echo "If secret is not set, add it in GitHub:"
+        echo "📋 To fix this:"
         echo "1. Go to: https://github.com/adrper79-dot/focusbro/settings/secrets/actions"
-        echo "2. Create new secret: CLOUDFLARE_API_TOKEN"
-        echo "3. Get token from: https://dash.cloudflare.com/profile/api-tokens"
-        echo "4. Required permission: Edit Cloudflare Workers"
+        echo "2. Verify that a secret named 'CLOUDFLARE_API_TOKEN' exists"
+        echo "3. If it doesn't exist, create it:"
+        echo "   - Name: CLOUDFLARE_API_TOKEN"
+        echo "   - Value: <your Cloudflare API token>"
+        echo ""
+        echo "4. Get your Cloudflare API token from:"
+        echo "   - https://dash.cloudflare.com/profile/api-tokens"
+        echo "   - Click 'Create Token' → 'Edit Cloudflare Workers'"
+        echo ""
+        echo "Current secret names available: (if any would be listed here...)"
         exit 1
     
     - name: Log deployment status
