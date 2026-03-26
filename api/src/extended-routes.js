@@ -1830,10 +1830,10 @@ router.post('/billing/webhook', async (request, env) => {
   }
 });
 
-// ── GET /gallery - Motivational Image Gallery (1000+ work-safe images) ──
+// ── GET /api/gallery - Motivational Image Gallery (1000+ work-safe images) ──
 // Returns 10 random images seeded by user ID for consistency
 // Categories: focus, adhd, energy, growth, brain, nature, motivation
-router.get('/gallery', async (request, env) => {
+router.get('/api/gallery', async (request, env) => {
   try {
     const url = new URL(request.url);
     const seed = url.searchParams.get('seed') || Math.random().toString();

@@ -1384,6 +1384,34 @@ router.get('/debug-api', async (request, env) => {
   });
 });
 
+// ── ICON-192.PNG ──
+router.get('/icon-192.png', async (request, env) => {
+  // Serve SVG icon as PNG (browsers handle content-type appropriately)
+  const svgIcon = `<svg width="192" height="192" xmlns="http://www.w3.org/2000/svg">
+    <rect width="192" height="192" fill="#6366f1" rx="24"/>
+    <text x="96" y="110" font-family="Arial, sans-serif" font-size="72" font-weight="bold" text-anchor="middle" fill="white">FB</text>
+  </svg>`;
+  
+  return new Response(svgIcon, {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' }
+  });
+});
+
+// ── ICON-512.PNG ──
+router.get('/icon-512.png', async (request, env) => {
+  // Serve larger SVG icon
+  const svgIcon = `<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+    <rect width="512" height="512" fill="#6366f1" rx="64"/>
+    <text x="256" y="295" font-family="Arial, sans-serif" font-size="192" font-weight="bold" text-anchor="middle" fill="white">FB</text>
+  </svg>`;
+  
+  return new Response(svgIcon, {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'image/svg+xml', 'Cache-Control': 'public, max-age=86400' }
+  });
+});
+
 // ── ROOT PAGE (Serve HTML) ──
 router.get('/', async (request, env) => {
   return new Response(htmlContent, {
