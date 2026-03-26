@@ -38,13 +38,13 @@ jobs:
         # Try multiple possible secret names
         if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
           echo "✅ Using CLOUDFLARE_API_TOKEN"
-          export CF_API_TOKEN="$CLOUDFLARE_API_TOKEN"
+          export CLOUDFLARE_API_TOKEN="$CLOUDFLARE_API_TOKEN"
         elif [ -n "$CLOUDFLARE_API" ]; then
-          echo "✅ Using CLOUDFLARE_API"
-          export CF_API_TOKEN="$CLOUDFLARE_API"
+          echo "✅ Using CLOUDFLARE_API (mapping to CLOUDFLARE_API_TOKEN)"
+          export CLOUDFLARE_API_TOKEN="$CLOUDFLARE_API"
         elif [ -n "$CF_API_TOKEN" ]; then
-          echo "✅ Using CF_API_TOKEN"
-          export CF_API_TOKEN="$CF_API_TOKEN"
+          echo "✅ Using CF_API_TOKEN (mapping to CLOUDFLARE_API_TOKEN)"
+          export CLOUDFLARE_API_TOKEN="$CF_API_TOKEN"
         else
           echo "❌ No Cloudflare API token found in any expected secret name"
           echo "Expected secret names: CLOUDFLARE_API_TOKEN, CLOUDFLARE_API, or CF_API_TOKEN"
