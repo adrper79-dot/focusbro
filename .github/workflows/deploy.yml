@@ -91,9 +91,35 @@ jobs:
     
     - name: Purge Cloudflare Cache
       run: |
-        echo "🧹 Cache purge temporarily disabled - manual purge required"
-        echo "After deployment succeeds, manually purge cache at:"
-        echo "https://dash.cloudflare.com → focusbro.net → Caching → Purge Everything"
+        # Determine which API token to use
+        API_TOKEN="${CLOUDFLARE_API_TOKEN:-${CLOUDFLARE_API:-${CF_API_TOKEN}}}"
+        
+        if [ -z "$API_TOKEN" ]; then
+          echo "❌ No Cloudflare API token found"
+          exit 1
+        fi
+        
+        ZONE_ID="62cd855349c37acba7c11db6fe2025cc"
+        echo "🧹 Purging Cloudflare cache for zone: $ZONE_ID"
+        
+        RESPONSE=$(curl -s -X POST \
+          "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/purge_cache" \
+          -H "Authorization: Bearer $API_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"purge_everything":true}')
+        
+        echo "✅ Cache purge response:"
+        echo "$RESPONSE" | jq .
+        
+        # Check if purge was successful
+        SUCCESS=$(echo "$RESPONSE" | jq -r '.success // false')
+        if [ "$SUCCESS" == "true" ]; then
+          echo "✅ Cache purge completed successfully!"
+        else
+          ERROR=$(echo "$RESPONSE" | jq -r '.errors[0].message // "Unknown error"')
+          echo "⚠️ Cache purge failed: $ERROR"
+          exit 1
+        fi
       env:
         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         CLOUDFLARE_API: ${{ secrets.CLOUDFLARE_API }}
