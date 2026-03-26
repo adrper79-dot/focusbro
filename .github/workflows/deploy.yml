@@ -52,10 +52,22 @@ jobs:
           exit 1
         fi
         
+        echo "� Testing CLOUDFLARE_API_TOKEN..."
+        curl -s "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+          -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+          -H "Content-Type: application/json" | jq -r '.result.status // "INVALID"'
+        
+        echo "🔍 Checking account access..."
+        curl -s "https://api.cloudflare.com/client/v4/accounts" \
+          -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+          -H "Content-Type: application/json" | jq -r '.result[]?.id // "NO_ACCOUNTS"'
+        
         echo "🚀 Starting deployment..."
         npx wrangler deploy --env production 2>&1 | tee deploy.log
+        DEPLOY_EXIT=$?
         echo "📋 Deployment log:"
         cat deploy.log
+        exit $DEPLOY_EXIT
       env:
         CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         CLOUDFLARE_API: ${{ secrets.CLOUDFLARE_API }}
