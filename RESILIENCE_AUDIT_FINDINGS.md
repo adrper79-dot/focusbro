@@ -1,4 +1,5 @@
-# FocusBro Resilience & Error Handling Audit
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "https://api.cloudflare.com/client/v4/user/tokens/verify"# FocusBro Resilience & Error Handling Audit
 
 **Date**: March 25, 2026  
 **Scope**: Missing error boundaries, incomplete sync handlers, token refresh, offline detection, error recovery, unvalidated responses
