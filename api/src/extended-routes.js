@@ -1763,7 +1763,7 @@ router.post('/billing/webhook', async (request, env) => {
     }
 
     // Log event type only (no sensitive customer data)
-    if (process.env.DEBUG === '1') {
+    if (env.DEBUG === '1') {
       console.log('Webhook verified - Event type:', event.type);
     }
 
@@ -1793,7 +1793,7 @@ router.post('/billing/webhook', async (request, env) => {
         )
       `).bind(plan, customer).run();
 
-      if (process.env.DEBUG === '1') {
+      if (env.DEBUG === '1') {
         console.log('Webhook: Subscription updated');
       }
     }
@@ -1817,7 +1817,7 @@ router.post('/billing/webhook', async (request, env) => {
         )
       `).bind(customer).run();
 
-      if (process.env.DEBUG === '1') {
+      if (env.DEBUG === '1') {
         console.log('Webhook: Subscription canceled');
       }
     }

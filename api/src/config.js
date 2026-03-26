@@ -141,7 +141,7 @@ export const config = {
   // ── Logging ──
   logging: {
     // Enable debug logging (set via DEBUG env var in production)
-    debug: process.env.DEBUG === 'true' || false,
+    debug: false, // Will be overridden at runtime from env.DEBUG
     // Log sensitive data (NEVER in production)
     logSensitiveData: false,
   }

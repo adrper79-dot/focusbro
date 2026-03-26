@@ -32,3 +32,99 @@ const groundingHTML = `
 `;
 
 export default groundingHTML;
+
+// Render grounding view
+export function renderGroundingView() {
+  return groundingHTML;
+}
+
+// Initialize grounding view
+export function initGroundingView() {
+  console.log('🔥 initGroundingView called');
+  
+  // Check if elements exist immediately
+  const checkElements = () => {
+    console.log('🔍 Checking for grounding elements...');
+    const groundingSee = document.getElementById('groundingSee');
+    console.log('groundingSee element:', groundingSee);
+    
+    if (groundingSee) {
+      console.log('✅ Elements found, initializing grounding sections...');
+      // Initialize each grounding section
+      initGroundingSection('groundingSee', 5);
+      initGroundingSection('groundingTouch', 4);
+      initGroundingSection('groundingHear', 3);
+      initGroundingSection('groundingSmell', 2);
+      initGroundingSection('groundingTaste', 1);
+      console.log('🎉 Grounding view initialized successfully');
+    } else {
+      console.log('❌ Elements not found, retrying in 50ms...');
+      // Retry after a short delay
+      setTimeout(checkElements, 50);
+    }
+  };
+  
+  checkElements();
+}
+
+// Initialize a grounding section with the specified number of items
+function initGroundingSection(sectionId, count) {
+  console.log(`Initializing grounding section ${sectionId} with ${count} items`);
+  const section = document.getElementById(sectionId);
+  if (!section) {
+    console.error(`Grounding section ${sectionId} not found`);
+    return;
+  }
+
+  // Clear existing content
+  section.innerHTML = '';
+
+  // Create clickable items
+  for (let i = 1; i <= count; i++) {
+    const item = document.createElement('div');
+    item.className = 'grounding-item';
+    item.innerHTML = `
+      <div class="grounding-number">${i}</div>
+      <div class="grounding-label">Click when noticed</div>
+    `;
+    item.onclick = () => completeGroundingItem(item, sectionId);
+    section.appendChild(item);
+  }
+  
+  console.log(`Created ${count} items for ${sectionId}`);
+}
+
+// Handle clicking a grounding item
+function completeGroundingItem(item, sectionId) {
+  item.classList.add('completed');
+  item.onclick = null; // Remove click handler
+  item.innerHTML = `
+    <div class="grounding-number">✓</div>
+    <div class="grounding-label">Completed</div>
+  `;
+
+  // Check if all items are completed
+  checkGroundingComplete();
+}
+
+// Check if the entire grounding exercise is complete
+function checkGroundingComplete() {
+  const sections = ['groundingSee', 'groundingTouch', 'groundingHear', 'groundingSmell', 'groundingTaste'];
+  const expectedCounts = [5, 4, 3, 2, 1];
+
+  for (let i = 0; i < sections.length; i++) {
+    const section = document.getElementById(sections[i]);
+    const completedItems = section.querySelectorAll('.grounding-item.completed');
+    if (completedItems.length !== expectedCounts[i]) {
+      return; // Not complete yet
+    }
+  }
+
+  // All sections complete - show success message
+  const completeDiv = document.getElementById('groundingComplete');
+  if (completeDiv) {
+    completeDiv.style.display = 'block';
+    // Log completion
+    logEvent('grounding_complete', '5-4-3-2-1', 0, { exercise: 'grounding' });
+  }
+}

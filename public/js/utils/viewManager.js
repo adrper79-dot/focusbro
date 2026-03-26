@@ -153,10 +153,18 @@ function initBreathing() {
 }
 
 function initGrounding() {
+  console.log('🚀 initGrounding called from viewManager');
+  // Import is already done in app.js, call directly
   import('../components/views/grounding.js').then(module => {
+    console.log('📦 Grounding module loaded:', Object.keys(module));
     if (module.initGroundingView) {
+      console.log('🎯 Calling initGroundingView');
       module.initGroundingView();
+    } else {
+      console.error('❌ initGroundingView not found in module');
     }
+  }).catch(err => {
+    console.error('💥 Failed to load grounding module:', err);
   });
 }
 
