@@ -1409,9 +1409,209 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: rgba(61, 79, 138, 0.5); border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: rgba(61, 79, 138, 0.8); }
+
+  /* ── APP SHELL NAV ── */
+  .app-nav {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 60px;
+    background: rgba(6, 9, 26, 0.97);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0 10px;
+    gap: 2px;
+    z-index: 200;
+    backdrop-filter: blur(20px);
+  }
+  .app-nav .logo-icon {
+    width: 36px; height: 36px;
+    font-size: 18px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--primary), var(--teal));
+    box-shadow: 0 4px 12px var(--primary-glow);
+    flex-shrink: 0;
+  }
+  .app-nav .nav-divider {
+    width: 30px; height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+    flex-shrink: 0;
+  }
+  .nav-item {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    color: var(--text-muted);
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .nav-item:hover { background: rgba(61, 79, 138, 0.35); color: var(--text); }
+  .nav-item.active { background: var(--primary-dim); color: var(--primary); }
+  .nav-item .nav-label {
+    position: absolute;
+    left: 52px;
+    background: var(--bg-card);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border-light);
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: opacity 0.15s, transform 0.15s;
+    z-index: 300;
+    box-shadow: var(--shadow);
+  }
+  .nav-item:hover .nav-label { opacity: 1; transform: translateX(0); }
+
+  /* App shell content offset */
+  .app-shell { margin-left: 60px; }
+
+  /* ── VIEW SYSTEM ── */
+  body[data-view="focus"] .sidebar { display: none !important; }
+  body[data-view="focus"] .dashboard { grid-template-columns: 1fr !important; max-width: 860px; }
+  body[data-view="stats"] .main-area { display: none !important; }
+  body[data-view="stats"] .dashboard { grid-template-columns: 1fr !important; }
+  body[data-view="stats"] .sidebar { max-width: 640px; margin: 0 auto; display: flex !important; }
+  /* Hide elements not in current view */
+  body[data-view="focus"]  [data-views]:not([data-views*="focus"])  { display: none !important; }
+  body[data-view="rest"]   [data-views]:not([data-views*="rest"])   { display: none !important; }
+  body[data-view="stats"]  [data-views]:not([data-views*="stats"])  { display: none !important; }
+  /* Rest view: clean up main-area empty top rows */
+  body[data-view="rest"] .top-row:empty { display: none; }
+
+  /* ── COMMAND PALETTE ── */
+  .cmd-palette {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 14vh;
+  }
+  .cmd-palette.open { display: flex; }
+  .cmd-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(8px);
+  }
+  .cmd-box {
+    position: relative;
+    width: 560px;
+    max-width: calc(100vw - 40px);
+    background: linear-gradient(135deg, rgba(20, 29, 63, 0.98), rgba(14, 19, 45, 0.98));
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.6);
+    animation: cmdIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes cmdIn {
+    from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .cmd-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cmd-input-icon { font-size: 16px; color: var(--text-muted); flex-shrink: 0; }
+  .cmd-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    font-family: var(--font);
+    font-size: 16px;
+    color: var(--text);
+    letter-spacing: 0.2px;
+  }
+  .cmd-input::placeholder { color: var(--text-dim); }
+  .cmd-list {
+    list-style: none;
+    max-height: 360px;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .cmd-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .cmd-item:hover, .cmd-item.selected { background: var(--primary-dim); }
+  .cmd-item.selected { background: rgba(14, 165, 233, 0.18); }
+  .cmd-icon { font-size: 18px; width: 26px; text-align: center; flex-shrink: 0; }
+  .cmd-info { flex: 1; min-width: 0; }
+  .cmd-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .cmd-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+  .cmd-kbd {
+    font-family: var(--mono); font-size: 10px; color: var(--text-dim);
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 4px; padding: 2px 5px; flex-shrink: 0;
+  }
+  .cmd-empty { padding: 32px; text-align: center; color: var(--text-muted); font-size: 13px; }
+  .cmd-section-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-dim); padding: 8px 12px 4px; pointer-events: none;
+  }
+  .cmd-footer {
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    gap: 16px;
+  }
 </style>
 </head>
 <body>
+
+<!-- APP NAV -->
+<nav class="app-nav" role="navigation" aria-label="Main navigation">
+  <div class="logo-icon">🧠</div>
+  <div class="nav-divider"></div>
+  <button class="nav-item active" id="navHome" data-view="home" onclick="setView('home')" aria-label="Dashboard">
+    🏠<span class="nav-label">Dashboard</span>
+  </button>
+  <button class="nav-item" id="navFocus" data-view="focus" onclick="setView('focus')" aria-label="Focus mode">
+    ⚡<span class="nav-label">Focus</span>
+  </button>
+  <button class="nav-item" id="navRest" data-view="rest" onclick="setView('rest')" aria-label="Restore mode">
+    🌿<span class="nav-label">Restore</span>
+  </button>
+  <button class="nav-item" id="navStats" data-view="stats" onclick="setView('stats')" aria-label="Stats & insights">
+    📊<span class="nav-label">Stats</span>
+  </button>
+  <div class="nav-divider"></div>
+  <button class="nav-item" onclick="openCmdPalette()" aria-label="Command palette (Ctrl+K)">
+    ⌘<span class="nav-label">Search  ⌃K</span>
+  </button>
+</nav>
+
+<!-- APP SHELL -->
+<div class="app-shell">
+
   <!-- Floating ambient particles -->
   <div class="particles-bg" id="particlesBg"></div>
 
@@ -1442,7 +1642,7 @@
 </header>
 
 <!-- INTENTION BANNER -->
-<div class="intention-banner" id="intentionBanner">
+<div class="intention-banner" id="intentionBanner" data-views="home,focus">
   <span class="intention-label">🎯 One Thing</span>
   <input class="intention-input" id="intentionInput" type="text" maxlength="120"
     placeholder="What is the ONE thing you're working on right now?"
@@ -1451,7 +1651,7 @@
 </div>
 
 <!-- TIME BLINDNESS BAR -->
-<div class="time-bar-wrap" id="timeBarWrap">
+<div class="time-bar-wrap" id="timeBarWrap" data-views="home,focus">
   <span id="timeBarStart">9 AM</span>
   <div class="time-bar"><div class="time-bar-fill" id="timeBarFill" style="width:0%"></div></div>
   <span id="timeBarEnd">5 PM</span>
@@ -1459,7 +1659,7 @@
 </div>
 
 <!-- TOP AD SLOT (Leaderboard 728x90) -->
-<div class="ad-slot" id="ad-top">
+<div class="ad-slot" id="ad-top" data-views="home">
   <!-- Ad Slot: Top Leaderboard -->
   <ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-7015938501859914" data-ad-slot="XXXXXXXXXX"></ins>
   <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
@@ -1473,7 +1673,7 @@
     <div class="zen-focus-display" id="zenFocusDisplay">Focusing on: <span id="zenFocusText">—</span></div>
 
     <!-- KEEP AWAKE HERO -->
-    <div class="card keep-awake" id="keepAwakeCard">
+    <div class="card keep-awake" id="keepAwakeCard" data-views="home,focus,rest">
       <div class="awake-ring" id="awakeRing" onclick="toggleWakeLock()" title="Click to activate">
         <span class="awake-icon" id="awakeIcon">😴</span>
       </div>
@@ -1499,7 +1699,7 @@
     </div>
 
     <!-- TOP ROW: POMODORO + MEETING COUNTDOWN -->
-    <div class="top-row">
+    <div class="top-row" data-views="home,focus">
       <div class="card" id="pomoCard">
         <div class="card-header">
           <div class="card-title"><span class="icon">🍅</span> Pomodoro Timer</div>
@@ -1537,7 +1737,7 @@
     </div>
 
     <!-- MIDDLE ROW: TASKS + NOTEPAD -->
-    <div class="top-row">
+    <div class="top-row" data-views="home,focus">
       <div class="card" id="taskCard">
         <div class="card-header">
           <div class="card-title"><span class="icon">✅</span> Tasks</div>
@@ -1570,7 +1770,7 @@
     </div>
 
     <!-- AMBIENT SOUNDS + BREAK REMINDER -->
-    <div class="top-row">
+    <div class="top-row" data-views="home,rest">
       <div class="card">
         <div class="card-header">
           <div class="card-title"><span class="icon">🎧</span> Ambient Sounds</div>
@@ -1624,7 +1824,7 @@
   <!-- SIDEBAR -->
   <div class="sidebar">
     <!-- FOCUS STATS -->
-    <div class="card">
+    <div class="card" data-views="home,stats">
       <div class="card-header">
         <div class="card-title"><span class="icon">📊</span> Today's Stats</div>
       </div>
@@ -1649,14 +1849,14 @@
     </div>
 
     <!-- SIDEBAR AD -->
-    <div class="ad-slot ad-slot-sidebar" id="ad-sidebar">
+    <div class="ad-slot ad-slot-sidebar" id="ad-sidebar" data-views="home">
       <ins class="adsbygoogle" style="display:block" data-ad-format="auto" data-full-width-responsive="true" data-ad-client="ca-pub-7015938501859914" data-ad-slot="XXXXXXXXXX"></ins>
       <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
       <span style="position:absolute;">Ad Space — 300×250</span>
     </div>
 
     <!-- ADHD TIP -->
-    <div class="card">
+    <div class="card" data-views="home,stats">
       <div class="card-header">
         <div class="card-title"><span class="icon">💡</span> Focus Tip</div>
       </div>
@@ -1668,7 +1868,7 @@
     </div>
 
     <!-- DISTRACTION PARKING LOT -->
-    <div class="card">
+    <div class="card" data-views="home">
       <div class="card-header">
         <div class="card-title"><span class="icon">🚗</span> Distraction Lot</div>
         <button class="btn btn-sm" onclick="openDistractionOverlay()" title="Shortcut: D">+ Capture</button>
@@ -1678,7 +1878,7 @@
     </div>
 
     <!-- BINAURAL BEATS + BREATHING -->
-    <div class="card">
+    <div class="card" data-views="home,rest">
       <div class="card-header">
         <div class="card-title"><span class="icon">🧠</span> Brainwave Tuning</div>
       </div>
@@ -1698,7 +1898,7 @@
     </div>
 
     <!-- ENERGY + MOOD TRACKER -->
-    <div class="card">
+    <div class="card" data-views="home,rest,stats">
       <div class="card-header">
         <div class="card-title"><span class="icon">⚡</span> Energy Tracker</div>
       </div>
@@ -1720,7 +1920,7 @@
     </div>
 
     <!-- FIDGET TOOLS -->
-    <div class="card">
+    <div class="card" data-views="home,rest">
       <div class="card-header">
         <div class="card-title"><span class="icon">🎮</span> Fidget Tools</div>
       </div>
@@ -1768,7 +1968,7 @@
     </div>
 
     <!-- MEDICATION REMINDER -->
-    <div class="card">
+    <div class="card" data-views="home">
       <div class="card-header">
         <div class="card-title"><span class="icon">💊</span> Med Reminder</div>
       </div>
@@ -1787,7 +1987,7 @@
     </div>
 
     <!-- MORE TOOLS QUICK ACCESS -->
-    <div class="card">
+    <div class="card" data-views="home,rest">
       <div class="card-header">
         <div class="card-title"><span class="icon">🧰</span> More Tools</div>
       </div>
@@ -1821,7 +2021,7 @@
     </div>
 
     <!-- KEYBOARD SHORTCUTS -->
-    <div class="card">
+    <div class="card" data-views="home">
       <div class="card-header">
         <div class="card-title"><span class="icon">⌨️</span> Quick Keys</div>
       </div>
@@ -2268,6 +2468,26 @@
 <!-- FOOTER -->
 <div class="footer">
   FocusBro — Built with 🧠 by <a href="#">The Factory</a> &nbsp;|&nbsp; Your data stays in your browser. Nothing is tracked.
+</div>
+
+</div><!-- /app-shell -->
+
+<!-- COMMAND PALETTE -->
+<div id="cmdPalette" class="cmd-palette" role="dialog" aria-modal="true" aria-label="Command palette">
+  <div class="cmd-backdrop" onclick="closeCmdPalette()"></div>
+  <div class="cmd-box">
+    <div class="cmd-input-wrap">
+      <span class="cmd-input-icon">🔍</span>
+      <input class="cmd-input" id="cmdInput" placeholder="Search tools, views, actions..."
+             autocomplete="off" oninput="filterCmds(this.value)" onkeydown="cmdKeyNav(event)" />
+    </div>
+    <ul class="cmd-list" id="cmdList"></ul>
+    <div class="cmd-footer">
+      <span>↑↓ navigate</span>
+      <span>↵ run</span>
+      <span>Esc close</span>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -3172,9 +3392,16 @@ function updateStreak(stats) {
 // KEYBOARD SHORTCUTS
 // ══════════════════════════════════════
 document.addEventListener('keydown', (e) => {
+  // Ctrl/Cmd+K — command palette
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    openCmdPalette();
+    return;
+  }
   // Allow Esc to close overlays even inside inputs
   if (e.key === 'Escape') {
     closeDistractionOverlay();
+    closeCmdPalette();
     return;
   }
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -4649,6 +4876,146 @@ window.addEventListener('offline', () => {
   showToast('You\'re offline — changes are saved locally.', 'warning');
 });
 document.addEventListener('DOMContentLoaded', updateOfflineUI);
+
+// ══════════════════════════════════════
+// APP NAV VIEW SYSTEM
+// ══════════════════════════════════════
+function setView(view) {
+  document.body.dataset.view = view;
+  document.querySelectorAll('.nav-item[data-view]').forEach(el => {
+    el.classList.toggle('active', el.dataset.view === view);
+  });
+  localStorage.setItem('fb_view', view);
+  // Scroll to top when switching views
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Restore saved view on load
+(function() {
+  const saved = localStorage.getItem('fb_view') || 'home';
+  if (saved !== 'home') {
+    document.body.dataset.view = saved;
+    document.querySelectorAll('.nav-item[data-view]').forEach(el => {
+      el.classList.toggle('active', el.dataset.view === saved);
+    });
+  }
+})();
+
+// ══════════════════════════════════════
+// COMMAND PALETTE
+// ══════════════════════════════════════
+const CMD_LIST = [
+  { icon:'🏠', name:'Dashboard',         desc:'All tools — full view',                                  action:()=>setView('home'),  keys:'home dashboard', group:'Views' },
+  { icon:'⚡', name:'Focus mode',         desc:'Pomodoro + Tasks only, no distractions',                action:()=>setView('focus'), keys:'focus mode pomodoro', group:'Views' },
+  { icon:'🌿', name:'Restore mode',       desc:'Sounds, breathing, fidgets, meditation',               action:()=>setView('rest'),  keys:'rest restore relax wellness', group:'Views' },
+  { icon:'📊', name:'Stats',              desc:'Today\'s stats, streak, energy, ADHD tips',            action:()=>setView('stats'), keys:'stats analytics streak insights', group:'Views' },
+  { icon:'🍅', name:'Start / Pause Pomodoro', desc:'Toggle the focus timer',                           action:()=>togglePomodoro(), keys:'pomodoro timer start pause focus', group:'Tools', kbd:'P' },
+  { icon:'🧘', name:'Open Meditation',   desc:'Guided 5–20 min sessions',                             action:()=>document.getElementById('meditationModal').style.display='flex', keys:'meditate calm', group:'Tools' },
+  { icon:'🫁', name:'Breathing Guide',   desc:'Box, 4-7-8, physiological sigh',                       action:()=>openBreathingGuide(), keys:'breath breathe box 478 calm', group:'Tools', kbd:'B' },
+  { icon:'🧭', name:'5-4-3-2-1 Grounding', desc:'ADHD anxiety grounding exercise',                   action:()=>openGroundingExercise(), keys:'ground anxiety 54321', group:'Tools', kbd:'G' },
+  { icon:'🔍', name:'Body Scan',          desc:'Tension check & progressive relaxation',               action:()=>document.getElementById('bodyScanModal').style.display='flex', keys:'body scan tension relax', group:'Tools' },
+  { icon:'🏃', name:'Movement',           desc:'Desk stretches and micro-breaks',                       action:()=>document.getElementById('movementModal').style.display='flex', keys:'stretch movement exercise desk', group:'Tools' },
+  { icon:'😴', name:'Sleep Tracker',      desc:'Log sleep, wind-down tips',                            action:()=>{ document.getElementById('sleepModal').style.display='flex'; renderSleepHistory(); newSleepTip(); }, keys:'sleep rest wind down', group:'Tools' },
+  { icon:'⚡', name:'Dopamine Menu',      desc:'Healthy dopamine reset activities',                    action:()=>openDopamineMenu(), keys:'dopamine reward motivation reset', group:'Tools' },
+  { icon:'🖥️', name:'Toggle Wake Lock',  desc:'Keep screen on during focus sessions',                 action:()=>toggleWakeLock(), keys:'wake lock screen sleep awake', group:'Actions' },
+  { icon:'🧠', name:'Toggle Zen mode',    desc:'Minimal view — timer and intention only',              action:()=>toggleZen(), keys:'zen minimal distraction free', group:'Actions', kbd:'Z' },
+  { icon:'🚗', name:'Capture Distraction', desc:'Park an intrusive thought without losing focus',     action:()=>openDistractionOverlay(), keys:'distraction thought capture parking lot', group:'Actions', kbd:'D' },
+  { icon:'🎯', name:'Set Intention',      desc:'Focus the One Thing input',                            action:()=>document.getElementById('intentionInput').focus(), keys:'intention focus one thing goal set', group:'Actions' },
+  { icon:'📝', name:'Quick Notes',        desc:'Focus the notepad',                                    action:()=>document.getElementById('notepad').focus(), keys:'notes notepad brain dump write', group:'Actions', kbd:'N' },
+  { icon:'✅', name:'Add a Task',         desc:'Focus the task input',                                 action:()=>document.getElementById('taskInput').focus(), keys:'task todo add item list', group:'Actions', kbd:'T' },
+  { icon:'🎯', name:'Focus binaural (40Hz)', desc:'Gamma waves for deep concentration',               action:()=>toggleBinaural('focus'), keys:'binaural gamma 40hz focus beats', group:'Audio' },
+  { icon:'😌', name:'Calm binaural (8Hz)',  desc:'Alpha waves for relaxed awareness',                  action:()=>toggleBinaural('calm'), keys:'binaural alpha 8hz calm beats relax', group:'Audio' },
+  { icon:'⚡', name:'Alert binaural (20Hz)', desc:'Beta waves for alert wakefulness',                  action:()=>toggleBinaural('alert'), keys:'binaural beta 20hz alert beats', group:'Audio' },
+  { icon:'🌧️', name:'Rain sounds',       desc:'Toggle ambient rain audio',                            action:()=>document.querySelector('.sound-btn[onclick*="rain"]')?.click(), keys:'rain ambient sound audio', group:'Audio' },
+  { icon:'☕', name:'Café sounds',         desc:'Toggle coffee shop ambient audio',                     action:()=>document.querySelector('.sound-btn[onclick*="cafe"]')?.click(), keys:'cafe coffee ambient sound', group:'Audio' },
+  { icon:'🌊', name:'Ocean sounds',        desc:'Toggle ocean waves audio',                             action:()=>document.querySelector('.sound-btn[onclick*="ocean"]')?.click(), keys:'ocean waves ambient sound', group:'Audio' },
+  { icon:'🔥', name:'Fireplace sounds',    desc:'Toggle fireplace crackle audio',                       action:()=>document.querySelector('.sound-btn[onclick*="fireplace"]')?.click(), keys:'fire fireplace crackle ambient', group:'Audio' },
+];
+
+let cmdSelectedIndex = 0;
+let cmdFiltered = [];
+
+function openCmdPalette() {
+  const el = document.getElementById('cmdPalette');
+  el.classList.add('open');
+  const input = document.getElementById('cmdInput');
+  input.value = '';
+  input.focus();
+  cmdSelectedIndex = 0;
+  renderCmdList(CMD_LIST);
+}
+
+function closeCmdPalette() {
+  document.getElementById('cmdPalette').classList.remove('open');
+}
+
+function renderCmdList(items) {
+  cmdFiltered = items;
+  const list = document.getElementById('cmdList');
+  if (items.length === 0) {
+    list.innerHTML = '<li class="cmd-empty">No matching commands — try a different keyword.</li>';
+    return;
+  }
+  // Group by section
+  const groups = {};
+  items.forEach((cmd, i) => {
+    const g = cmd.group || 'Other';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push({ cmd, i });
+  });
+  list.innerHTML = Object.entries(groups).map(([group, entries]) => `
+    <li class="cmd-section-label">${group}</li>
+    ${entries.map(({ cmd, i }) => `
+      <li class="cmd-item ${i === cmdSelectedIndex ? 'selected' : ''}"
+          onclick="runCmd(${i})"
+          onmouseover="cmdSelectedIndex=${i};document.querySelectorAll('.cmd-item').forEach((el,j)=>el.classList.toggle('selected',${i}===j))">
+        <span class="cmd-icon">${cmd.icon}</span>
+        <span class="cmd-info">
+          <div class="cmd-name">${cmd.name}</div>
+          <div class="cmd-desc">${cmd.desc}</div>
+        </span>
+        ${cmd.kbd ? `<span class="cmd-kbd">${cmd.kbd}</span>` : ''}
+      </li>
+    `).join('')}
+  `).join('');
+  // Scroll selected into view
+  const sel = list.querySelector('.selected');
+  if (sel) sel.scrollIntoView({ block: 'nearest' });
+}
+
+function filterCmds(query) {
+  const q = query.toLowerCase().trim();
+  cmdSelectedIndex = 0;
+  if (!q) { renderCmdList(CMD_LIST); return; }
+  const results = CMD_LIST.filter(cmd =>
+    cmd.name.toLowerCase().includes(q) ||
+    cmd.desc.toLowerCase().includes(q) ||
+    (cmd.keys || '').toLowerCase().includes(q)
+  );
+  renderCmdList(results);
+}
+
+function runCmd(index) {
+  const cmd = cmdFiltered[index];
+  if (cmd) { closeCmdPalette(); setTimeout(() => cmd.action(), 80); }
+}
+
+function cmdKeyNav(e) {
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    cmdSelectedIndex = Math.min(cmdSelectedIndex + 1, cmdFiltered.length - 1);
+    renderCmdList(cmdFiltered);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    cmdSelectedIndex = Math.max(cmdSelectedIndex - 1, 0);
+    renderCmdList(cmdFiltered);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    runCmd(cmdSelectedIndex);
+  } else if (e.key === 'Escape') {
+    closeCmdPalette();
+  }
+}
 </script>
 
 </body>
