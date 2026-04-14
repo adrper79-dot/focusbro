@@ -1986,7 +1986,7 @@
             <span>🎙️ Audio session</span>
             <span class="presence-opt-hint">in-browser</span>
           </label>
-          <button class="btn btn-sm" onclick="downloadPresenceScript()" style="font-size:11px;" title="Download a tiny script that fires safe keystrokes to keep Teams active — runs alongside FocusBro">
+          <button class="btn btn-sm" onclick="downloadPresenceScript()" style="font-size:11px;" title="Download script that sends safe keystrokes to keep Teams active. See Terms of Service for policy disclaimers.">
             💾 Companion script
           </button>
         </div>
@@ -2811,7 +2811,10 @@
 
 <!-- FOOTER -->
 <div class="footer">
-  FocusBro — Built with 🧠 by <a href="#">The Factory</a> &nbsp;|&nbsp; Your data stays in your browser. Nothing is tracked.
+  FocusBro — Built with 🧠 by <a href="#" onclick="showLegal('about'); return false;">The Factory</a> &nbsp;|&nbsp; 
+  <a href="#" onclick="showLegal('privacy'); return false;">Privacy</a> &nbsp;|&nbsp; 
+  <a href="#" onclick="showLegal('terms'); return false;">Terms</a> &nbsp;|&nbsp; 
+  Your data stays in your browser. Nothing is tracked.
 </div>
 
 </div><!-- /app-shell -->
@@ -3047,6 +3050,13 @@ function downloadPresenceScript() {
 # FocusBro Companion — Keep Teams/Slack Active (macOS)
 # Sends a safe F15 keypress every 4 minutes to reset OS idle timer.
 # F15 has no effect in any modern app.
+#
+# ⚠️  IMPORTANT DISCLAIMER:
+# - This script is intended for personal use during legitimate work sessions.
+# - Check your organization's policies before use. Some employers may prohibit idle-detection bypass.
+# - FocusBro is not responsible for policy violations or employment consequences.
+# - Use responsibly and ethically.
+#
 # Run: bash focusbro-active.sh  (stop with Ctrl+C)
 
 echo "FocusBro Companion running. Teams/Slack will stay green. Press Ctrl+C to stop."
@@ -3070,11 +3080,24 @@ done
     const script = `# FocusBro Companion — Keep Teams/Slack Active (Windows)
 # Sends a Scroll Lock keystroke every 4 minutes to reset OS idle timer.
 # Scroll Lock has no visible effect in any modern application.
+#
+# ⚠️  IMPORTANT DISCLAIMER:
+# - This script is intended for personal use during legitimate work sessions.
+# - Check your organization's policies before use. Some employers may prohibit idle-detection bypass.
+# - FocusBro is not responsible for policy violations or employment consequences.
+# - Use responsibly and ethically.
+#
 # Run: Right-click > "Run with PowerShell"  (stop by closing window)
 
 Add-Type -AssemblyName System.Windows.Forms
 
+Write-Host ""
+Write-Host "⚠️  DISCLAIMER:"
+Write-Host "This script is for personal use during legitimate work sessions."
+Write-Host "Check your organization's policies before use."
+Write-Host ""
 Write-Host "FocusBro Companion running. Teams/Slack will stay green. Close window to stop."
+Write-Host ""
 
 while ($true) {
     [System.Windows.Forms.SendKeys]::SendWait('{SCROLLLOCK}')
@@ -5524,6 +5547,123 @@ confettiStyle.textContent = `
   }
 `;
 if (document.head) document.head.appendChild(confettiStyle);
+</script>
+
+<!-- LEGAL MODALS -->
+<div id="legalModal" class="onboarding-modal" style="display:none; z-index:11000;">
+  <div class="onboarding-content" style="max-height:80vh; overflow-y:auto; max-width:700px;">
+    <button onclick="closeLegal()" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:24px; cursor:pointer; color:var(--text-muted);">✕</button>
+    
+    <div id="privacyContent" style="display:none;">
+      <div class="onboarding-title">Privacy Policy</div>
+      <div style="font-size:13px; line-height:1.8; color:var(--text); margin-top:16px;">
+        <p><strong>Last Updated: April 14, 2026</strong></p>
+        
+        <h3 style="margin-top:16px; font-weight:600; color:var(--primary);">Your Privacy Matters</h3>
+        <p>FocusBro is built with privacy-first principles. <strong>All data stays in your browser.</strong> We do not collect, store, or transmit your personal information to our servers.</p>
+        
+        <h3 style="margin-top:16px; font-weight:600; color:var(--primary);">What Data We Store</h3>
+        <ul style="margin-left:20px; margin-top:8px;">
+          <li><strong>Local Storage Only:</strong> Tasks, meditation logs, energy tracking, stats, notes — all saved to your device's browser storage</li>
+          <li><strong>No Server Backup:</strong> Your data is not transmitted to us unless you explicitly sync</li>
+          <li><strong>Optional Sync:</strong> If you choose to sync data, it's encrypted in transit and stored securely on our servers for your account</li>
+        </ul>
+        
+        <h3 style="margin-top:16px; font-weight:600; color:var(--primary);">Third-Party Services</h3>
+        <ul style="margin-left:20px; margin-top:8px;">
+          <li><strong>Google AdSense:</strong> Displays ads; Google may collect limited data per their privacy policy</li>
+          <li><strong>Cloudflare:</strong> Hosts our app; see their privacy policy for details</li>
+        </ul>
+        
+        <h3 style="margin-top:16px; font-weight:600; color:var(--primary);">Your Rights</h3>
+        <p>You have the right to export, delete, or control your data at any time. No data will be shared with third parties without your consent.</p>
+        
+        <p style="margin-top:16px; font-size:12px; color:var(--text-muted);">Questions? Contact us at support@focusbro.net</p>
+      </div>
+    </div>
+    
+    <div id="termsContent" style="display:none;">
+      <div class="onboarding-title">Terms of Service</div>
+      <div style="font-size:13px; line-height:1.8; color:var(--text); margin-top:16px;">
+        <p><strong>Last Updated: April 14, 2026</strong></p>
+        
+        <h3 style="margin-top:16px; font-weight:600; color:var(--primary);">Use License</h3>
+        <p>Permission is granted to temporarily download one copy of materials (information or software) from FocusBro for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not: modify or copy the materials; use the materials for any commercial purpose or for any public display; attempt to decompile or reverse engineer any software contained on FocusBro; remove any copyright or other proprietary notations from the materials; or transfer the materials to another person.</p>
+        
+        <h3 style="margin-top:16px; font-weight:600; color:var(--primary);">Disclaimer</h3>
+        <p>FocusBro is provided on an 'as-is' basis. We make no warranties, expressed or implied, regarding the website or the materials. We shall not be liable for any damages arising out of the use or inability to use materials on FocusBro.</p>
+        
+        <h3 style="margin-top:16px; font-weight:600; color:var(--primary);">Limitations</h3>
+        <p>In no event shall The Factory or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use FocusBro.</p>
+        
+        <h3 style="margin-top:16px; font-weight:600; color:var(--primary);">Companion Script</h3>
+        <p>The optional companion script (for Teams/Slack presence) is provided as-is. Users assume all responsibility for its use. We recommend testing in a non-production environment first. The script sends safe, invisible keystrokes and does not modify system files.</p>
+        
+        <p style="margin-top:16px; font-size:12px; color:var(--text-muted);">Questions? Contact us at support@focusbro.net</p>
+      </div>
+    </div>
+    
+    <div id="aboutContent" style="display:none;">
+      <div class="onboarding-title">About FocusBro</div>
+      <div style="font-size:13px; line-height:1.8; color:var(--text); margin-top:16px;">
+        <p><strong>FocusBro – Your ADHD-Friendly Focus Toolkit</strong></p>
+        
+        <p>Built by The Factory, a digital wellness collective focused on making focus accessible and sustainable for neurodivergent minds.</p>
+        
+        <h3 style="margin-top:16px; font-weight:600; color:var(--primary);">Features</h3>
+        <ul style="margin-left:20px; margin-top:8px;">
+          <li>Pomodoro timer with visual/audio cues</li>
+          <li>Meditation and breathing exercises</li>
+          <li>Energy and dopamine tracking</li>
+          <li>Distraction capture &amp; task management</li>
+          <li>Sleep and movement logging</li>
+          <li>Optional screen wake-lock for focus sessions</li>
+        </ul>
+        
+        <h3 style="margin-top:16px; font-weight:600; color:var(--primary);">Privacy First</h3>
+        <p>All your data stays in your browser by default. Sync is optional. We never sell your data.</p>
+        
+        <h3 style="margin-top:16px; font-weight:600; color:var(--primary);">Contact</h3>
+        <p>Questions, feedback, or bugs? Reach out: <strong>support@focusbro.net</strong></p>
+        
+        <p style="margin-top:16px; font-size:12px; color:var(--text-muted);">© 2026 The Factory. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showLegal(type) {
+  const modal = document.getElementById('legalModal');
+  const pContent = document.getElementById('privacyContent');
+  const tContent = document.getElementById('termsContent');
+  const aContent = document.getElementById('aboutContent');
+  
+  pContent.style.display = 'none';
+  tContent.style.display = 'none';
+  aContent.style.display = 'none';
+  
+  if (type === 'privacy') pContent.style.display = 'block';
+  else if (type === 'terms') tContent.style.display = 'block';
+  else if (type === 'about') aContent.style.display = 'block';
+  
+  modal.style.display = 'flex';
+}
+
+function closeLegal() {
+  const modal = document.getElementById('legalModal');
+  modal.style.display = 'none';
+}
+
+// Close modal when clicking backdrop
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('legalModal');
+    if (modal && modal.style.display === 'flex') {
+      closeLegal();
+    }
+  }
+});
 </script>
 
 </body>
