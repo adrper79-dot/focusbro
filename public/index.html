@@ -223,6 +223,15 @@
   .ad-slot-inline {
     min-height: 100px;
     margin: 0;
+    width: 100%;
+    min-width: 300px;
+    max-width: 100%;
+    display: block !important;
+  }
+
+  .ad-slot-inline ins {
+    display: block !important;
+    width: 100% !important;
   }
 
   /* ── PROFESSIONAL MAIN GRID ── */
@@ -3135,10 +3144,14 @@ function simulateActivity() {
     { v: ['mousemove', 'keydown'],             w: 3  }  // mouse + safe key (very rare)
   ]);
 
+  // Defensive check: ensure eventSet is an array
+  if (!Array.isArray(eventSet)) return;
+
   if (eventSet.includes('mousemove') || eventSet.includes('pointermove')) {
-    eventSet
-      .filter(t => t !== 'wheel')
+    (eventSet || [])
+      .filter(t => t && t !== 'wheel')
       .forEach(type => {
+        if (!type) return; // Skip if type is falsy
         document.body.dispatchEvent(new MouseEvent(type, {
           bubbles: true, cancelable: true,
           clientX: cx, clientY: cy,
@@ -3149,7 +3162,7 @@ function simulateActivity() {
       });
   }
 
-  if (eventSet.includes('wheel')) {
+  if (eventSet && eventSet.includes('wheel')) {
     // Real scroll: small, non-zero delta — looks like someone scrolling
     const deltaY = (Math.random() < 0.5 ? 1 : -1) * randInt(3, 40);
     document.body.dispatchEvent(new WheelEvent('wheel', {
@@ -3160,7 +3173,7 @@ function simulateActivity() {
     }));
   }
 
-  if (eventSet.includes('keydown')) {
+  if (eventSet && eventSet.includes('keydown')) {
     // Safe modifier key press (Shift) - won't interfere with typing
     document.body.dispatchEvent(new KeyboardEvent('keydown', {
       bubbles: true, cancelable: true,
