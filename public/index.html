@@ -2883,13 +2883,31 @@ async function activateWake() {
   // Show warning about presence impact
   showToast('Screen will stay awake, but you may appear "away" in Teams/Slack during focus sessions', 'warning');
 
-  document.getElementById('awakeRing').classList.add('active');
-  document.getElementById('keepAwakeCard').classList.add('active');
-  document.getElementById('awakeIcon').textContent = '⚡';
-  document.getElementById('awakeLabel').textContent = 'Your PC is Staying Awake';
-  document.getElementById('awakeTimer').classList.add('visible');
-  document.getElementById('awakePill').className = 'status-pill active';
-  document.getElementById('awakeStatusText').textContent = 'Awake';
+  try {
+    // Update UI with defensive null checks
+    const ring = document.getElementById('awakeRing');
+    if (ring) ring.classList.add('active');
+    
+    const card = document.getElementById('keepAwakeCard');
+    if (card) card.classList.add('active');
+    
+    const icon = document.getElementById('awakeIcon');
+    if (icon) icon.textContent = '⚡';
+    
+    const label = document.getElementById('awakeLabel');
+    if (label) label.textContent = 'Your PC is Staying Awake';
+    
+    const timer = document.getElementById('awakeTimer');
+    if (timer) timer.classList.add('visible');
+    
+    const pill = document.getElementById('awakePill');
+    if (pill) pill.className = 'status-pill active';
+    
+    const statusText = document.getElementById('awakeStatusText');
+    if (statusText) statusText.textContent = 'Awake';
+  } catch (e) {
+    console.warn('Error updating wake UI:', e.message);
+  }
 
   awakeInterval = setInterval(updateAwakeTimer, 1000);
 
@@ -2917,21 +2935,40 @@ function deactivateWake() {
   stopSilentAudio();
   stopAudioCapture(); // also stop mic capture if active
 
-  document.getElementById('awakeRing').classList.remove('active');
-  document.getElementById('keepAwakeCard').classList.remove('active');
-  document.getElementById('awakeIcon').textContent = '😴';
-  document.getElementById('awakeLabel').textContent = 'Click to Keep Your PC Awake';
-  document.getElementById('awakeTimer').classList.remove('visible');
-  document.getElementById('awakePill').className = 'status-pill inactive';
-  document.getElementById('awakeStatusText').textContent = 'Inactive';
-  const pulse = document.getElementById('presencePulse');
-  if (pulse) pulse.textContent = '—';
+  try {
+    const ring = document.getElementById('awakeRing');
+    if (ring) ring.classList.remove('active');
+    
+    const card = document.getElementById('keepAwakeCard');
+    if (card) card.classList.remove('active');
+    
+    const icon = document.getElementById('awakeIcon');
+    if (icon) icon.textContent = '😴';
+    
+    const label = document.getElementById('awakeLabel');
+    if (label) label.textContent = 'Click to Keep Your PC Awake';
+    
+    const timer = document.getElementById('awakeTimer');
+    if (timer) timer.classList.remove('visible');
+    
+    const pill = document.getElementById('awakePill');
+    if (pill) pill.className = 'status-pill inactive';
+    
+    const statusText = document.getElementById('awakeStatusText');
+    if (statusText) statusText.textContent = 'Inactive';
+    
+    const pulse = document.getElementById('presencePulse');
+    if (pulse) pulse.textContent = '—';
 
-  // Reset Teams presence UI
-  const cap = document.getElementById('teamsAudioCapture');
-  if (cap) cap.checked = false;
-  const status = document.getElementById('teamsPresenceStatus');
-  if (status) status.textContent = '';
+    // Reset Teams presence UI
+    const cap = document.getElementById('teamsAudioCapture');
+    if (cap) cap.checked = false;
+    
+    const status = document.getElementById('teamsPresenceStatus');
+    if (status) status.textContent = '';
+  } catch (e) {
+    console.warn('Error updating wake UI on deactivation:', e.message);
+  }
 }
 
 // ══════════════════════════════════════
@@ -4727,27 +4764,41 @@ function startGuidedExercise(type) {
   renderExerciseStep();
 
   exerciseTimer = setInterval(() => {
-    exerciseStepTime--;
-    exerciseTotalElapsed++;
+    try {
+      exerciseStepTime--;
+      exerciseTotalElapsed++;
 
-    if (exerciseStepTime <= 0) {
-      exerciseStepIdx++;
-      if (exerciseStepIdx >= exerciseSteps.length) {
-        completeExercise();
+      if (exerciseStepTime <= 0) {
+        exerciseStepIdx++;
+        if (exerciseStepIdx >= exerciseSteps.length) {
+          completeExercise();
+          return;
+        }
+        exerciseStepTime = exerciseSteps[exerciseStepIdx].duration;
+        renderExerciseStep();
+      }
+
+      // Update timer (guard against closed modal)
+      const timerEl = document.getElementById('exerciseTimer');
+      if (!timerEl) {
+        clearInterval(exerciseTimer);
+        exerciseTimer = null;
         return;
       }
-      exerciseStepTime = exerciseSteps[exerciseStepIdx].duration;
-      renderExerciseStep();
+
+      const m = Math.floor(exerciseStepTime / 60);
+      const s = exerciseStepTime % 60;
+      timerEl.textContent = `${m}:${String(s).padStart(2, '0')}`;
+
+      // Update overall progress
+      const pct = (exerciseTotalElapsed / exerciseTotalDuration) * 100;
+      const barEl = document.getElementById('exerciseProgressBar');
+      if (barEl) barEl.style.width = pct + '%';
+    } catch (e) {
+      console.warn('Exercise timer error:', e.message);
+      clearInterval(exerciseTimer);
+      exerciseTimer = null;
     }
-
-    // Update timer
-    const m = Math.floor(exerciseStepTime / 60);
-    const s = exerciseStepTime % 60;
-    document.getElementById('exerciseTimer').textContent = `${m}:${String(s).padStart(2, '0')}`;
-
-    // Update overall progress
-    const pct = (exerciseTotalElapsed / exerciseTotalDuration) * 100;
-    document.getElementById('exerciseProgressBar').style.width = pct + '%';
   }, 1000);
 }
 
