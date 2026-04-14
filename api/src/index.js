@@ -374,6 +374,7 @@ async function verifyPassword(password, storedHash) {
   const parts = storedHash.split(':');
   if (parts.length !== 4) return false;
   const [, iterations, saltHex, expectedHash] = parts;
+  if (!saltHex || saltHex.length % 2 !== 0 || saltHex.length < 2) return false;
   const saltBytes = saltHex.match(/.{2}/g);
   if (!saltBytes || saltBytes.length === 0) return false;
   const salt = new Uint8Array(saltBytes.map(b => parseInt(b, 16)));
