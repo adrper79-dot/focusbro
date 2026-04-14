@@ -371,14 +371,20 @@ async function verifyPassword(password, storedHash) {
     return hashHex === storedHash;
   }
   // PBKDF2 verification
-  const [, iterations, saltHex, expectedHash] = storedHash.split(':');
-  const salt = new Uint8Array(saltHex.match(/.{2}/g).map(b => parseInt(b, 16)));
+  const parts = storedHash.split(':');
+  if (parts.length !== 4) return false;
+  const [, iterations, saltHex, expectedHash] = parts;
+  const saltBytes = saltHex.match(/.{2}/g);
+  if (!saltBytes || saltBytes.length === 0) return false;
+  const salt = new Uint8Array(saltBytes.map(b => parseInt(b, 16)));
+  const iterCount = parseInt(iterations, 10);
+  if (!Number.isFinite(iterCount) || iterCount <= 0) return false;
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']
   );
   const hashBuffer = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt, iterations: parseInt(iterations), hash: 'SHA-256' },
+    { name: 'PBKDF2', salt, iterations: iterCount, hash: 'SHA-256' },
     keyMaterial,
     256
   );

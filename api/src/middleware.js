@@ -58,7 +58,6 @@ export async function verifyAuth(request, env) {
     return {
       valid: true,
       userId: payload.sub,
-      user: { id: payload.sub },
       token,
       issuedAt: payload.iat,
       expiresAt: payload.exp
