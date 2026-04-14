@@ -370,15 +370,59 @@
   /* ── PROFESSIONAL POMODORO DISPLAY ── */
   .pomo-display {
     text-align: center;
-    padding: 20px 0;
+    padding: 12px 0 4px;
+  }
+
+  .pomo-ring-wrap {
+    position: relative;
+    width: 196px; height: 196px;
+    margin: 0 auto 16px;
+  }
+
+  .pomo-ring-svg {
+    width: 100%; height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .pomo-ring-svg .pomo-ring-track {
+    fill: none;
+    stroke: rgba(61, 79, 138, 0.25);
+    stroke-width: 6;
+  }
+
+  .pomo-ring-svg .pomo-ring-fill {
+    fill: none;
+    stroke: var(--primary);
+    stroke-width: 6;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.5s ease;
+    filter: drop-shadow(0 0 6px var(--primary-glow));
+  }
+
+  .pomo-ring-svg .pomo-ring-fill.break {
+    stroke: var(--success);
+    filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.4));
+  }
+
+  .pomo-ring-svg .pomo-ring-fill.longbreak {
+    stroke: var(--teal);
+    filter: drop-shadow(0 0 6px rgba(20, 184, 166, 0.4));
+  }
+
+  .pomo-time-inner {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
   }
 
   .pomo-time {
     font-family: var(--mono);
-    font-size: 64px;
+    font-size: 46px;
     font-weight: 700;
-    letter-spacing: -3px;
-    margin-bottom: 8px;
+    letter-spacing: -2px;
+    line-height: 1;
     background: linear-gradient(135deg, var(--primary), var(--primary-light));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -386,9 +430,9 @@
   }
 
   .pomo-phase {
-    font-size: 13px;
+    font-size: 10px;
     color: var(--primary-light);
-    margin-bottom: 24px;
+    margin-top: 4px;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     font-weight: 700;
@@ -1583,6 +1627,43 @@
     display: flex;
     gap: 16px;
   }
+
+  /* ── VIEW FADE TRANSITIONS ── */
+  .app-shell {
+    transition: opacity 0.18s ease;
+  }
+  .app-shell.view-switching {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* ── MOBILE BOTTOM NAV ── */
+  @media (max-width: 680px) {
+    .app-nav {
+      top: auto;
+      bottom: 0; left: 0; right: 0;
+      width: 100%;
+      height: 56px;
+      flex-direction: row;
+      justify-content: space-around;
+      padding: 0 4px;
+      border-right: none;
+      border-top: 1px solid var(--border);
+      gap: 0;
+    }
+    .app-nav .logo-icon { display: none; }
+    .app-nav .nav-divider { display: none; }
+    .app-shell { margin-left: 0; padding-bottom: 56px; }
+    .nav-item { width: 56px; height: 48px; border-radius: 8px; }
+    .nav-item .nav-label { display: none; }
+    .dashboard { padding: 20px 12px 28px; }
+    .header { padding: 14px 16px; }
+    .intention-banner { margin: 0 12px; }
+    .time-bar-wrap { margin: 8px 12px 0; }
+    .ad-slot { margin: 10px 12px; }
+    .pomo-ring-wrap { width: 160px; height: 160px; }
+    .pomo-time { font-size: 38px; }
+  }
 </style>
 </head>
 <body>
@@ -1706,8 +1787,17 @@
           <button class="btn btn-sm" onclick="resetPomodoro()">Reset</button>
         </div>
         <div class="pomo-display">
-          <div class="pomo-time" id="pomoTime">25:00</div>
-          <div class="pomo-phase" id="pomoPhase">Focus Session</div>
+          <div class="pomo-ring-wrap">
+            <svg class="pomo-ring-svg" viewBox="0 0 200 200" aria-hidden="true">
+              <circle class="pomo-ring-track" cx="100" cy="100" r="88"/>
+              <circle class="pomo-ring-fill" id="pomoRingFill" cx="100" cy="100" r="88"
+                stroke-dasharray="552.9" stroke-dashoffset="0"/>
+            </svg>
+            <div class="pomo-time-inner">
+              <div class="pomo-time" id="pomoTime">25:00</div>
+              <div class="pomo-phase" id="pomoPhase">Focus Session</div>
+            </div>
+          </div>
           <div class="pomo-controls">
             <button class="btn btn-accent" id="pomoStartBtn" onclick="togglePomodoro()">▶ Start</button>
             <button class="btn" onclick="skipPomodoro()">⏭ Skip</button>
@@ -3043,6 +3133,17 @@ function renderPomodoro() {
   if (timeEl) timeEl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   const phases = { work: 'Focus Session', short: 'Short Break', long: 'Long Break' };
   if (phaseEl) phaseEl.textContent = phases[pomoState.phase];
+
+  // Update SVG progress ring
+  const ringEl = document.getElementById('pomoRingFill');
+  if (ringEl) {
+    const total = pomoState.phase === 'work' ? POMO_WORK : pomoState.phase === 'short' ? POMO_SHORT : POMO_LONG;
+    const progress = pomoState.seconds / total;
+    const circ = 552.9;
+    ringEl.style.strokeDashoffset = circ * (1 - progress);
+    ringEl.className = 'pomo-ring-fill' +
+      (pomoState.phase === 'short' ? ' break' : pomoState.phase === 'long' ? ' longbreak' : '');
+  }
 }
 
 function renderPomoDots() {
@@ -4881,13 +4982,25 @@ document.addEventListener('DOMContentLoaded', updateOfflineUI);
 // APP NAV VIEW SYSTEM
 // ══════════════════════════════════════
 function setView(view) {
-  document.body.dataset.view = view;
-  document.querySelectorAll('.nav-item[data-view]').forEach(el => {
-    el.classList.toggle('active', el.dataset.view === view);
-  });
-  localStorage.setItem('fb_view', view);
-  // Scroll to top when switching views
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const shell = document.querySelector('.app-shell');
+  if (shell) {
+    shell.classList.add('view-switching');
+    setTimeout(() => {
+      document.body.dataset.view = view;
+      document.querySelectorAll('.nav-item[data-view]').forEach(el => {
+        el.classList.toggle('active', el.dataset.view === view);
+      });
+      localStorage.setItem('fb_view', view);
+      shell.classList.remove('view-switching');
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }, 180);
+  } else {
+    document.body.dataset.view = view;
+    document.querySelectorAll('.nav-item[data-view]').forEach(el => {
+      el.classList.toggle('active', el.dataset.view === view);
+    });
+    localStorage.setItem('fb_view', view);
+  }
 }
 
 // Restore saved view on load
