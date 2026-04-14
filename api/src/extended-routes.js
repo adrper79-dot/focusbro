@@ -217,14 +217,12 @@ export function isFeatureEnabled(featureName, userTier = 'free') {
 router.options('*', (request) => new Response(null, { headers: getCorsHeaders(request) }));
 
 // ── JSON RESPONSE HELPER ──
-function jsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
-    }
-  });
+function jsonResponse(data, status = 200, request = null) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (request) {
+    Object.assign(headers, getCorsHeaders(request));
+  }
+  return new Response(JSON.stringify(data), { status, headers });
 }
 
 // ── CACHE CONTROL HEADERS ──
@@ -246,32 +244,58 @@ function getCacheStrategy(strategy) {
 
 // ── PASSWORD HASHING & VERIFICATION ──
 /**
- * Hash password using SHA-256 Web Crypto API
- * Generates 64-character hexadecimal hash from plaintext password
+ * Hash password using PBKDF2 via Web Crypto API
+ * Generates a salted, iteratively-hashed password string
  * @param {string} password - Plaintext password to hash
- * @returns {Promise<string>} 64-character hex-encoded SHA-256 hash
+ * @returns {Promise<string>} pbkdf2:iterations:salt_hex:hash_hex formatted string
  * @throws {Error} If crypto operation fails
  */
 async function hashPassword(password) {
   const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']
+  );
+  const hashBuffer = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    256
+  );
+  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return `pbkdf2:100000:${saltHex}:${hashHex}`;
 }
 
 /**
  * Verify plaintext password against stored hash
- * Uses constant-time comparison implicitly through hash matching
+ * Supports both legacy SHA-256 (unsalted) and PBKDF2 hashes
  * @param {string} password - Plaintext password to verify
- * @param {string} hash - Stored hash to compare against (64-char hex)
+ * @param {string} storedHash - Stored hash to compare against
  * @returns {Promise<boolean>} True if password matches hash, false otherwise
  * @throws {Error} If hashing operation fails
  */
-async function verifyPassword(password, hash) {
-  const passwordHash = await hashPassword(password);
-  return passwordHash === hash;
+async function verifyPassword(password, storedHash) {
+  // Support legacy unsalted SHA-256 hashes for backward compatibility
+  if (!storedHash.startsWith('pbkdf2:')) {
+    const encoder = new TextEncoder();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(password));
+    const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex === storedHash;
+  }
+  // PBKDF2 verification
+  const [, iterations, saltHex, expectedHash] = storedHash.split(':');
+  const salt = new Uint8Array(saltHex.match(/.{2}/g).map(b => parseInt(b, 16)));
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']
+  );
+  const hashBuffer = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: parseInt(iterations), hash: 'SHA-256' },
+    keyMaterial,
+    256
+  );
+  const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex === expectedHash;
 }
 
 // ── SAFE JSON PARSING ──
@@ -632,13 +656,8 @@ router.post('/auth/confirm-password-reset', async (request, env) => {
       return errorResponse('Invalid or expired token', 401);
     }
     
-    // Import hashPassword function from index.js (need to use env.DB to get it available in middleware)
-    // For now, we'll use a simple approach - create hash utility inline
-    const encoder = new TextEncoder();
-    const data = encoder.encode(newPassword);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const newHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    // Hash the new password using PBKDF2
+    const newHash = await hashPassword(newPassword);
     
     // Update password
     const updateResult = await env.DB.prepare(

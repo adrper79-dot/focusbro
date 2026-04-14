@@ -22,7 +22,25 @@ export async function verifyAuth(request, env) {
     if (parts.length !== 3) {
       return { valid: false, error: 'Invalid token format (must be 3 parts)' };
     }
-    
+
+    // Verify HMAC-SHA256 signature before trusting any payload data
+    const headerPayload = `${parts[0]}.${parts[1]}`;
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(env.JWT_SECRET);
+    const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
+
+    const signaturePadded = parts[2] + '='.repeat((4 - parts[2].length % 4) % 4);
+    const signatureBinary = atob(signaturePadded.replace(/-/g, '+').replace(/_/g, '/'));
+    const signatureArray = new Uint8Array(signatureBinary.length);
+    for (let i = 0; i < signatureBinary.length; i++) {
+      signatureArray[i] = signatureBinary.charCodeAt(i);
+    }
+
+    const isValid = await crypto.subtle.verify('HMAC', key, signatureArray, encoder.encode(headerPayload));
+    if (!isValid) {
+      return { valid: false, error: 'Invalid token signature' };
+    }
+
     let payload;
     try {
       const decodedPayload = atob(parts[1]);
@@ -40,6 +58,7 @@ export async function verifyAuth(request, env) {
     return {
       valid: true,
       userId: payload.sub,
+      user: { id: payload.sub },
       token,
       issuedAt: payload.iat,
       expiresAt: payload.exp
@@ -111,8 +130,7 @@ export function errorResponse(message, status = 400, details = null) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Content-Type': 'application/json'
     }
   });
 }
@@ -126,8 +144,7 @@ export function successResponse(data, status = 200) {
   }), {
     status,
     headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      'Content-Type': 'application/json'
     }
   });
 }
@@ -218,9 +235,5 @@ export async function checkFeatureFlag(env, userId, feature) {
 
 // ── UTILITY: Generate UUID ──
 export function generateUUID() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+  return crypto.randomUUID();
 }

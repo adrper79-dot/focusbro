@@ -28,7 +28,11 @@ routes = [
 ]
 d1_databases = [{ binding = "DB", database_id = "2ac20b08-66e3-4abd-92de-f0e6380bdad0", database_name = "focusbro" }]
 kv_namespaces = [{ binding = "KV_CACHE", id = "60c1852cd70f4999a380b9ea290fccb3", preview_id = "60c1852cd70f4999a380b9ea290fccb3" }]
-vars = { ENV = "production", API_ORIGIN = "https://focusbro.net", JWT_SECRET = "focusbro-secret-key-prod-2024" }
+vars = { ENV = "production", API_ORIGIN = "https://focusbro.net" }
+# JWT_SECRET must be set as a Cloudflare secret (never in vars):
+#   wrangler secret put JWT_SECRET --env production
 
 [env.development]
-vars = { ENV = "development", API_ORIGIN = "http://localhost:8787", JWT_SECRET = "focusbro-secret-key-dev" }
+vars = { ENV = "development", API_ORIGIN = "http://localhost:8787" }
+# JWT_SECRET must be set as a Cloudflare secret (never in vars):
+#   wrangler secret put JWT_SECRET --env development

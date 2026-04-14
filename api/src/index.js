@@ -344,20 +344,46 @@ function jsonResponse(data, status = 200, cacheStrategy = 'nocache') {
 // ── UTILITY: Handle CORS ──
 router.options('*', (request) => new Response(null, { headers: getCorsHeaders(request) }));
 
-// ── UTILITY: Secure Password Hashing (Web Crypto API) ──
+// ── UTILITY: Secure Password Hashing (PBKDF2 via Web Crypto API) ──
 async function hashPassword(password) {
   const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']
+  );
+  const hashBuffer = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    256
+  );
+  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return `pbkdf2:100000:${saltHex}:${hashHex}`;
 }
 
 // ── UTILITY: Verify Password ──
-async function verifyPassword(password, hash) {
-  const passwordHash = await hashPassword(password);
-  return passwordHash === hash;
+async function verifyPassword(password, storedHash) {
+  // Support legacy unsalted SHA-256 hashes for backward compatibility
+  if (!storedHash.startsWith('pbkdf2:')) {
+    const encoder = new TextEncoder();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(password));
+    const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex === storedHash;
+  }
+  // PBKDF2 verification
+  const [, iterations, saltHex, expectedHash] = storedHash.split(':');
+  const salt = new Uint8Array(saltHex.match(/.{2}/g).map(b => parseInt(b, 16)));
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']
+  );
+  const hashBuffer = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: parseInt(iterations), hash: 'SHA-256' },
+    keyMaterial,
+    256
+  );
+  const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex === expectedHash;
 }
 
 // ── EXPORT UTILITIES FOR OTHER MODULES ──
@@ -1646,7 +1672,7 @@ router.get('/api/gallery', async (request, env) => {
 
     // Validate category
     if (!safeKeywords[category]) {
-      return errorResponse('Invalid category', 400);
+      return jsonResponse({ success: false, error: 'Invalid category' }, 400);
     }
 
     const keywords = safeKeywords[category];
@@ -1744,21 +1770,25 @@ router.get('/api/gallery', async (request, env) => {
     const shuffled = seededShuffle(images, seed);
     const selected = shuffled.slice(0, limit);
 
-    return successResponse({
-      images: selected,
-      category,
-      count: selected.length,
-      total: images.length,
-      seed: seed.substring(0, 8) // Return truncated seed
-    });
+    return jsonResponse({
+      success: true,
+      data: {
+        images: selected,
+        category,
+        count: selected.length,
+        total: images.length,
+        seed: seed.substring(0, 8) // Return truncated seed
+      },
+      timestamp: new Date().toISOString()
+    }, 200, 'medium');
 
   } catch (error) {
     console.error('Gallery endpoint error:', error.message);
     // Graceful fallback - return empty array, frontend will use local SVG set
-    return successResponse({
-      images: [],
-      error: 'Gallery service temporarily unavailable',
-      count: 0
+    return jsonResponse({
+      success: true,
+      data: { images: [], error: 'Gallery service temporarily unavailable', count: 0 },
+      timestamp: new Date().toISOString()
     });
   }
 });
