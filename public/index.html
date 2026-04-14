@@ -693,6 +693,75 @@
   .task-item:hover .task-delete { opacity: 1; }
   .task-delete:hover { color: var(--danger); }
 
+  /* ── TASK EMPTY STATE ── */
+  .task-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 28px 16px;
+    text-align: center;
+  }
+  .task-empty-icon { font-size: 36px; opacity: 0.35; }
+  .task-empty-text { font-size: 13px; color: var(--text-dim); line-height: 1.6; }
+  .task-empty-text strong { color: var(--text-muted); display: block; margin-bottom: 2px; }
+
+  @keyframes taskPop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.25); }
+    70%  { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+  .task-check.pop { animation: taskPop 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+  /* ── POMODORO SESSION FOCUS MODE ── */
+  body.session-active .dashboard .card:not(#pomoCard):not(#taskCard):not(#keepAwakeCard) {
+    opacity: 0.28;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+  body.session-active .dashboard .card:not(#pomoCard):not(#taskCard):not(#keepAwakeCard):hover {
+    opacity: 0.65;
+    pointer-events: auto;
+  }
+  body.session-active .top-row:has(#pomoCard) { order: -1; }
+  #pomoCard { transition: box-shadow 0.4s ease, border-color 0.4s ease; }
+  body.session-active #pomoCard {
+    border-color: rgba(14, 165, 233, 0.5);
+    box-shadow: 0 0 40px rgba(14, 165, 233, 0.15), 0 4px 16px rgba(0,0,0,0.25);
+  }
+
+  /* ── TOOL TILES ── */
+  .tool-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .tool-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: var(--font);
+    text-align: left;
+    color: var(--text);
+  }
+  .tool-tile:hover {
+    border-color: var(--primary);
+    background: var(--primary-dim);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.15);
+  }
+  .tool-tile-icon { font-size: 22px; margin-bottom: 4px; }
+  .tool-tile-name { font-size: 13px; font-weight: 600; }
+  .tool-tile-desc { font-size: 10px; color: var(--text-muted); line-height: 1.4; }
+
   /* ── FOCUS STATS ── */
   .stats-grid {
     display: grid;
@@ -1431,7 +1500,7 @@
 
     <!-- TOP ROW: POMODORO + MEETING COUNTDOWN -->
     <div class="top-row">
-      <div class="card">
+      <div class="card" id="pomoCard">
         <div class="card-header">
           <div class="card-title"><span class="icon">🍅</span> Pomodoro Timer</div>
           <button class="btn btn-sm" onclick="resetPomodoro()">Reset</button>
@@ -1469,7 +1538,7 @@
 
     <!-- MIDDLE ROW: TASKS + NOTEPAD -->
     <div class="top-row">
-      <div class="card">
+      <div class="card" id="taskCard">
         <div class="card-header">
           <div class="card-title"><span class="icon">✅</span> Tasks</div>
           <span style="font-size: 12px; color: var(--text-muted);" id="taskCount">0 tasks</span>
@@ -1722,12 +1791,32 @@
       <div class="card-header">
         <div class="card-title"><span class="icon">🧰</span> More Tools</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <button class="btn" style="font-size:12px;padding:10px;" onclick="document.getElementById('meditationModal').style.display='flex'">🧘 Meditate</button>
-        <button class="btn" style="font-size:12px;padding:10px;" onclick="document.getElementById('movementModal').style.display='flex'">🏃 Movement</button>
-        <button class="btn" style="font-size:12px;padding:10px;" onclick="document.getElementById('sleepModal').style.display='flex'; renderSleepHistory(); newSleepTip();">😴 Sleep</button>
-        <button class="btn" style="font-size:12px;padding:10px;" onclick="document.getElementById('bodyScanModal').style.display='flex'">🔍 Body Scan</button>
-        <button class="btn" style="font-size:12px;padding:10px;" onclick="document.getElementById('socialModal').style.display='flex'; updateSocialGoals();">👥 Focus Score</button>
+      <div class="tool-tiles">
+        <button class="tool-tile" onclick="document.getElementById('meditationModal').style.display='flex'">
+          <span class="tool-tile-icon">🧘</span>
+          <span class="tool-tile-name">Meditate</span>
+          <span class="tool-tile-desc">Guided sessions, 5–20 min</span>
+        </button>
+        <button class="tool-tile" onclick="document.getElementById('movementModal').style.display='flex'">
+          <span class="tool-tile-icon">🏃</span>
+          <span class="tool-tile-name">Movement</span>
+          <span class="tool-tile-desc">Desk stretches & micro-breaks</span>
+        </button>
+        <button class="tool-tile" onclick="document.getElementById('sleepModal').style.display='flex'; renderSleepHistory(); newSleepTip();">
+          <span class="tool-tile-icon">😴</span>
+          <span class="tool-tile-name">Sleep</span>
+          <span class="tool-tile-desc">Log sleep, tips & wind-down</span>
+        </button>
+        <button class="tool-tile" onclick="document.getElementById('bodyScanModal').style.display='flex'">
+          <span class="tool-tile-icon">🔍</span>
+          <span class="tool-tile-name">Body Scan</span>
+          <span class="tool-tile-desc">Tension check & relaxation</span>
+        </button>
+        <button class="tool-tile" onclick="document.getElementById('socialModal').style.display='flex'; updateSocialGoals();" style="grid-column: span 2;">
+          <span class="tool-tile-icon">👥</span>
+          <span class="tool-tile-name">Focus Score</span>
+          <span class="tool-tile-desc">Track productivity goals & streaks</span>
+        </button>
       </div>
     </div>
 
@@ -2648,12 +2737,14 @@ function togglePomodoro() {
 function startPomodoro() {
   pomoState.running = true;
   document.getElementById('pomoStartBtn').innerHTML = '⏸ Pause';
+  document.body.classList.add('session-active');
   pomoInterval = setInterval(tickPomodoro, 1000);
 }
 
 function pausePomodoro() {
   pomoState.running = false;
   document.getElementById('pomoStartBtn').innerHTML = '▶ Start';
+  document.body.classList.remove('session-active');
   clearInterval(pomoInterval);
 }
 
@@ -2705,11 +2796,13 @@ function pomoComplete() {
   }
 
   document.getElementById('pomoStartBtn').innerHTML = '▶ Start';
+  document.body.classList.remove('session-active');
 }
 
 function resetPomodoro() {
   clearInterval(pomoInterval);
   pomoState = { running: false, seconds: POMO_WORK, phase: 'work', session: 0, completed: pomoState.completed };
+  document.body.classList.remove('session-active');
   renderPomodoro();
   renderPomoDots();
   document.getElementById('pomoStartBtn').innerHTML = '▶ Start';
@@ -2801,6 +2894,12 @@ let tasks = JSON.parse(localStorage.getItem('fb_tasks') || '[]');
 function renderTasks() {
   const list = document.getElementById('taskList');
   list.innerHTML = '';
+  if (tasks.length === 0) {
+    list.innerHTML = `<li class="task-empty"><div class="task-empty-icon">📋</div><div class="task-empty-text"><strong>No tasks yet</strong>Add the one thing you need to get done today.</div></li>`;
+    document.getElementById('taskCount').textContent = '0 tasks';
+    document.getElementById('statTasks').textContent = '0';
+    return;
+  }
   tasks.forEach((t, i) => {
     const li = document.createElement('li');
     li.className = 'task-item';
@@ -2828,8 +2927,16 @@ function addTask() {
 
 function toggleTask(i) {
   tasks[i].done = !tasks[i].done;
+  const wasDone = tasks[i].done;
   saveTasks();
   renderTasks();
+  if (wasDone) {
+    const checkBtns = document.querySelectorAll('.task-check');
+    if (checkBtns[i]) {
+      checkBtns[i].classList.add('pop');
+      checkBtns[i].addEventListener('animationend', () => checkBtns[i].classList.remove('pop'), { once: true });
+    }
+  }
   saveStats();
 }
 
