@@ -68,6 +68,23 @@
     --mono: 'JetBrains Mono', monospace;
   }
 
+  /* ── LIGHT MODE ── */
+  body[data-theme="light"] {
+    --bg: #f9fafb;
+    --bg-secondary: #f3f4f6;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f9fafb;
+    --border: #e5e7eb;
+    --border-light: #d1d5db;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --primary-dim: rgba(59, 130, 246, 0.08);
+    --primary-glow: rgba(59, 130, 246, 0.15);
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1);
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
@@ -1521,8 +1538,78 @@
   }
   .nav-item:hover .nav-label { opacity: 1; transform: translateX(0); }
 
+  /* ── THEME TOGGLE ── */
+  .theme-toggle {
+    position: fixed;
+    top: 14px; right: 20px;
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    background: rgba(61, 79, 138, 0.3);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    z-index: 150;
+  }
+  .theme-toggle:hover { background: rgba(61, 79, 138, 0.5); color: var(--text); }
+  @media (max-width: 680px) { .theme-toggle { top: 12px; right: 64px; } }
+
+  /* ── ONBOARDING MODAL ── */
+  .onboarding-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px);
+    z-index: 1100;
+    align-items: center;
+    justify-content: center;
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text-dim); padding: 8px 12px 4px; pointer-events: none;
+  }
+  .onboarding-modal.show { display: flex; }
+  .onboarding-content {
+    background: linear-gradient(135deg, rgba(20, 29, 63, 0.95), rgba(14, 19, 45, 0.95));
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    padding: 48px 40px;
+    max-width: 480px;
+    text-align: center;
+    animation: modalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.6);
+  }
+  .onboarding-title {
+    font-size: 28px; font-weight: 700; margin-bottom: 12px;
+    background: linear-gradient(135deg, var(--primary-light), var(--text));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .onboarding-desc {
+    font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 28px;
+  }
+  .onboarding-steps {
+    display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; text-align: left;
+  }
+  .onboarding-step {
+    display: flex; gap: 12px; padding: 10px; background: rgba(61, 79, 138, 0.2);
+    border-radius: 10px; border-left: 3px solid var(--primary);
+  }
+  .onboarding-step-icon { font-size: 18px; flex-shrink: 0; }
+  .onboarding-step-text { font-size: 12px; color: var(--text); line-height: 1.5; }
+  .onboarding-step-label { font-weight: 600; color: var(--primary-light); }
+
+  /* ── CONFETTI ── */
+  .confetti {
+    position: fixed;
+    pointer-events: none;
+    font-size: 28px;
+    z-index: 999;
+  }
+
   /* App shell content offset */
-  .app-shell { margin-left: 60px; }
+  .app-shell { margin-left: 60px; transition: opacity 0.18s ease; }
+  .app-shell.view-switching { opacity: 0; pointer-events: none; }
 
   /* ── VIEW SYSTEM ── */
   body[data-view="focus"] .sidebar { display: none !important; }
@@ -1664,6 +1751,107 @@
     .pomo-ring-wrap { width: 160px; height: 160px; }
     .pomo-time { font-size: 38px; }
   }
+
+  /* ── ONBOARDING MODAL ── */
+  .onboarding-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .onboarding-modal.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .onboarding-content {
+    background: var(--bg);
+    border-radius: var(--radius-lg);
+    max-width: 500px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.35s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .onboarding-icon {
+    font-size: 60px;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .onboarding-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .onboarding-desc {
+    font-size: 14px;
+    color: var(--text-muted);
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  .onboarding-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+
+  .onboarding-actions button {
+    padding: 10px 24px;
+    border-radius: 6px;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .btn-primary:hover {
+    background: var(--primary-bright);
+    transform: translateY(-2px);
+  }
+
+  .btn-secondary {
+    background: var(--bg-card);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg-hover);
+  }
+
+  /* ── CONFETTI ── */
+  .confetti {
+    position: fixed;
+    pointer-events: none;
+    font-size: 24px;
+    z-index: 9998;
+  }
 </style>
 </head>
 <body>
@@ -1685,10 +1873,28 @@
     📊<span class="nav-label">Stats</span>
   </button>
   <div class="nav-divider"></div>
+  <button class="nav-item" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle dark/light theme">
+    🌙<span class="nav-label">Theme</span>
+  </button>
   <button class="nav-item" onclick="openCmdPalette()" aria-label="Command palette (Ctrl+K)">
     ⌘<span class="nav-label">Search  ⌃K</span>
   </button>
 </nav>
+
+<!-- ONBOARDING MODAL -->
+<div class="onboarding-modal" id="onboardingModal">
+  <div class="onboarding-content">
+    <div class="onboarding-icon">🚀</div>
+    <div class="onboarding-title">Welcome to FocusBro!</div>
+    <div class="onboarding-desc">
+      Master your focus, boost your productivity, and build winning habits. 
+      Use the left navigation to explore Focus modes, Restore activities, and track your progress.
+    </div>
+    <div class="onboarding-actions">
+      <button class="btn-primary" onclick="dismissOnboarding()">Get Started →</button>
+    </div>
+  </div>
+</div>
 
 <!-- APP SHELL -->
 <div class="app-shell">
@@ -2554,6 +2760,45 @@
 
 <!-- Hidden activity canvas — drives continuous rAF rendering loop -->
 <canvas id="activityCanvas" width="20" height="20" style="position:fixed;bottom:0;right:0;opacity:0;pointer-events:none;width:1px;height:1px;"></canvas>
+
+<!-- ONBOARDING MODAL -->
+<div class="onboarding-modal" id="onboardingModal">
+  <div class="onboarding-content">
+    <div class="onboarding-title">Welcome to FocusBro 🧠</div>
+    <div class="onboarding-desc">An ADHD-friendly toolkit for deep focus, movement, and dopamine resets.</div>
+    <div class="onboarding-steps">
+      <div class="onboarding-step">
+        <span class="onboarding-step-icon">🧰</span>
+        <div>
+          <div class="onboarding-step-label">Navigation</div>
+          <div class="onboarding-step-text">4 views: Dashboard (all tools) → Focus (timer only) → Restore (sounds + meditation) → Stats (insights)</div>
+        </div>
+      </div>
+      <div class="onboarding-step">
+        <span class="onboarding-step-icon">⌘K</span>
+        <div>
+          <div class="onboarding-step-label">Command Palette</div>
+          <div class="onboarding-step-text">Press Ctrl+K (or ⌘K on Mac) to search 25+ tools, sounds, and actions by name</div>
+        </div>
+      </div>
+      <div class="onboarding-step">
+        <span class="onboarding-step-icon">🌟</span>
+        <div>
+          <div class="onboarding-step-label">One Thing</div>
+          <div class="onboarding-step-text">Define your ONE intention at the top — your brain works better with a single focus</div>
+        </div>
+      </div>
+      <div class="onboarding-step">
+        <span class="onboarding-step-icon">?</span>
+        <div>
+          <div class="onboarding-step-label">Keyboard Shortcuts</div>
+          <div class="onboarding-step-text">Space=toggle awake, P=pomodoro, Z=zen, D=park thought, all in Quick Keys card</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-accent" onclick="dismissOnboarding()" style="padding: 12px 32px; font-size: 15px; width: 100%;">Get Started 🚀</button>
+  </div>
+</div>
 
 <!-- FOOTER -->
 <div class="footer">
@@ -5129,6 +5374,74 @@ function cmdKeyNav(e) {
     closeCmdPalette();
   }
 }
+
+// ══════════════════════════════════════
+// THEME MANAGEMENT
+// ══════════════════════════════════════
+function toggleTheme() {
+  const current = localStorage.getItem('fb_theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.body.dataset.theme = next;
+  localStorage.setItem('fb_theme', next);
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = next === 'light' ? '☀️' : '🌙';
+}
+
+(function() {
+  const saved = localStorage.getItem('fb_theme') || 'dark';
+  if (saved === 'light') {
+    document.body.dataset.theme = 'light';
+    const btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+
+// ══════════════════════════════════════
+// ONBOARDING
+// ══════════════════════════════════════
+function dismissOnboarding() {
+  const modal = document.getElementById('onboardingModal');
+  if (modal) modal.classList.remove('show');
+  localStorage.setItem('fb_onboarded', 'true');
+}
+
+(function() {
+  const onboarded = localStorage.getItem('fb_onboarded');
+  if (!onboarded) {
+    setTimeout(() => {
+      const modal = document.getElementById('onboardingModal');
+      if (modal) modal.classList.add('show');
+    }, 800);
+  }
+})();
+
+// ══════════════════════════════════════
+// CONFETTI CELEBRATION
+// ══════════════════════════════════════
+function fireConfetti() {
+  const colors = ['🎉', '✨', '🎊', '🌟', '💫', '⭐'];
+  const count = 30;
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.textContent = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.left = Math.random() * 100 + 'vw';
+      confetti.style.top = '-20px';
+      confetti.style.animation = `fall ${2 + Math.random() * 2}s linear forwards`;
+      document.body.appendChild(confetti);
+      setTimeout(() => confetti.remove(), 4000);
+    }, i * 30);
+  }
+}
+
+const confettiStyle = document.createElement('style');
+confettiStyle.textContent = `
+  @keyframes fall {
+    to { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+  }
+`;
+if (document.head) document.head.appendChild(confettiStyle);
 </script>
 
 </body>
