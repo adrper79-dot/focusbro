@@ -1536,6 +1536,51 @@ router.get('/integrations/slack', async (request, env) => {
   }
 });
 
+// ── Slack webhook helper with exponential backoff retry ──
+/**
+ * Send a Slack message with up to `maxRetries` attempts.
+ * Uses exponential backoff: 500ms, 1000ms, 2000ms...
+ * Only retries on transient errors (5xx, network failure).
+ * Does NOT retry on 4xx (permanent failures — invalid URL, token revoked).
+ */
+async function sendSlackWebhook(webhookUrl, payload, maxRetries = 3) {
+  let lastError;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) return { success: true };
+
+      const status = response.status;
+      const body = await response.text().catch(() => '');
+
+      // 4xx: permanent failure — do not retry
+      if (status >= 400 && status < 500) {
+        console.warn(`Slack webhook permanent failure (${status}):`, body.slice(0, 200));
+        return { success: false, permanent: true, status };
+      }
+
+      // 5xx: transient — will retry
+      lastError = new Error(`Slack returned ${status}: ${body.slice(0, 200)}`);
+      console.warn(`Slack webhook attempt ${attempt}/${maxRetries} failed (${status}), retrying...`);
+    } catch (err) {
+      lastError = err;
+      console.warn(`Slack webhook attempt ${attempt}/${maxRetries} network error:`, err.message);
+    }
+
+    // Exponential backoff: 500, 1000, 2000ms
+    if (attempt < maxRetries) {
+      await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt - 1)));
+    }
+  }
+  console.error('Slack webhook failed after', maxRetries, 'attempts:', lastError?.message);
+  return { success: false, permanent: false, error: lastError?.message };
+}
+
 // ── POST /integrations/slack/test - Send test Slack message ──
 router.post('/integrations/slack/test', async (request, env) => {
   try {
@@ -1558,15 +1603,12 @@ router.post('/integrations/slack/test', async (request, env) => {
       text: '✅ FocusBro connected to Slack! Your focus sessions will appear here.'
     };
 
-    const response = await fetch(integration.webhook_url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(message)
-    });
-
-    if (!response.ok) {
-      console.warn('Slack webhook failed:', response.status, await response.text());
-      return errorResponse('Slack webhook rejected request', 400);
+    const result = await sendSlackWebhook(integration.webhook_url, message);
+    if (!result.success) {
+      return errorResponse(
+        result.permanent ? 'Slack rejected the message (check webhook URL)' : 'Slack webhook unavailable, try again later',
+        result.permanent ? 400 : 503
+      );
     }
 
     return jsonResponse({ success: true });
