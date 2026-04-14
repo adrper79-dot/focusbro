@@ -3505,7 +3505,25 @@ function renderMeeting() {
 // ══════════════════════════════════════
 // TASKS
 // ══════════════════════════════════════
-let tasks = JSON.parse(localStorage.getItem('fb_tasks') || '[]');
+
+// Safe localStorage JSON parser with error recovery
+function safeJSONParse(key, defaultValue = {}) {
+  try {
+    const item = localStorage.getItem(key);
+    if (!item) return defaultValue;
+    return JSON.parse(item);
+  } catch (e) {
+    console.warn(`Failed to parse ${key} from localStorage, using default:`, e.message);
+    try {
+      localStorage.removeItem(key); // Clear corrupted data
+    } catch (storageErr) {
+      console.warn('Failed to clear corrupted storage:', storageErr.message);
+    }
+    return defaultValue;
+  }
+}
+
+let tasks = safeJSONParse('fb_tasks', []);
 
 function renderTasks() {
   const list = document.getElementById('taskList');
@@ -3757,7 +3775,7 @@ function newTip() {
 // ══════════════════════════════════════
 function saveStats() {
   const today = new Date().toDateString();
-  const stats = JSON.parse(localStorage.getItem('fb_stats') || '{}');
+  const stats = safeJSONParse('fb_stats', {});
   if (!stats[today]) stats[today] = { pomos: 0, tasks: 0 };
   stats[today].pomos = pomoState.completed;
   stats[today].tasks = tasks.filter(t => t.done).length;
@@ -3865,7 +3883,7 @@ function updateTimeBar() {
 // ══════════════════════════════════════
 // DISTRACTION PARKING LOT
 // ══════════════════════════════════════
-let distractions = JSON.parse(localStorage.getItem('fb_distractions') || '[]');
+let distractions = safeJSONParse('fb_distractions', []);
 
 function renderDistractions() {
   const list = document.getElementById('distractionList');
@@ -4086,7 +4104,7 @@ function completeGrounding() {
 // ══════════════════════════════════════
 // DOPAMINE MENU
 // ══════════════════════════════════════
-let dopamineItems = JSON.parse(localStorage.getItem('fb_dopamine') || '["Stretch 30s", "Drink water", "Pet cat", "Cold water on face", "Dance to 1 song", "Walk 5 min"]');
+let dopamineItems = safeJSONParse('fb_dopamine', ["Stretch 30s", "Drink water", "Pet cat", "Cold water on face", "Dance to 1 song", "Walk 5 min"]);
 
 function renderDopamineItems() {
   const list = document.getElementById('dopamineList');
@@ -4129,7 +4147,7 @@ function closeDopamineMenu() {
 // ══════════════════════════════════════
 // ENERGY + MOOD TRACKER
 // ══════════════════════════════════════
-let energyLog = JSON.parse(localStorage.getItem('fb_energy') || '[]');
+let energyLog = safeJSONParse('fb_energy', []);
 
 function logEnergy(level) {
   const entry = { time: Date.now(), level };
@@ -4454,7 +4472,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const today = new Date().toDateString();
-  const stats = JSON.parse(localStorage.getItem('fb_stats') || '{}');
+  const stats = safeJSONParse('fb_stats', {});
   if (stats[today]) {
     document.getElementById('statTasks').textContent = stats[today].tasks || 0;
   }
@@ -4852,7 +4870,7 @@ function closeMovementModal() {
 // ══════════════════════════════════════
 // SLEEP TRACKER (FULL HISTORY + INSIGHTS)
 // ══════════════════════════════════════
-let sleepLog = JSON.parse(localStorage.getItem('fb_sleep') || '[]');
+let sleepLog = safeJSONParse('fb_sleep', []);
 
 const sleepTips = [
   "🌙 <strong>ADHD brains need more sleep.</strong> Aim for 8-9 hours. The executive function deficit from sleep loss is compounded with ADHD.",
