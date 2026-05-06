@@ -11,14 +11,14 @@ account_id = "a1c8a33cbe8a3c9e260480433a0dbb06"
 # Cloudflare D1 Database (SQLite)
 [[d1_databases]]
 binding = "DB"
-database_name = "focusbro"
-database_id = "placeholder-db-id"
+database_name = "focusbro-db"
+database_id = "f6b1685b-a879-4d42-9c23-a30da614be01"
 
 # Cloudflare KV Store (for user data caching)
 [[kv_namespaces]]
 binding = "KV_CACHE"
-id = "placeholder-kv-id"
-preview_id = "placeholder-kv-preview-id"
+id = "732d985fd2b84650aa828f7982ba0f87"
+preview_id = "732d985fd2b84650aa828f7982ba0f87"
 
 # Environment-specific config
 [env.production]
@@ -26,8 +26,8 @@ routes = [
   { pattern = "focusbro.net/*", zone_name = "focusbro.net" },
   { pattern = "*.focusbro.net/*", zone_name = "focusbro.net" }
 ]
-d1_databases = [{ binding = "DB", database_id = "2ac20b08-66e3-4abd-92de-f0e6380bdad0", database_name = "focusbro" }]
-kv_namespaces = [{ binding = "KV_CACHE", id = "60c1852cd70f4999a380b9ea290fccb3", preview_id = "60c1852cd70f4999a380b9ea290fccb3" }]
+d1_databases = [{ binding = "DB", database_id = "f6b1685b-a879-4d42-9c23-a30da614be01", database_name = "focusbro-db" }]
+kv_namespaces = [{ binding = "KV_CACHE", id = "732d985fd2b84650aa828f7982ba0f87", preview_id = "732d985fd2b84650aa828f7982ba0f87" }]
 vars = { ENV = "production", API_ORIGIN = "https://focusbro.net", JWT_SECRET = "focusbro-secret-key-prod-2024" }
 
 [env.development]

@@ -43,7 +43,7 @@ async function checkRateLimit(request, env, endpoint) {
   
   try {
     // Get current count from KV
-    const countStr = await env.KV.get(rateLimitKey);
+    const countStr = await env.KV_CACHE.get(rateLimitKey);
     const count = countStr ? parseInt(countStr) : 0;
     
     const MAX_ATTEMPTS = config.auth.maxLoginAttempts;
@@ -58,7 +58,7 @@ async function checkRateLimit(request, env, endpoint) {
     }
     
     // Increment counter and set expiration
-    await env.KV.put(rateLimitKey, (count + 1).toString(), { expirationTtl: TIME_WINDOW });
+    await env.KV_CACHE.put(rateLimitKey, (count + 1).toString(), { expirationTtl: TIME_WINDOW });
     
     return { limited: false };
   } catch (e) {
@@ -1417,6 +1417,96 @@ router.get('/', async (request, env) => {
   return new Response(htmlContent, {
     status: 200,
     headers: { ...corsHeaders, 'Content-Type': 'text/html; charset=utf-8' }
+  });
+});
+
+router.get('/index.html', async () => {
+  return new Response(htmlContent, {
+    status: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300' }
+  });
+});
+
+router.get('/privacy.html', async () => {
+  const page = `<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FocusBro Privacy Policy</title><meta name="description" content="Privacy Policy for FocusBro." /></head>
+<body style="font-family:Arial,sans-serif;max-width:860px;margin:0 auto;padding:24px;line-height:1.6;color:#111827;">
+<nav><a href="/">Home</a> | <a href="/terms.html">Terms</a> | <a href="/about.html">About</a> | <a href="/contact.html">Contact</a></nav>
+<h1>Privacy Policy</h1><p><strong>Last updated: May 5, 2026</strong></p>
+<p>FocusBro is designed as a browser-first productivity app. By default, your notes, tasks, timer history, and preferences are stored locally in your browser.</p>
+<h2>Advertising and cookies</h2>
+<p>We use Google AdSense to show ads. Google and its partners may use cookies or device identifiers to personalize ads and measure performance.</p>
+<h2>Contact</h2><p>Privacy questions: <a href="mailto:support@focusbro.net">support@focusbro.net</a>.</p>
+</body></html>`;
+  return new Response(page, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300' } });
+});
+
+router.get('/terms.html', async () => {
+  const page = `<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FocusBro Terms of Service</title><meta name="description" content="Terms of Service for FocusBro." /></head>
+<body style="font-family:Arial,sans-serif;max-width:860px;margin:0 auto;padding:24px;line-height:1.6;color:#111827;">
+<nav><a href="/">Home</a> | <a href="/privacy.html">Privacy</a> | <a href="/about.html">About</a> | <a href="/contact.html">Contact</a></nav>
+<h1>Terms of Service</h1><p><strong>Last updated: May 5, 2026</strong></p>
+<p>FocusBro is provided for lawful productivity and wellness support. This service is informational and not medical advice.</p>
+<h2>Advertising</h2><p>FocusBro may display third-party ads. Advertisers are responsible for their own products and claims.</p>
+<h2>Contact</h2><p>Questions: <a href="mailto:support@focusbro.net">support@focusbro.net</a>.</p>
+</body></html>`;
+  return new Response(page, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300' } });
+});
+
+router.get('/about.html', async () => {
+  const page = `<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>About FocusBro</title><meta name="description" content="About FocusBro ADHD-friendly focus toolkit." /></head>
+<body style="font-family:Arial,sans-serif;max-width:860px;margin:0 auto;padding:24px;line-height:1.6;color:#111827;">
+<nav><a href="/">Home</a> | <a href="/privacy.html">Privacy</a> | <a href="/terms.html">Terms</a> | <a href="/contact.html">Contact</a></nav>
+<h1>About FocusBro</h1>
+<p>FocusBro is an ADHD-friendly focus and productivity toolkit to help users structure work sessions, reduce distractions, and build sustainable routines.</p>
+</body></html>`;
+  return new Response(page, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300' } });
+});
+
+router.get('/contact.html', async () => {
+  const page = `<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contact FocusBro</title><meta name="description" content="Contact information for FocusBro." /></head>
+<body style="font-family:Arial,sans-serif;max-width:860px;margin:0 auto;padding:24px;line-height:1.6;color:#111827;">
+<nav><a href="/">Home</a> | <a href="/privacy.html">Privacy</a> | <a href="/terms.html">Terms</a> | <a href="/about.html">About</a></nav>
+<h1>Contact</h1>
+<p>Support and policy requests: <a href="mailto:support@focusbro.net">support@focusbro.net</a></p>
+<p>General business inquiries: <a href="mailto:hello@focusbro.net">hello@focusbro.net</a></p>
+</body></html>`;
+  return new Response(page, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300' } });
+});
+
+router.get('/ads.txt', async () => {
+  return new Response('google.com, pub-7015938501859914, DIRECT, f08c47fec0942fa0\n', {
+    status: 200,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=3600' }
+  });
+});
+
+router.get('/robots.txt', async () => {
+  return new Response('User-agent: *\nAllow: /\n\nSitemap: https://focusbro.net/sitemap.xml\n', {
+    status: 200,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=3600' }
+  });
+});
+
+router.get('/sitemap.xml', async () => {
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://focusbro.net/</loc></url>
+  <url><loc>https://focusbro.net/privacy.html</loc></url>
+  <url><loc>https://focusbro.net/terms.html</loc></url>
+  <url><loc>https://focusbro.net/about.html</loc></url>
+  <url><loc>https://focusbro.net/contact.html</loc></url>
+</urlset>`;
+  return new Response(sitemap, {
+    status: 200,
+    headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' }
   });
 });
 
